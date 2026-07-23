@@ -1,183 +1,171 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
-import { TopBar } from "@/components/top-bar"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { formatCurrency, timeAgo, cn } from "@/lib/utils"
-import { mockCompanies, mockLeads } from "@/lib/mock-data"
-import { CRMCompany } from "@/lib/types"
+import { useState } from "react";
+import { Sidebar } from "@/components/sidebar";
+import { TopBar } from "@/components/top-bar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { formatCurrency, timeAgo, cn } from "@/lib/utils";
+import { mockCompanies } from "@/lib/mock-data";
+import type { CRMCompany } from "@/lib/types";
 import {
-  Users,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Edit3,
-  DollarSign,
-  Target,
-  Calendar,
-  MessageSquare,
-  FileText,
-  Clock,
-  Star,
-  ArrowUpRight,
-  ExternalLink,
-  Briefcase,
-  BarChart3,
-  Layers,
-  UserPlus,
-  TrendingUp,
-  CheckCircle2,
-} from "lucide-react"
-
-const statusColors: Record<string, string> = {
-  prospect: "bg-blue-500/10 text-blue-600",
-  active: "bg-emerald-500/10 text-emerald-600",
-  inactive: "bg-gray-500/10 text-gray-600",
-  partner: "bg-violet-500/10 text-violet-600",
-}
+  Users, Building2, Mail, Phone, MapPin, Globe, Plus, Search, Filter,
+  DollarSign, Target, Calendar, MessageSquare, Clock, UserPlus, Edit3,
+} from "lucide-react";
 
 export default function CRMPage() {
-  const [selectedCompany, setSelectedCompany] = useState<CRMCompany | null>(null)
-  const [activeTab, setActiveTab] = useState("companies")
-  const [showAddContact, setShowAddContact] = useState(false)
+  const [search, setSearch] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState<CRMCompany | null>(null);
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [activeTab, setActiveTab] = useState("companies");
+
+  const filteredCompanies = mockCompanies.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.industry.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalCompanies = mockCompanies.length;
+  const totalContacts = mockCompanies.reduce((a, c) => a + c.contacts.length, 0);
+  const activeLeads = mockCompanies.filter((c) => c.status === "prospect").length;
+  const totalRevenue = mockCompanies.reduce((a, c) => a + c.revenue, 0);
+
+  const stats = [
+    { label: "Companies", value: totalCompanies, icon: Building2, color: "text-cyan-400", glow: "bg-cyan-500/10" },
+    { label: "Contacts", value: totalContacts, icon: Users, color: "text-violet-400", glow: "bg-violet-500/10" },
+    { label: "Active Leads", value: activeLeads, icon: Target, color: "text-amber-400", glow: "bg-amber-500/10" },
+    { label: "Total Revenue", value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-emerald-400", glow: "bg-emerald-500/10" },
+  ];
+
+  const statusColor: Record<string, string> = {
+    prospect: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+    active: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+    inactive: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
+    partner: "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-zinc-950 text-white">
       <Sidebar />
-      <div className="flex-1 flex flex-col ml-64">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                CRM
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your companies, clients, leads, and relationships
-              </p>
-            </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" /> Filter
-              </Button>
-              <Button size="sm" onClick={() => setShowAddContact(true)}>
-                <UserPlus className="h-4 w-4 mr-2" /> Add Contact
-              </Button>
-              <Button size="sm">
-                <Building2 className="h-4 w-4 mr-2" /> Add Company
-              </Button>
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                <Users className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                  CRM
+                </h1>
+                <p className="text-sm text-zinc-500">Manage your customer relationships</p>
+              </div>
             </div>
+            <Button
+              onClick={() => setShowAddContact(true)}
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/20"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Contact
+            </Button>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                    <Building2 className="h-5 w-5 text-blue-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((s) => (
+              <Card key={s.label} className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm hover:border-zinc-700 transition-all duration-300">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className={cn("p-2.5 rounded-lg", s.glow)}>
+                      <s.icon className={cn("w-5 h-5", s.color)} />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold">{mockCompanies.length}</p>
-                    <p className="text-xs text-muted-foreground">Companies</p>
+                  <div className="mt-4">
+                    <p className="text-2xl font-bold text-white">{s.value}</p>
+                    <p className="text-sm text-zinc-500 mt-1">{s.label}</p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{mockCompanies.reduce((a, c) => a + c.contacts.length, 0)}</p>
-                    <p className="text-xs text-muted-foreground">Contacts</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-                    <Target className="h-5 w-5 text-violet-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{mockCompanies.reduce((a, c) => a + c.leads.length, 0)}</p>
-                    <p className="text-xs text-muted-foreground">Active Leads</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                    <DollarSign className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{formatCurrency(mockCompanies.reduce((a, c) => a + c.revenue, 0))}</p>
-                    <p className="text-xs text-muted-foreground">Total Revenue</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
+          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 max-w-lg">
-              <TabsTrigger value="companies">Companies</TabsTrigger>
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
-              <TabsTrigger value="meetings">Meetings</TabsTrigger>
-              <TabsTrigger value="activities">Activities</TabsTrigger>
+            <TabsList className="bg-zinc-900/80 border border-zinc-800/80 p-1 h-auto">
+              <TabsTrigger value="companies" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white">
+                <Building2 className="w-4 h-4 mr-1.5" />
+                Companies
+              </TabsTrigger>
+              <TabsTrigger value="contacts" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white">
+                <Users className="w-4 h-4 mr-1.5" />
+                Contacts
+              </TabsTrigger>
+              <TabsTrigger value="meetings" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white">
+                <Calendar className="w-4 h-4 mr-1.5" />
+                Meetings
+              </TabsTrigger>
+              <TabsTrigger value="activities" className="data-[state=active]:bg-zinc-800 data-[state=active]:text-white">
+                <Clock className="w-4 h-4 mr-1.5" />
+                Activities
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="companies" className="space-y-4 mt-4">
-              <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search companies..." className="pl-10" />
+            {/* Companies Tab */}
+            <TabsContent value="companies" className="mt-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Input
+                    placeholder="Search companies..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 bg-zinc-900/60 border-zinc-800/80 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                  />
+                </div>
+                <Button variant="outline" size="icon" className="border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-800">
+                  <Filter className="w-4 h-4" />
+                </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockCompanies.map((company) => (
-                  <Card key={company.id} className="hover:shadow-md transition-all cursor-pointer group" onClick={() => setSelectedCompany(company)}>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredCompanies.map((company) => (
+                  <Card
+                    key={company.id}
+                    className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm hover:border-zinc-700 hover:bg-zinc-900/80 transition-all duration-300 cursor-pointer group"
+                    onClick={() => setSelectedCompany(company)}
+                  >
                     <CardContent className="p-5">
-                      <div className="flex items-start gap-3">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
-                          <Building2 className="h-6 w-6 text-primary" />
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg shrink-0 group-hover:from-cyan-500/30 group-hover:to-blue-500/30 transition-all">
+                          {company.name.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold group-hover:text-primary transition-colors truncate">{company.name}</h3>
-                          <p className="text-xs text-muted-foreground">{company.industry}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline" className={cn("text-[10px]", statusColors[company.status])}>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-semibold text-white truncate">{company.name}</h3>
+                            <Badge variant="outline" className={cn("text-[10px] shrink-0 border", statusColor[company.status])}>
                               {company.status}
                             </Badge>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />{company.country}
-                            </span>
                           </div>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="text-sm font-semibold text-emerald-600">{formatCurrency(company.revenue)}</span>
-                            <span className="text-xs text-muted-foreground">{company.contacts.length} contacts</span>
+                          <p className="text-sm text-zinc-500 mt-0.5">{company.industry}</p>
+                          <div className="flex items-center gap-3 mt-3 text-xs text-zinc-500">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {company.country}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              {formatCurrency(company.revenue)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {company.contacts.length}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -187,155 +175,246 @@ export default function CRMPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="contacts" className="space-y-4 mt-4">
-              <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search contacts..." className="pl-10" />
+            {/* Contacts Tab */}
+            <TabsContent value="contacts" className="mt-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Input
+                    placeholder="Search contacts..."
+                    className="pl-10 bg-zinc-900/60 border-zinc-800/80 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                  />
+                </div>
               </div>
+
               <div className="space-y-3">
-                {mockCompanies.flatMap(c => c.contacts).map(contact => {
-                  const company = mockCompanies.find(c => c.id === contact.companyId)
-                  return (
-                    <Card key={contact.id} className="hover:shadow-md transition-all cursor-pointer">
+                {mockCompanies.flatMap((c) =>
+                  c.contacts.map((contact) => (
+                    <Card key={contact.id} className="bg-zinc-900/60 border-zinc-800/80 backdrop-blur-sm hover:border-zinc-700 transition-all duration-300">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                            <Users className="h-5 w-5 text-primary" />
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500/30 to-purple-500/30 border border-violet-500/20 flex items-center justify-center text-violet-300 font-semibold text-sm shrink-0">
+                            {contact.name.split(" ").map((n: string) => n[0]).join("")}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold">{contact.name}</h4>
-                            <p className="text-xs text-muted-foreground">{contact.role} at {company?.name}</p>
+                            <h4 className="font-medium text-white">{contact.name}</h4>
+                            <p className="text-sm text-zinc-500">{contact.role} at {c.name}</p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Mail className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Phone className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><MessageSquare className="h-4 w-4" /></Button>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10">
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10">
+                              <Phone className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10">
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  )
-                })}
+                  ))
+                )}
               </div>
             </TabsContent>
 
-            <TabsContent value="meetings" className="space-y-4 mt-4">
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold">Meetings</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Schedule and manage your client meetings</p>
-                  <Button className="mt-4"><Plus className="h-4 w-4 mr-2" /> Schedule Meeting</Button>
+            {/* Meetings Tab */}
+            <TabsContent value="meetings" className="mt-4">
+              <Card className="bg-zinc-900/60 border-zinc-800/80">
+                <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+                  <div className="p-4 rounded-2xl bg-zinc-800/50 mb-4">
+                    <Calendar className="w-10 h-10 text-zinc-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-zinc-400">No meetings scheduled</h3>
+                  <p className="text-sm text-zinc-600 mt-1 max-w-sm">
+                    Schedule meetings with your contacts to keep your pipeline moving forward.
+                  </p>
+                  <Button className="mt-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Schedule Meeting
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="activities" className="space-y-4 mt-4">
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold">Activity Timeline</h3>
-                  <p className="text-sm text-muted-foreground mt-1">Track all interactions with your contacts</p>
+            {/* Activities Tab */}
+            <TabsContent value="activities" className="mt-4">
+              <Card className="bg-zinc-900/60 border-zinc-800/80">
+                <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+                  <div className="p-4 rounded-2xl bg-zinc-800/50 mb-4">
+                    <Clock className="w-10 h-10 text-zinc-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-zinc-400">No recent activities</h3>
+                  <p className="text-sm text-zinc-600 mt-1 max-w-sm">
+                    Activities like calls, emails, and notes will appear here as you interact with your contacts.
+                  </p>
+                  <Button className="mt-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Log Activity
+                  </Button>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
+        </div>
+      </main>
 
-          {/* Company Detail Dialog */}
-          <Dialog open={!!selectedCompany} onOpenChange={() => setSelectedCompany(null)}>
-            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-              {selectedCompany && (
-                <>
-                  <DialogHeader>
+      {/* Add Contact Dialog */}
+      <Dialog open={showAddContact} onOpenChange={setShowAddContact}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-cyan-400" />
+              Add New Contact
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Add a new contact to your CRM database.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-400">First Name</label>
+                <Input placeholder="John" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-zinc-400">Last Name</label>
+                <Input placeholder="Doe" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-400">Email</label>
+              <Input placeholder="john@example.com" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-400">Phone</label>
+              <Input placeholder="+1 (555) 000-0000" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-400">Role</label>
+              <Input placeholder="CTO" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-400">Company</label>
+              <Input placeholder="Acme Corp" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-zinc-400">Notes</label>
+              <Textarea placeholder="Add any notes about this contact..." rows={3} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50 resize-none" />
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="ghost" onClick={() => setShowAddContact(false)} className="text-zinc-400 hover:text-white">
+                Cancel
+              </Button>
+              <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Contact
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Company Detail Dialog */}
+      <Dialog open={!!selectedCompany} onOpenChange={(open) => !open && setSelectedCompany(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-2xl max-h-[85vh] overflow-y-auto">
+          {selectedCompany && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-xl shrink-0">
+                    {selectedCompany.name.charAt(0)}
+                  </div>
+                  <div>
                     <DialogTitle className="text-xl">{selectedCompany.name}</DialogTitle>
-                    <DialogDescription>{selectedCompany.industry} · {selectedCompany.country}</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-6 mt-4">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className={cn(statusColors[selectedCompany.status])}>{selectedCompany.status}</Badge>
-                      <span className="text-sm text-muted-foreground flex items-center gap-1"><Globe className="h-3.5 w-3.5" />{selectedCompany.website}</span>
-                    </div>
+                    <DialogDescription className="flex items-center gap-2 mt-1">
+                      <span>{selectedCompany.industry}</span>
+                      <Badge variant="outline" className={cn("text-[10px] border", statusColor[selectedCompany.status])}>
+                        {selectedCompany.status}
+                      </Badge>
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold mb-3">Contacts ({selectedCompany.contacts.length})</h4>
-                        <div className="space-y-2">
-                          {selectedCompany.contacts.map(contact => (
-                            <div key={contact.id} className="p-3 rounded-lg bg-muted/30">
-                              <p className="font-medium text-sm">{contact.name}</p>
-                              <p className="text-xs text-muted-foreground">{contact.role}</p>
-                              <p className="text-xs text-muted-foreground">{contact.email}</p>
-                            </div>
-                          ))}
+              <div className="mt-6 space-y-6">
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800/80">
+                    <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Globe className="w-3 h-3" /> Country</p>
+                    <p className="text-sm font-medium text-white">{selectedCompany.country}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800/80">
+                    <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Revenue</p>
+                    <p className="text-sm font-medium text-emerald-400">{formatCurrency(selectedCompany.revenue)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800/80">
+                    <p className="text-xs text-zinc-500 mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Contacts</p>
+                    <p className="text-sm font-medium text-white">{selectedCompany.contacts.length}</p>
+                  </div>
+                </div>
+
+                {/* Contacts List */}
+                <div>
+                  <h4 className="text-sm font-semibold text-zinc-400 mb-3 uppercase tracking-wider">Contacts</h4>
+                  <div className="space-y-2">
+                    {selectedCompany.contacts.map((contact) => (
+                      <div key={contact.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/60 hover:bg-zinc-800/50 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/20 flex items-center justify-center text-violet-300 text-xs font-semibold shrink-0">
+                          {contact.name.split(" ").map((n: string) => n[0]).join("")}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white">{contact.name}</p>
+                          <p className="text-xs text-zinc-500">{contact.role}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-500 hover:text-cyan-400">
+                            <Mail className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-500 hover:text-emerald-400">
+                            <Phone className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold mb-3">Details</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-muted-foreground" />Revenue: {formatCurrency(selectedCompany.revenue)}</div>
-                          <div className="flex items-center gap-2"><Target className="h-4 w-4 text-muted-foreground" />Active Leads: {selectedCompany.leads.length}</div>
-                          <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" />Created: {timeAgo(new Date(selectedCompany.createdAt))}</div>
-                        </div>
-                        <div className="mt-4">
-                          <h4 className="font-semibold mb-2">Notes</h4>
-                          <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">{selectedCompany.notes}</p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-3 pt-4 border-t">
-                      <Button><Mail className="h-4 w-4 mr-2" /> Send Email</Button>
-                      <Button variant="outline"><Phone className="h-4 w-4 mr-2" /> Call</Button>
-                      <Button variant="outline"><Calendar className="h-4 w-4 mr-2" /> Schedule Meeting</Button>
-                      <Button variant="outline"><Edit3 className="h-4 w-4 mr-2" /> Edit</Button>
+                {/* Notes */}
+                {selectedCompany.notes && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-zinc-400 mb-3 uppercase tracking-wider">Notes</h4>
+                    <div className="p-4 rounded-lg bg-zinc-800/30 border border-zinc-800/60">
+                      <p className="text-sm text-zinc-400 leading-relaxed">{selectedCompany.notes}</p>
                     </div>
                   </div>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
+                )}
 
-          {/* Add Contact Dialog */}
-          <Dialog open={showAddContact} onOpenChange={setShowAddContact}>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add New Contact</DialogTitle>
-                <DialogDescription>Add a new contact to your CRM</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Name</label>
-                  <Input placeholder="Full name" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Email</label>
-                  <Input placeholder="email@example.com" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Phone</label>
-                  <Input placeholder="+1-555-0123" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Role</label>
-                  <Input placeholder="e.g. CTO, Project Manager" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Company</label>
-                  <Input placeholder="Company name" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Notes</label>
-                  <Textarea placeholder="Additional notes..." rows={3} />
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setShowAddContact(false)}>Cancel</Button>
-                  <Button onClick={() => setShowAddContact(false)}>Save Contact</Button>
+                {/* Actions */}
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/60">
+                  <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+                    <Mail className="w-3.5 h-3.5 mr-1.5" />
+                    Send Email
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                    <Phone className="w-3.5 h-3.5 mr-1.5" />
+                    Call
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                    <Calendar className="w-3.5 h-3.5 mr-1.5" />
+                    Schedule Meeting
+                  </Button>
+                  <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                    <Edit3 className="w-3.5 h-3.5 mr-1.5" />
+                    Edit
+                  </Button>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </main>
-      </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }
