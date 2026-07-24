@@ -76,6 +76,7 @@ const statusSummaryCards = [
 const PAGE_SIZE = 9;
 
 export default function LeadsPage() {
+  const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -84,9 +85,11 @@ export default function LeadsPage() {
   const [showCount, setShowCount] = useState(PAGE_SIZE);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Lead>>({});
   const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -94,17 +97,17 @@ export default function LeadsPage() {
   }, []);
 
   const filteredLeads = useMemo(() => {
-    return mockLeads
+    return leads
       .filter((lead) => {
         if (deletedIds.has(lead.id)) return false;
-        if (archivedIds.has(lead.id) && statusFilter !== "archived") return false;
+        if (statusFilter === "archived") return archivedIds.has(lead.id);
+        if (archivedIds.has(lead.id)) return false;
         const matchesSearch =
           lead.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           lead.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           lead.company.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus =
-          statusFilter === "all" ||
-          statusFilter === "archived"
+          statusFilter === "all"
             ? true
             : lead.status === statusFilter;
         const matchesUrgency = urgencyFilter === "all" || lead.urgency === urgencyFilter;
@@ -126,30 +129,30 @@ export default function LeadsPage() {
             return 0;
         }
       });
-  }, [searchQuery, statusFilter, urgencyFilter, sortBy, archivedIds, deletedIds]);
+  }, [leads, searchQuery, statusFilter, urgencyFilter, sortBy, archivedIds, deletedIds]);
 
   const visibleLeads = useMemo(() => filteredLeads.slice(0, showCount), [filteredLeads, showCount]);
   const hasMore = showCount < filteredLeads.length;
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = { new: 0, analyzing: 0, qualified: 0, proposal_sent: 0, won: 0 };
-    mockLeads.forEach((lead) => {
+    leads.forEach((lead) => {
       if (!deletedIds.has(lead.id) && counts[lead.status] !== undefined) counts[lead.status]++;
     });
     return counts;
-  }, [deletedIds]);
+  }, [leads, deletedIds]);
 
   const totalBudget = useMemo(
-    () => mockLeads.filter((l) => !deletedIds.has(l.id)).reduce((sum, l) => sum + (l.budget?.max || 0), 0),
-    [deletedIds]
+    () => leads.filter((l) => !deletedIds.has(l.id)).reduce((sum, l) => sum + (l.budget?.max || 0), 0),
+    [leads, deletedIds]
   );
 
   const avgProbability = useMemo(() => {
-    const valid = mockLeads.filter((l) => !deletedIds.has(l.id) && l.successProbability);
+    const valid = leads.filter((l) => !deletedIds.has(l.id) && l.successProbability);
     return valid.length ? Math.round(valid.reduce((sum, l) => sum + (l.successProbability || 0), 0) / valid.length) : 0;
-  }, [deletedIds]);
+  }, [leads, deletedIds]);
 
-  const activeLeadCount = mockLeads.length - deletedIds.size;
+  const activeLeadCount = leads.length - deletedIds.size;
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -187,9 +190,11 @@ export default function LeadsPage() {
 
   const handleDeleteLead = useCallback(
     (leadId: string) => {
+      setLeads((prev) => prev.filter((l) => l.id !== leadId));
       setDeletedIds((prev) => new Set(prev).add(leadId));
       setSelectedLead(null);
       setEditingLeadId(null);
+      setLeadToDelete(null);
       showToast("Lead deleted");
     },
     [showToast]
@@ -318,6 +323,7 @@ export default function LeadsPage() {
                   {Object.entries(statusConfig).map(([key, cfg]) => (
                     <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
                   ))}
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
@@ -368,7 +374,7 @@ export default function LeadsPage() {
                   <button
                     onClick={() => setViewMode("grid")}
                     className={cn(
-                      "p-2 transition-colors",
+                      "h-9 w-9 flex items-center justify-center transition-colors",
                       viewMode === "grid" ? "bg-white/[0.08] text-white" : "text-zinc-600 hover:text-zinc-400"
                     )}
                     title="Grid view"
@@ -378,7 +384,7 @@ export default function LeadsPage() {
                   <button
                     onClick={() => setViewMode("list")}
                     className={cn(
-                      "p-2 transition-colors",
+                      "h-9 w-9 flex items-center justify-center transition-colors",
                       viewMode === "list" ? "bg-white/[0.08] text-white" : "text-zinc-600 hover:text-zinc-400"
                     )}
                     title="List view"
@@ -437,7 +443,7 @@ export default function LeadsPage() {
                             <Globe className="w-3.5 h-3.5 shrink-0" />
                             <span className="truncate">{lead.country || "Global"}</span>
                           </div>
-                          <div className="text-emerald-400 text-xs font-semibold whitespace-nowrap">
+                          <div className="text-emerald-400 text-xs sm:text-sm font-semibold whitespace-nowrap">
                             {formatCurrency(lead.budget.min)} – {formatCurrency(lead.budget.max)}
                           </div>
                         </div>
@@ -510,7 +516,7 @@ export default function LeadsPage() {
                         <div className="hidden md:flex items-center gap-4 shrink-0">
                           <div className="text-center">
                             <p className="text-[10px] text-zinc-600 uppercase">Budget</p>
-                            <p className="text-xs font-semibold text-emerald-400 whitespace-nowrap">{formatCurrency(lead.budget.max)}</p>
+                            <p className="text-xs sm:text-sm font-semibold text-emerald-400 whitespace-nowrap">{formatCurrency(lead.budget.max)}</p>
                           </div>
                           <div className="text-center">
                             <p className="text-[10px] text-zinc-600 uppercase">Probability</p>
@@ -575,6 +581,7 @@ export default function LeadsPage() {
           if (!open) {
             setSelectedLead(null);
             setEditingLeadId(null);
+            setLeadToDelete(null);
           }
         }}
       >
@@ -606,8 +613,9 @@ export default function LeadsPage() {
                       onClick={() => {
                         setSelectedLead(null);
                         setEditingLeadId(null);
+                        setLeadToDelete(null);
                       }}
-                      className="text-zinc-500 hover:text-white shrink-0 h-8 w-8 p-0"
+                      className="text-zinc-500 hover:text-white shrink-0 h-9 w-9 p-0"
                     >
                       <X className="w-4 h-4" />
                     </Button>
@@ -661,7 +669,7 @@ export default function LeadsPage() {
                           <DollarSign className="w-5 h-5 text-emerald-400" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-2xl font-bold text-emerald-400 truncate">
+                          <p className="text-2xl font-bold text-emerald-400 text-xs sm:text-sm whitespace-nowrap">
                             {formatCurrency(selectedLead.budget.min)} – {formatCurrency(selectedLead.budget.max)}
                           </p>
                           <p className="text-xs text-zinc-500 mt-0.5">Estimated project budget</p>
@@ -743,8 +751,11 @@ export default function LeadsPage() {
                   <div className="flex items-center gap-3">
                     <Button
                       onClick={() => {
+                        setLeads((prev) => prev.map((l) => (l.id === selectedLead.id ? { ...l, ...editForm } : l)));
+                        setSelectedLead((prev) => (prev && prev.id === selectedLead.id ? { ...prev, ...editForm } : prev));
                         showToast("Changes saved");
                         setEditingLeadId(null);
+                        setEditForm({});
                       }}
                       className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold h-11 shadow-lg shadow-emerald-500/20"
                     >
@@ -753,16 +764,34 @@ export default function LeadsPage() {
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => setEditingLeadId(null)}
+                      onClick={() => { setEditingLeadId(null); setEditForm({}); }}
                       className="flex-1 border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 h-11"
                     >
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
                   </div>
+                ) : leadToDelete === selectedLead.id ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm text-zinc-400 mr-2">Are you sure you want to delete?</p>
+                    <Button
+                      onClick={() => handleDeleteLead(selectedLead.id)}
+                      className="bg-red-600 hover:bg-red-500 text-white font-semibold h-9 px-4"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setLeadToDelete(null)}
+                      className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 h-9 px-4"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Button
                         onClick={() => handleGenerateProposal(selectedLead)}
                         className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold h-11 shadow-lg shadow-blue-500/20"
@@ -791,8 +820,8 @@ export default function LeadsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setEditingLeadId(selectedLead.id)}
-                        className="text-zinc-500 hover:text-amber-400 text-xs"
+                        onClick={() => { setEditingLeadId(selectedLead.id); setEditForm({}); }}
+                        className="text-zinc-500 hover:text-amber-400 text-xs h-9"
                       >
                         <Pencil className="w-3.5 h-3.5 mr-1" />
                         Edit
@@ -801,7 +830,7 @@ export default function LeadsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleArchiveLead(selectedLead.id)}
-                        className="text-zinc-500 hover:text-blue-400 text-xs"
+                        className="text-zinc-500 hover:text-blue-400 text-xs h-9"
                       >
                         <Archive className="w-3.5 h-3.5 mr-1" />
                         {archivedIds.has(selectedLead.id) ? "Unarchive" : "Archive"}
@@ -809,8 +838,8 @@ export default function LeadsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteLead(selectedLead.id)}
-                        className="text-zinc-500 hover:text-red-400 text-xs"
+                        onClick={() => setLeadToDelete(selectedLead.id)}
+                        className="text-zinc-500 hover:text-red-400 text-xs h-9"
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
                         Delete

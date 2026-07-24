@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { timeAgo, cn } from "@/lib/utils";
 import { mockNotifications } from "@/lib/mock-data";
 import type { Notification } from "@/lib/types";
@@ -68,6 +67,32 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [filter, setFilter] = useState<FilterType>("all");
   const [showPreferences, setShowPreferences] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [prefs, setPrefs] = useState({
+    highValue: true,
+    urgentAlerts: true,
+    governmentContracts: true,
+    systemUpdates: false,
+  });
+
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const togglePref = useCallback((key: keyof typeof prefs) => {
+    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    showToast(`${key === "highValue" ? "High Value Leads" : key === "urgentAlerts" ? "Urgent Alerts" : key === "governmentContracts" ? "Government Contracts" : "System Updates"} ${prefs[key] ? "disabled" : "enabled"}`);
+  }, [prefs, showToast]);
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
@@ -93,7 +118,8 @@ export default function NotificationsPage() {
 
   const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+    showToast("All notifications marked as read");
+  }, [showToast]);
 
   const toggleRead = useCallback((id: string) => {
     setNotifications((prev) =>
@@ -107,7 +133,8 @@ export default function NotificationsPage() {
 
   const clearAll = useCallback(() => {
     setNotifications([]);
-  }, []);
+    showToast("All notifications cleared");
+  }, [showToast]);
 
   const restoreAll = useCallback(() => {
     setNotifications(mockNotifications);
@@ -205,22 +232,25 @@ export default function NotificationsPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                      { label: "High Value Leads", enabled: true },
-                      { label: "Urgent Alerts", enabled: true },
-                      { label: "Government Contracts", enabled: true },
-                      { label: "System Updates", enabled: false },
+                      { key: "highValue" as const, label: "High Value Leads", enabled: prefs.highValue },
+                      { key: "urgentAlerts" as const, label: "Urgent Alerts", enabled: prefs.urgentAlerts },
+                      { key: "governmentContracts" as const, label: "Government Contracts", enabled: prefs.governmentContracts },
+                      { key: "systemUpdates" as const, label: "System Updates", enabled: prefs.systemUpdates },
                     ].map((pref) => (
                       <div key={pref.label} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
                         <span className="text-xs text-slate-400">{pref.label}</span>
-                        <div className={cn(
-                          "w-9 h-5 rounded-full flex items-center cursor-pointer transition-colors duration-200",
-                          pref.enabled ? "bg-cyan-500/30 justify-end" : "bg-slate-700/50 justify-start"
-                        )}>
+                        <button
+                          onClick={() => togglePref(pref.key)}
+                          className={cn(
+                            "w-9 h-5 rounded-full flex items-center cursor-pointer transition-colors duration-200",
+                            pref.enabled ? "bg-cyan-500/30 justify-end" : "bg-slate-700/50 justify-start"
+                          )}
+                        >
                           <div className={cn(
                             "w-4 h-4 rounded-full mx-0.5 transition-colors duration-200",
                             pref.enabled ? "bg-cyan-400" : "bg-slate-500"
                           )} />
-                        </div>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -309,7 +339,7 @@ export default function NotificationsPage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <h3 className={cn(
-                                  "text-sm font-medium leading-tight",
+                                  "text-sm font-medium leading-tight truncate",
                                   !notif.read ? "text-white" : "text-slate-300"
                                 )}>
                                   {notif.title}
@@ -334,7 +364,7 @@ export default function NotificationsPage() {
                                     e.stopPropagation();
                                     dismissNotification(notif.id);
                                   }}
-                                  className="h-7 w-7 p-0 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                                  className="h-7 w-7 p-0 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150"
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </Button>
@@ -448,6 +478,25 @@ export default function NotificationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 bg-[#1a1a24] border border-cyan-500/30 rounded-xl shadow-xl shadow-cyan-500/10 backdrop-blur-sm animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span className="text-sm text-slate-200 min-w-0">{toast}</span>
+            <button
+              onClick={() => {
+                setToast(null);
+                if (toastTimer.current) clearTimeout(toastTimer.current);
+              }}
+              className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors ml-2"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -59,6 +59,10 @@
   border-color: hsl(var(--border));
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
@@ -140,9 +144,11 @@ body {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .card-hover:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.08);
+  @media (hover: hover) {
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.08);
+    }
   }
 }
 
@@ -256,3 +262,14 @@ body {
 .typing-dot:nth-child(1) { animation: typing-dots 1.4s infinite 0s; }
 .typing-dot:nth-child(2) { animation: typing-dots 1.4s infinite 0.2s; }
 .typing-dot:nth-child(3) { animation: typing-dots 1.4s infinite 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

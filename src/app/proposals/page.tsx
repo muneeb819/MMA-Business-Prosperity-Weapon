@@ -193,10 +193,12 @@ export default function ProposalsPage() {
     const drafts = proposals.filter((p) => p.status === "draft").length;
     const submitted = proposals.filter((p) => p.status === "submitted").length;
     const accepted = proposals.filter((p) => p.status === "accepted").length;
+    const rejected = proposals.filter((p) => p.status === "rejected").length;
+    const revision = proposals.filter((p) => p.status === "revision").length;
     const avgWin = proposals.length
       ? Math.round(proposals.reduce((sum, p) => sum + p.winProbability, 0) / proposals.length)
       : 0;
-    return { drafts, submitted, accepted, avgWin, total: proposals.length };
+    return { drafts, submitted, accepted, rejected, revision, avgWin, total: proposals.length };
   }, [proposals]);
 
   const filteredProposals = useMemo(() => {
@@ -261,7 +263,7 @@ export default function ProposalsPage() {
 
   const handleDuplicateProposal = useCallback(
     (proposal: MockProposal) => {
-      const newId = `prop-${String(proposals.length + 1).padStart(3, "0")}`;
+      const newId = `prop-${Date.now().toString()}`;
       const duplicate: MockProposal = {
         ...proposal,
         id: newId,
@@ -274,7 +276,7 @@ export default function ProposalsPage() {
       setSelectedProposal(null);
       showToast("Proposal duplicated as draft", "success");
     },
-    [proposals.length, showToast]
+    [showToast]
   );
 
   const handleStartEdit = useCallback(
@@ -311,7 +313,7 @@ export default function ProposalsPage() {
     await new Promise((r) => setTimeout(r, 2500));
     const lead = mockLeads.find((l) => l.id === genLeadId);
     const newProposal: MockProposal = {
-      id: `prop-${String(proposals.length + 1).padStart(3, "0")}`,
+      id: `prop-${Date.now().toString()}`,
       title: `${lead?.title || "New"} Proposal`,
       clientName: lead?.clientName || "Unknown",
       company: lead?.company || "Unknown",
@@ -342,12 +344,14 @@ export default function ProposalsPage() {
     { key: "draft", label: "Draft", count: stats.drafts },
     { key: "submitted", label: "Submitted", count: stats.submitted },
     { key: "accepted", label: "Accepted", count: stats.accepted },
+    { key: "rejected", label: "Rejected", count: stats.rejected },
+    { key: "revision", label: "Revision", count: stats.revision },
   ];
 
   return (
     <div className="flex h-screen bg-[#07080F]">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <ScrollArea className="flex-1 px-6 pb-6">
           {/* Header Stats */}
@@ -441,7 +445,7 @@ export default function ProposalsPage() {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center text-zinc-500 hover:text-white transition-colors rounded-md"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -474,7 +478,7 @@ export default function ProposalsPage() {
                   key={f.key}
                   onClick={() => setStatusFilter(f.key)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border",
+                    "px-3 h-9 rounded-lg text-xs font-medium transition-all duration-200 border inline-flex items-center",
                     statusFilter === f.key
                       ? "bg-blue-500/15 border-blue-500/30 text-blue-300"
                       : "bg-white/[0.02] border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
@@ -606,10 +610,10 @@ export default function ProposalsPage() {
                             autoFocus
                             onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") handleCancelEdit(); }}
                           />
-                          <Button size="sm" onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0">
+                          <Button size="sm" onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0 h-9 w-9 p-0">
                             <Check className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="text-zinc-400 hover:text-white shrink-0">
+                          <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="text-zinc-400 hover:text-white shrink-0 h-9 w-9 p-0">
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
@@ -768,7 +772,7 @@ export default function ProposalsPage() {
                         key={tone.value}
                         onClick={() => setGenTone(tone.value)}
                         className={cn(
-                          "p-3 rounded-xl border text-left transition-all duration-300 overflow-hidden",
+                          "p-3 min-h-9 rounded-xl border text-left transition-all duration-300 overflow-hidden",
                           genTone === tone.value
                             ? "border-blue-500/40 bg-blue-500/[0.08] shadow-lg shadow-blue-500/10"
                             : "border-white/[0.06] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
@@ -836,7 +840,7 @@ export default function ProposalsPage() {
             {toast.type === "info" && <AlertCircle className="w-4 h-4 shrink-0" />}
             {toast.type === "error" && <AlertCircle className="w-4 h-4 shrink-0" />}
             <span className="text-sm font-medium">{toast.message}</span>
-            <button onClick={() => dismissToast(toast.id)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity shrink-0">
+            <button onClick={() => dismissToast(toast.id)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity shrink-0 h-9 w-9 flex items-center justify-center rounded-md">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>

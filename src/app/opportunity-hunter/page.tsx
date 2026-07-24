@@ -39,7 +39,7 @@ import {
   Save,
   Filter,
 } from "lucide-react"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 
 function Code(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -97,6 +97,25 @@ function formatCurrency(value: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl shadow-zinc-900/50">
+        <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+        <p className="text-sm text-zinc-100">{message}</p>
+        <button onClick={onClose} className="ml-2 text-zinc-400 hover:text-white transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
 }
 
 const searchSources = [
@@ -334,6 +353,8 @@ export default function OpportunityHunterPage() {
   const [sourceStatuses, setSourceStatuses] = useState<Record<string, string>>(
     Object.fromEntries(searchSources.map((s) => [s.id, s.status]))
   )
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [savedConfig, setSavedConfig] = useState({ minDealSize: "50000", targetRegion: "global", searchFrequency: "15" })
 
   const hunterAgent = mockAgents.find((a) => a.type === "opportunity_hunter") || {
     id: "agent-1",
@@ -352,15 +373,28 @@ export default function OpportunityHunterPage() {
   const filteredDiscoveries = useMemo(() => {
     return discoveries.filter((d) => {
       if (selectedFilter !== "all" && d.status !== selectedFilter) return false
-      if (activePlatform !== "all" && d.source.toLowerCase() !== activePlatform) return false
+      if (activePlatform !== "all") {
+        const platformMap: Record<string, string[]> = {
+          linkedin: ["linkedin"],
+          twitter: ["twitter"],
+          web: ["web crawling", "web scraping", "web"],
+          crunchbase: ["crunchbase"],
+          github: ["github"],
+          email: ["email"],
+        }
+        const matches = platformMap[activePlatform] || []
+        if (matches.length > 0 && !matches.some((m) => d.source.toLowerCase().includes(m))) return false
+      }
       if (activeCountry !== "all") {
         const countryMap: Record<string, string[]> = {
           us: ["San Francisco", "New York", "Austin", "Chicago"],
           uk: ["London"],
           ca: ["Toronto"],
+          de: ["berlin", "munich", "frankfurt"],
+          au: ["sydney", "melbourne"],
         }
         const locations = countryMap[activeCountry] || []
-        if (!locations.some((l) => d.location.includes(l))) return false
+        if (!locations.some((l) => d.location.toLowerCase().includes(l.toLowerCase()))) return false
       }
       if (activeTechnology !== "all") {
         const techTags: Record<string, string[]> = {
@@ -372,6 +406,16 @@ export default function OpportunityHunterPage() {
         }
         const matches = techTags[activeTechnology] || []
         if (!d.tags.some((t) => matches.some((m) => t.includes(m))) && !d.industry.toLowerCase().includes(activeTechnology)) return false
+      }
+      if (parseInt(savedConfig.minDealSize) > 0 && d.dealSize < parseInt(savedConfig.minDealSize)) return false
+      if (savedConfig.targetRegion !== "global") {
+        const regionMap: Record<string, string[]> = {
+          na: ["San Francisco", "New York", "Austin", "Chicago", "Toronto"],
+          eu: ["London", "Berlin", "Munich", "Frankfurt"],
+          apac: ["Sydney", "Melbourne"],
+        }
+        const regionLocations = regionMap[savedConfig.targetRegion] || []
+        if (regionLocations.length > 0 && !regionLocations.some((l) => d.location.toLowerCase().includes(l.toLowerCase()))) return false
       }
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -385,7 +429,7 @@ export default function OpportunityHunterPage() {
       }
       return true
     })
-  }, [selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery])
+  }, [selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery, savedConfig])
 
   const toggleCategory = (id: string) => {
     setCategories((prev) =>
@@ -687,19 +731,19 @@ export default function OpportunityHunterPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-9 w-9 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                               onClick={() => toggleSourceStatus(source.id)}
                             >
                               {sourceStatuses[source.id] === "active" ? (
-                                <Pause className="w-3 h-3" />
+                                <Pause className="w-3.5 h-3.5" />
                               ) : (
-                                <Play className="w-3 h-3" />
+                                <Play className="w-3.5 h-3.5" />
                               )}
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-9 w-9 p-0 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                               onClick={() => setSelectedSource(source)}
                             >
                               <Eye className="w-3 h-3" />
@@ -924,7 +968,7 @@ export default function OpportunityHunterPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                className="h-9 w-9 p-0 text-zinc-400 hover:text-white"
                                 onClick={() => setSelectedDiscovery(discovery)}
                                 title="View Details"
                               >
@@ -934,7 +978,7 @@ export default function OpportunityHunterPage() {
                                 variant="ghost"
                                 size="sm"
                                 className={cn(
-                                  "h-8 w-8 p-0",
+                                  "h-9 w-9 p-0",
                                   bookmarkedIds.has(discovery.id)
                                     ? "text-amber-400 hover:text-amber-300"
                                     : "text-zinc-400 hover:text-white"
@@ -947,7 +991,7 @@ export default function OpportunityHunterPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                className="h-9 w-9 p-0 text-zinc-400 hover:text-white"
                                 onClick={() => window.open(discovery.website, "_blank")}
                                 title="Open Website"
                               >
@@ -1086,7 +1130,8 @@ export default function OpportunityHunterPage() {
                         <Button
                           className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
                           onClick={() => {
-                            setIsRunning(true)
+                            setSavedConfig({ minDealSize, targetRegion, searchFrequency })
+                            setToastMessage("Configuration saved")
                           }}
                         >
                           <Save className="w-4 h-4 mr-2" />
@@ -1283,13 +1328,22 @@ export default function OpportunityHunterPage() {
             </div>
             <Button
               className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
-              onClick={() => setShowConfigDialog(false)}
+              onClick={() => {
+                setSavedConfig({ minDealSize, targetRegion, searchFrequency })
+                setToastMessage("Settings applied")
+                setShowConfigDialog(false)
+              }}
             >
-              Apply Settings
+              Done
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+      )}
     </div>
   )
 }

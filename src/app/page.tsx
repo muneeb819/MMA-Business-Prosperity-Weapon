@@ -5,7 +5,6 @@ import { TopBar } from "@/components/top-bar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   formatCurrency, 
@@ -16,7 +15,6 @@ import {
 import {
   mockAgents,
   mockLeads,
-  mockProposals,
   mockNotifications,
   mockActivityLog,
   mockAnalytics,
@@ -33,72 +31,25 @@ import {
   Search,
   Bell,
   Clock,
-  ArrowUpRight,
-  ArrowDownRight,
   Sparkles,
   Bot,
   Globe,
   Mail,
   BarChart3,
-  PieChart,
   RefreshCw,
   ChevronRight,
-  Eye,
-  Star,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Info,
-  ArrowRight,
   Cpu,
-  Wifi,
-  WifiOff,
-  Settings,
-  Play,
-  Pause,
-  MoreVertical,
-  Filter,
   Download,
-  Calendar,
   FileText,
   Send,
-  MessageSquare,
-  Video,
-  Phone,
   Building2,
-  MapPin,
-  Briefcase,
-  GraduationCap,
-  Heart,
-  Share2,
-  Bookmark,
   ExternalLink,
   X,
 } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
-
-function AnimatedCounter({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    const duration = 1500
-    const steps = 60
-    const increment = value / steps
-    let current = 0
-    const timer = setInterval(() => {
-      current += increment
-      if (current >= value) {
-        setCount(value)
-        clearInterval(timer)
-      } else {
-        setCount(Math.floor(current))
-      }
-    }, duration / steps)
-    return () => clearInterval(timer)
-  }, [value])
-
-  return <span>{prefix}{count.toLocaleString()}{suffix}</span>
-}
 
 function PulseDot({ status, className = "" }: { status: string; className?: string }) {
   const colors = {
@@ -179,13 +130,15 @@ export default function DashboardPage() {
   const [showInsightsModal, setShowInsightsModal] = useState(false)
   const [showRevenueDetails, setShowRevenueDetails] = useState(false)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
-  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null)
+  const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshingActivity, setIsRefreshingActivity] = useState(false)
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg)
   }, [])
+
+  const selectedLead = selectedLeadId ? mockLeads.find(l => l.id === selectedLeadId) : null
 
   const filteredAgents = mockAgents.filter((agent) => {
     if (activeAgentTab === "active") {
@@ -204,6 +157,12 @@ export default function DashboardPage() {
       return new Date(b.foundAt).getTime() - new Date(a.foundAt).getTime()
     })
     .filter((lead) => {
+      if (filterSource) {
+        return lead.platform.toLowerCase().includes(filterSource.toLowerCase())
+      }
+      return true
+    })
+    .filter((lead) => {
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         return (
@@ -216,10 +175,7 @@ export default function DashboardPage() {
     })
     .slice(0, 5)
 
-  const filteredNotifications = mockNotifications.filter((n) => {
-    if (selectedNotificationId) return n.id === selectedNotificationId
-    return true
-  })
+  const filteredNotifications = mockNotifications
 
   const stats = [
     {
@@ -271,12 +227,12 @@ export default function DashboardPage() {
     }
   }
 
-  const revenueData = [
-    { label: "Q1 2026", value: 425000, max: 500000 },
-    { label: "Q2 2026", value: 387500, max: 500000 },
-    { label: "Q3 2026", value: 312000, max: 500000 },
-    { label: "Q4 2026", value: 275000, max: 500000 },
-  ]
+  const maxMonthlyRevenue = Math.max(...mockAnalytics.monthlyRevenue.map(m => m.revenue))
+  const revenueData = mockAnalytics.monthlyRevenue.map(m => ({
+    label: m.month,
+    value: m.revenue,
+    max: maxMonthlyRevenue,
+  }))
 
   const handleRefreshActivity = () => {
     setIsRefreshingActivity(true)
@@ -755,7 +711,6 @@ export default function DashboardPage() {
                           )}
                           onClick={() => {
                             setSelectedLeadId(selectedLeadId === lead.id ? null : lead.id)
-                            showToast(`Selected lead: ${lead.clientName}`)
                           }}
                         >
                           <div className="flex items-start justify-between mb-2">
@@ -810,6 +765,50 @@ export default function DashboardPage() {
                         <p className="text-center text-sm text-zinc-500 py-4">No leads match your search.</p>
                       )}
                     </div>
+                    {selectedLead && (
+                      <div className="mt-3 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm truncate">{selectedLead.clientName}</p>
+                            <p className="text-xs text-zinc-400 mt-0.5">{selectedLead.company} &bull; {selectedLead.title}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-400 hover:text-white shrink-0 h-7"
+                            onClick={() => setSelectedLeadId(null)}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed">{selectedLead.description}</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 text-zinc-400">
+                            <DollarSign className="w-3 h-3" />
+                            <span>{formatCurrency(selectedLead.budget.min)} &ndash; {formatCurrency(selectedLead.budget.max)}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-zinc-400">
+                            <Globe className="w-3 h-3" />
+                            <span>{selectedLead.platform}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-zinc-400">
+                            <Mail className="w-3 h-3" />
+                            <span className="truncate">{selectedLead.email}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-zinc-400">
+                            <Clock className="w-3 h-3" />
+                            <span>Due {new Date(selectedLead.deadline).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedLead.technologies.slice(0, 5).map((tech) => (
+                            <Badge key={tech} variant="secondary" className="text-[10px] bg-zinc-800/50 text-zinc-400 border-zinc-700/50">
+                              {tech}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -903,14 +902,14 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        {selectedNotificationId && (
+                        {expandedNotificationId && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-zinc-400 hover:text-white text-xs"
-                            onClick={() => setSelectedNotificationId(null)}
+                            onClick={() => setExpandedNotificationId(null)}
                           >
-                            Show all
+                            Collapse
                           </Button>
                         )}
                         <Badge
@@ -925,42 +924,64 @@ export default function DashboardPage() {
                   <CardContent className="overflow-hidden">
                     <ScrollArea className="h-[280px] pr-4">
                       <div className="space-y-2">
-                        {filteredNotifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={cn(
-                              "p-3 rounded-lg border transition-all cursor-pointer",
-                              selectedNotificationId === notification.id
-                                ? "bg-zinc-800/60 border-zinc-600/50"
-                                : notification.read
-                                ? "bg-zinc-800/20 border-zinc-800/30 hover:bg-zinc-800/30"
-                                : "bg-zinc-800/40 border-zinc-700/50 hover:bg-zinc-800/50"
-                            )}
-                            onClick={() => {
-                              setSelectedNotificationId(
-                                selectedNotificationId === notification.id ? null : notification.id
-                              )
-                              if (!notification.read) {
-                                showToast("Notification marked as read")
-                              }
-                            }}
-                          >
-                            <div className="flex items-start gap-2.5">
-                              <NotificationIcon type={notification.type} />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm leading-relaxed line-clamp-2">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-zinc-500 mt-1">
-                                  {timeAgo(new Date(notification.createdAt))}
-                                </p>
-                              </div>
-                              {!notification.read && (
-                                <span className="w-2 h-2 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
+                        {filteredNotifications.map((notification) => {
+                          const isExpanded = expandedNotificationId === notification.id
+                          return (
+                            <div
+                              key={notification.id}
+                              className={cn(
+                                "p-3 rounded-lg border transition-all cursor-pointer",
+                                isExpanded
+                                  ? "bg-zinc-800/60 border-zinc-600/50"
+                                  : notification.read
+                                  ? "bg-zinc-800/20 border-zinc-800/30 hover:bg-zinc-800/30"
+                                  : "bg-zinc-800/40 border-zinc-700/50 hover:bg-zinc-800/50"
                               )}
+                              onClick={() => {
+                                setExpandedNotificationId(
+                                  expandedNotificationId === notification.id ? null : notification.id
+                                )
+                                if (!notification.read) {
+                                  showToast("Notification marked as read")
+                                }
+                              }}
+                            >
+                              <div className="flex items-start gap-2.5">
+                                <NotificationIcon type={notification.type} />
+                                <div className="flex-1 min-w-0">
+                                  {isExpanded && notification.title && (
+                                    <p className="text-sm font-medium mb-1">
+                                      {notification.title}
+                                    </p>
+                                  )}
+                                  <p className={cn("text-sm leading-relaxed", !isExpanded && "line-clamp-2")}>
+                                    {notification.message}
+                                  </p>
+                                  {isExpanded && (
+                                    <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
+                                      {notification.leadId && (
+                                        <span className="flex items-center gap-1">
+                                          <Target className="w-3 h-3" />
+                                          Linked Lead
+                                        </span>
+                                      )}
+                                      <span className="flex items-center gap-1">
+                                        <Bell className="w-3 h-3" />
+                                        {notification.type.replace("_", " ")}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-zinc-500 mt-1">
+                                    {timeAgo(new Date(notification.createdAt))}
+                                  </p>
+                                </div>
+                                {!notification.read && (
+                                  <span className="w-2 h-2 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </ScrollArea>
                   </CardContent>

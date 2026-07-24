@@ -47,8 +47,27 @@ export default function CRMPage() {
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [activeTab, setActiveTab] = useState("companies");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<CRMCompany[]>(mockCompanies);
+  const [companyToDelete, setCompanyToDelete] = useState<CRMCompany | null>(null);
 
-  const filteredCompanies = mockCompanies.filter((c) => {
+  // Add Company form state
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [newCompanyIndustry, setNewCompanyIndustry] = useState("");
+  const [newCompanyCountry, setNewCompanyCountry] = useState("");
+  const [newCompanyRevenue, setNewCompanyRevenue] = useState("");
+  const [newCompanyWebsite, setNewCompanyWebsite] = useState("");
+  const [newCompanyNotes, setNewCompanyNotes] = useState("");
+
+  // Add Contact form state
+  const [newContactFirstName, setNewContactFirstName] = useState("");
+  const [newContactLastName, setNewContactLastName] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactRole, setNewContactRole] = useState("");
+  const [newContactCompany, setNewContactCompany] = useState("");
+  const [newContactNotes, setNewContactNotes] = useState("");
+
+  const filteredCompanies = companies.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.industry.toLowerCase().includes(search.toLowerCase());
@@ -56,7 +75,7 @@ export default function CRMPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const filteredContacts = mockCompanies.flatMap((c) =>
+  const filteredContacts = companies.flatMap((c) =>
     c.contacts
       .filter(
         (contact) =>
@@ -66,10 +85,10 @@ export default function CRMPage() {
       .map((contact) => ({ ...contact, companyName: c.name }))
   );
 
-  const totalCompanies = mockCompanies.length;
-  const totalContacts = mockCompanies.reduce((a, c) => a + c.contacts.length, 0);
-  const activeLeads = mockCompanies.filter((c) => c.status === "prospect").length;
-  const totalRevenue = mockCompanies.reduce((a, c) => a + c.revenue, 0);
+  const totalCompanies = companies.length;
+  const totalContacts = companies.reduce((a, c) => a + c.contacts.length, 0);
+  const activeLeads = companies.filter((c) => c.status === "prospect").length;
+  const totalRevenue = companies.reduce((a, c) => a + c.revenue, 0);
 
   const stats = [
     { label: "Companies", value: totalCompanies, icon: Building2, color: "text-cyan-400", glow: "bg-cyan-500/10" },
@@ -245,10 +264,10 @@ export default function CRMPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-7"
+                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-9"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedCompany(company);
+                              showToast(`Edit mode for ${company.name}`);
                             }}
                           >
                             <Edit3 className="w-3 h-3 mr-1" />
@@ -257,10 +276,10 @@ export default function CRMPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-7"
+                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-9"
                             onClick={(e) => {
                               e.stopPropagation();
-                              showToast(`Editing ${company.name}`);
+                              showToast(`Email sent to ${company.name}`);
                             }}
                           >
                             <Mail className="w-3 h-3 mr-1" />
@@ -269,10 +288,10 @@ export default function CRMPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-zinc-700 text-red-400/80 hover:bg-red-500/10 hover:border-red-500/30 text-xs h-7 ml-auto"
+                            className="border-zinc-700 text-red-400/80 hover:bg-red-500/10 hover:border-red-500/30 text-xs h-9 ml-auto"
                             onClick={(e) => {
                               e.stopPropagation();
-                              showToast(`${company.name} removed`);
+                              setCompanyToDelete(company);
                             }}
                           >
                             <Trash2 className="w-3 h-3" />
@@ -328,7 +347,7 @@ export default function CRMPage() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10"
+                              className="h-9 w-9 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10"
                               onClick={() => showToast(`Email sent to ${contact.name}`)}
                             >
                               <Mail className="w-4 h-4" />
@@ -336,7 +355,7 @@ export default function CRMPage() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+                              className="h-9 w-9 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
                               onClick={() => showToast(`Calling ${contact.name}...`)}
                             >
                               <Phone className="w-4 h-4" />
@@ -344,7 +363,7 @@ export default function CRMPage() {
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-8 w-8 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
+                              className="h-9 w-9 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
                               onClick={() => showToast(`Message sent to ${contact.name}`)}
                             >
                               <MessageSquare className="w-4 h-4" />
@@ -421,41 +440,98 @@ export default function CRMPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-400">First Name</label>
-                <Input placeholder="John" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+                <Input placeholder="John" value={newContactFirstName} onChange={(e) => setNewContactFirstName(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-400">Last Name</label>
-                <Input placeholder="Doe" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+                <Input placeholder="Doe" value={newContactLastName} onChange={(e) => setNewContactLastName(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Email</label>
-              <Input placeholder="john@example.com" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="john@example.com" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Phone</label>
-              <Input placeholder="+1 (555) 000-0000" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="+1 (555) 000-0000" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Role</label>
-              <Input placeholder="CTO" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="CTO" value={newContactRole} onChange={(e) => setNewContactRole(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Company</label>
-              <Input placeholder="Acme Corp" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="Acme Corp" value={newContactCompany} onChange={(e) => setNewContactCompany(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Notes</label>
-              <Textarea placeholder="Add any notes about this contact..." rows={3} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50 resize-none" />
+              <Textarea placeholder="Add any notes about this contact..." rows={3} value={newContactNotes} onChange={(e) => setNewContactNotes(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50 resize-none" />
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setShowAddContact(false)} className="text-zinc-400 hover:text-white">
+              <Button variant="ghost" onClick={() => {
+                setShowAddContact(false);
+                setNewContactFirstName("");
+                setNewContactLastName("");
+                setNewContactEmail("");
+                setNewContactPhone("");
+                setNewContactRole("");
+                setNewContactCompany("");
+                setNewContactNotes("");
+              }} className="text-zinc-400 hover:text-white">
                 Cancel
               </Button>
               <Button
                 onClick={() => {
+                  const name = `${newContactFirstName} ${newContactLastName}`.trim();
+                  const email = newContactEmail.trim();
+                  if (!name || !email) {
+                    showToast("Name and email are required");
+                    return;
+                  }
+                  const newContact = {
+                    id: `contact-${Date.now()}`,
+                    name,
+                    email,
+                    phone: newContactPhone,
+                    role: newContactRole || "Unknown",
+                    companyId: "",
+                  };
+                  const targetCompany = newContactCompany.trim();
+                  if (targetCompany) {
+                    setCompanies((prev) => {
+                      const updated = prev.map((c) =>
+                        c.name.toLowerCase() === targetCompany.toLowerCase()
+                          ? { ...c, contacts: [...c.contacts, newContact] }
+                          : c
+                      );
+                      const found = prev.some((c) => c.name.toLowerCase() === targetCompany.toLowerCase());
+                      if (!found) {
+                        showToast(`Company "${targetCompany}" not found, contact added without company link`);
+                      }
+                      return updated;
+                    });
+                  } else {
+                    setCompanies((prev) => {
+                      if (prev.length > 0) {
+                        const updated = [...prev];
+                        updated[updated.length - 1] = {
+                          ...updated[updated.length - 1],
+                          contacts: [...updated[updated.length - 1].contacts, newContact],
+                        };
+                        return updated;
+                      }
+                      return prev;
+                    });
+                  }
                   showToast("Contact added successfully");
                   setShowAddContact(false);
+                  setNewContactFirstName("");
+                  setNewContactLastName("");
+                  setNewContactEmail("");
+                  setNewContactPhone("");
+                  setNewContactRole("");
+                  setNewContactCompany("");
+                  setNewContactNotes("");
                 }}
                 className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
               >
@@ -482,38 +558,71 @@ export default function CRMPage() {
           <div className="space-y-4 mt-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Company Name</label>
-              <Input placeholder="Acme Corp" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="Acme Corp" value={newCompanyName} onChange={(e) => setNewCompanyName(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Industry</label>
-              <Input placeholder="Technology Services" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="Technology Services" value={newCompanyIndustry} onChange={(e) => setNewCompanyIndustry(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-400">Country</label>
-                <Input placeholder="United States" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+                <Input placeholder="United States" value={newCompanyCountry} onChange={(e) => setNewCompanyCountry(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-zinc-400">Revenue</label>
-                <Input placeholder="50000" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+                <Input placeholder="50000" value={newCompanyRevenue} onChange={(e) => setNewCompanyRevenue(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Website</label>
-              <Input placeholder="https://example.com" className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
+              <Input placeholder="https://example.com" value={newCompanyWebsite} onChange={(e) => setNewCompanyWebsite(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-zinc-400">Notes</label>
-              <Textarea placeholder="Add any notes about this company..." rows={3} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50 resize-none" />
+              <Textarea placeholder="Add any notes about this company..." rows={3} value={newCompanyNotes} onChange={(e) => setNewCompanyNotes(e.target.value)} className="bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50 resize-none" />
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setShowAddCompany(false)} className="text-zinc-400 hover:text-white">
+              <Button variant="ghost" onClick={() => {
+                setShowAddCompany(false);
+                setNewCompanyName("");
+                setNewCompanyIndustry("");
+                setNewCompanyCountry("");
+                setNewCompanyRevenue("");
+                setNewCompanyWebsite("");
+                setNewCompanyNotes("");
+              }} className="text-zinc-400 hover:text-white">
                 Cancel
               </Button>
               <Button
                 onClick={() => {
+                  const name = newCompanyName.trim();
+                  if (!name) {
+                    showToast("Company name is required");
+                    return;
+                  }
+                  const newCompany: CRMCompany = {
+                    id: `company-${Date.now()}`,
+                    name,
+                    industry: newCompanyIndustry || "Unknown",
+                    country: newCompanyCountry || "Unknown",
+                    revenue: Number(newCompanyRevenue) || 0,
+                    status: "prospect",
+                    website: newCompanyWebsite,
+                    notes: newCompanyNotes,
+                    contacts: [],
+                    leads: [],
+                    createdAt: new Date().toISOString(),
+                  };
+                  setCompanies((prev) => [...prev, newCompany]);
                   showToast("Company added successfully");
                   setShowAddCompany(false);
+                  setNewCompanyName("");
+                  setNewCompanyIndustry("");
+                  setNewCompanyCountry("");
+                  setNewCompanyRevenue("");
+                  setNewCompanyWebsite("");
+                  setNewCompanyNotes("");
                 }}
                 className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
               >
@@ -581,7 +690,7 @@ export default function CRMPage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-zinc-500 hover:text-cyan-400"
+                            className="h-9 w-9 text-zinc-500 hover:text-cyan-400"
                             onClick={() => showToast(`Email sent to ${contact.name}`)}
                           >
                             <Mail className="w-3.5 h-3.5" />
@@ -589,7 +698,7 @@ export default function CRMPage() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-zinc-500 hover:text-emerald-400"
+                            className="h-9 w-9 text-zinc-500 hover:text-emerald-400"
                             onClick={() => showToast(`Calling ${contact.name}...`)}
                           >
                             <Phone className="w-3.5 h-3.5" />
@@ -654,6 +763,39 @@ export default function CRMPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!companyToDelete} onOpenChange={(open) => !open && setCompanyToDelete(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-sm z-[100]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Delete Company
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Are you sure you want to delete <span className="text-white font-medium">{companyToDelete?.name}</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="ghost" onClick={() => setCompanyToDelete(null)} className="text-zinc-400 hover:text-white">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (companyToDelete) {
+                  setCompanies((prev) => prev.filter((c) => c.id !== companyToDelete.id));
+                  showToast(`${companyToDelete.name} removed`);
+                  setCompanyToDelete(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-500 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

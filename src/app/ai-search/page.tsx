@@ -48,7 +48,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   formatCurrency,
   formatNumber,
@@ -192,8 +191,35 @@ export default function AISearchPage() {
     }, 1200 + Math.random() * 800);
   }, [applyFilters]);
 
+  useEffect(() => {
+    if (!hasSearched || results.length === 0) return;
+    setResults((prev) => {
+      const sorted = [...prev];
+      switch (sortBy) {
+        case "budget-high":
+          sorted.sort((a, b) => b.budget.max - a.budget.max);
+          break;
+        case "budget-low":
+          sorted.sort((a, b) => a.budget.min - b.budget.min);
+          break;
+        case "probability":
+          sorted.sort((a, b) => b.successProbability - a.successProbability);
+          break;
+        case "newest":
+          sorted.sort(
+            (a, b) =>
+              new Date(b.foundAt).getTime() - new Date(a.foundAt).getTime()
+          );
+          break;
+        default:
+          break;
+      }
+      return sorted;
+    });
+  }, [sortBy, hasSearched, results.length]);
+
   const handleSearch = useCallback(() => {
-    if (!query.trim() && !countryFilter && selectedTechs.length === 0) {
+    if (!query.trim() && countryFilter === "All Countries" && selectedTechs.length === 0) {
       showToast("Please enter a search query or set a filter");
       return;
     }
@@ -283,7 +309,7 @@ export default function AISearchPage() {
   return (
     <div className="flex h-screen bg-[#0a0a0f] text-white">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <div className="flex-1 overflow-auto">
           <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
@@ -443,7 +469,7 @@ export default function AISearchPage() {
             </Card>
 
             {/* Main Content Area */}
-            <div className="flex gap-8">
+            <div className="flex flex-col lg:flex-row gap-8">
 
               {/* Results Area */}
               <div className="flex-1 min-w-0 space-y-4">
@@ -713,7 +739,7 @@ export default function AISearchPage() {
               </div>
 
               {/* Right Sidebar */}
-              <div className="w-80 shrink-0 space-y-6">
+              <div className="w-full lg:w-80 shrink-0 space-y-6">
 
                 {/* Suggested Searches */}
                 <Card className="border-0 bg-[#12121a] overflow-hidden">

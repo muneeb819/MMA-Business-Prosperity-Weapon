@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Bell, Search, Settings, User, ChevronDown, Zap, Command } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,10 +18,15 @@ import {
 import { mockNotifications } from "@/lib/mock-data"
 
 export function TopBar() {
+  const router = useRouter()
   const unreadCount = mockNotifications.filter(n => !n.read).length
-  const [mounted, setMounted] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
-  useEffect(() => { setMounted(true) }, [])
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/ai-search?q=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   return (
     <header className="h-16 border-b border-border/50 bg-card/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30">
@@ -30,6 +36,9 @@ export function TopBar() {
           <Input
             placeholder="Search anything... (⌘K)"
             className="pl-10 pr-12 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/50 transition-all h-10 rounded-xl"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50">
             <Command className="h-2.5 w-2.5 text-muted-foreground" />
@@ -49,7 +58,12 @@ export function TopBar() {
         </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all"
+          onClick={() => router.push("/notifications")}
+        >
           <Bell className="h-4.5 w-4.5" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] rounded-full bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] flex items-center justify-center font-bold px-1 shadow-lg shadow-red-500/30 animate-scale-in">
@@ -77,13 +91,13 @@ export function TopBar() {
           <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-xl">
             <DropdownMenuLabel className="font-semibold">My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="rounded-lg cursor-pointer">
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Profile clicked")}>
               <User className="mr-2 h-4 w-4" /> Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer">
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Settings clicked")}>
               <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer">
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Billing clicked")}>
               <Zap className="mr-2 h-4 w-4" /> Billing
             </DropdownMenuItem>
           </DropdownMenuContent>

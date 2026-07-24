@@ -37,7 +37,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   }, [onDone]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+    <div className="fixed bottom-6 right-6 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
       <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl shadow-black/40">
         <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
           <span className="text-emerald-400 text-xs">✓</span>
@@ -75,7 +75,7 @@ export default function AnalyticsPage() {
   }, [data.monthlyRevenue, selectedPeriod]);
 
   const filteredMonthlyRevenue = getFilteredMonthlyRevenue();
-  const maxMonthlyRevenue = Math.max(...filteredMonthlyRevenue.map((m) => m.revenue));
+  const maxMonthlyRevenue = Math.max(...filteredMonthlyRevenue.map((m) => m.revenue), 1);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
       <button
         onClick={onToggle}
         className={cn(
-          "inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md transition-colors shrink-0",
+          "inline-flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 min-h-9",
           active ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
         )}
       >
@@ -177,7 +177,7 @@ export default function AnalyticsPage() {
                     key={p.value}
                     onClick={() => setSelectedPeriod(p.value)}
                     className={cn(
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200",
+                      "px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 min-h-9",
                       selectedPeriod === p.value
                         ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
                         : "text-zinc-400 hover:text-white hover:bg-zinc-800"
@@ -289,7 +289,7 @@ export default function AnalyticsPage() {
                         <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative min-w-0">
                           <div
                             className="h-full rounded-lg bg-gradient-to-r from-emerald-600/80 to-emerald-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3 group-hover:from-emerald-500/80 group-hover:to-emerald-300/80 pointer-events-none"
-                            style={{ width: `${(month.revenue / maxMonthlyRevenue) * 100}%`, minWidth: "60px" }}
+                            style={{ width: `${(month.revenue / maxMonthlyRevenue) * 100}%` }}
                           >
                             <span className="text-xs font-semibold text-white drop-shadow-lg">
                               {formatCurrency(month.revenue)}
@@ -358,7 +358,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4 overflow-hidden">
                   {displayedCountries.map((country, i) => {
-                    const maxCount = Math.max(...data.topCountries.map((c) => c.count));
+                    const maxCount = Math.max(...data.topCountries.map((c) => c.count), 1);
                     return (
                       <div
                         key={country.country}
@@ -419,7 +419,7 @@ export default function AnalyticsPage() {
                 <CardContent className="overflow-hidden">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {displayedTech.map((tech, i) => {
-                      const maxCount = Math.max(...data.topTechnologies.map((t) => t.count));
+                      const maxCount = Math.max(...data.topTechnologies.map((t) => t.count), 1);
                       return (
                         <div
                           key={tech.tech}
@@ -477,7 +477,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4 overflow-hidden">
                   {displayedPlatforms.map((platform, i) => {
-                    const maxCount = Math.max(...data.platformBreakdown.map((p) => p.leads));
+                    const maxCount = Math.max(...data.platformBreakdown.map((p) => p.leads), 1);
                     return (
                       <div
                         key={platform.platform}
@@ -488,7 +488,7 @@ export default function AnalyticsPage() {
                         <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative min-w-0">
                           <div
                             className="h-full rounded-lg bg-gradient-to-r from-blue-600/80 to-blue-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3 pointer-events-none"
-                            style={{ width: `${(platform.leads / maxCount) * 100}%`, minWidth: "40px" }}
+                            style={{ width: `${(platform.leads / maxCount) * 100}%` }}
                           >
                             <span className="text-xs font-semibold text-white drop-shadow-lg">{platform.leads}</span>
                           </div>
