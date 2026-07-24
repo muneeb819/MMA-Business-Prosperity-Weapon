@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Bell,
@@ -15,6 +15,9 @@ import {
   EyeOff,
   Target,
   Building2,
+  X,
+  Trash2,
+  RotateCcw,
   Mail,
 } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
@@ -64,6 +67,7 @@ const typeBadgeConfig: Record<Notification["type"], string> = {
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [filter, setFilter] = useState<FilterType>("all");
+  const [showPreferences, setShowPreferences] = useState(false);
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
@@ -87,33 +91,45 @@ export default function NotificationsPage() {
     }
   }, [notifications, filter]);
 
-  const markAllRead = () => {
+  const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
+  }, []);
 
-  const toggleRead = (id: string) => {
+  const toggleRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
     );
-  };
+  }, []);
+
+  const dismissNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  const restoreAll = useCallback(() => {
+    setNotifications(mockNotifications);
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#0a0a0f] text-white">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
-        <div className="flex-1 overflow-auto">
-          <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
 
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
-                <div className="relative">
+                <div className="relative shrink-0">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-slate-700/50 flex items-center justify-center">
                     <Bell className="w-6 h-6 text-cyan-400" />
                   </div>
                   {unreadCount > 0 && (
-                    <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center border-2 border-[#0a0a0f]">
+                    <div className="absolute -top-1.5 -right-1.5 z-10 w-5 h-5 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center border-2 border-[#0a0a0f]">
                       {unreadCount}
                     </div>
                   )}
@@ -125,7 +141,7 @@ export default function NotificationsPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
@@ -139,7 +155,32 @@ export default function NotificationsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={clearAll}
+                  disabled={notifications.length === 0}
+                  className="border-slate-700/50 bg-[#12121a] text-slate-300 hover:bg-rose-500/10 hover:text-rose-400 disabled:opacity-40 h-9 rounded-lg text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  Clear All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={restoreAll}
                   className="border-slate-700/50 bg-[#12121a] text-slate-300 hover:bg-slate-800 hover:text-white h-9 rounded-lg text-xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  Restore
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPreferences((prev) => !prev)}
+                  className={cn(
+                    "h-9 rounded-lg text-xs",
+                    showPreferences
+                      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
+                      : "border-slate-700/50 bg-[#12121a] text-slate-300 hover:bg-slate-800 hover:text-white"
+                  )}
                 >
                   <Settings className="w-3.5 h-3.5 mr-1.5" />
                   Preferences
@@ -147,8 +188,48 @@ export default function NotificationsPage() {
               </div>
             </div>
 
+            {/* Preferences Panel */}
+            {showPreferences && (
+              <Card className="border-0 bg-[#12121a] border-slate-800/50">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-white">Notification Preferences</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowPreferences(false)}
+                      className="h-7 w-7 p-0 text-slate-500 hover:text-white hover:bg-slate-800 rounded-md"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {[
+                      { label: "High Value Leads", enabled: true },
+                      { label: "Urgent Alerts", enabled: true },
+                      { label: "Government Contracts", enabled: true },
+                      { label: "System Updates", enabled: false },
+                    ].map((pref) => (
+                      <div key={pref.label} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                        <span className="text-xs text-slate-400">{pref.label}</span>
+                        <div className={cn(
+                          "w-9 h-5 rounded-full flex items-center cursor-pointer transition-colors duration-200",
+                          pref.enabled ? "bg-cyan-500/30 justify-end" : "bg-slate-700/50 justify-start"
+                        )}>
+                          <div className={cn(
+                            "w-4 h-4 rounded-full mx-0.5 transition-colors duration-200",
+                            pref.enabled ? "bg-cyan-400" : "bg-slate-500"
+                          )} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Stats Cards */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: "Total", value: stats.total, icon: Bell, color: "text-slate-400", bg: "from-slate-500/5 to-slate-800/5", filterType: "all" as FilterType },
                 { label: "Unread", value: stats.unread, icon: Eye, color: "text-cyan-400", bg: "from-cyan-500/5 to-cyan-800/5", filterType: "unread" as FilterType },
@@ -159,20 +240,20 @@ export default function NotificationsPage() {
                   key={stat.label}
                   onClick={() => setFilter(stat.filterType)}
                   className={cn(
-                    "border-0 bg-gradient-to-br cursor-pointer transition-all duration-200 hover:scale-[1.02]",
+                    "border-slate-800/50 bg-gradient-to-br cursor-pointer transition-all duration-200 hover:scale-[1.02] overflow-hidden",
                     stat.bg,
                     filter === stat.filterType
                       ? "ring-1 ring-cyan-500/30 shadow-lg shadow-cyan-500/5"
-                      : "border-slate-800/50 hover:border-slate-700/50"
+                      : "hover:border-slate-700/50"
                   )}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">{stat.label}</p>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium truncate">{stat.label}</p>
                         <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
                       </div>
-                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", stat.bg)}>
+                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", stat.bg)}>
                         <stat.icon className={cn("w-5 h-5", stat.color)} />
                       </div>
                     </div>
@@ -181,9 +262,27 @@ export default function NotificationsPage() {
               ))}
             </div>
 
+            {/* Active Filter Indicator */}
+            {filter !== "all" && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Showing:</span>
+                <Badge variant="outline" className="text-[10px] font-medium border bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+                  {filter === "unread" ? "Unread" : filter === "high_value" ? "High Value" : "Urgent"}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                  className="h-6 px-2 text-[10px] text-slate-500 hover:text-white hover:bg-slate-800 rounded-md"
+                >
+                  Clear filter
+                </Button>
+              </div>
+            )}
+
             {/* Notifications List */}
             {filteredNotifications.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredNotifications.map((notif) => {
                   const typeMeta = typeIconMap[notif.type];
                   const priorityMeta = priorityConfig[notif.priority] || priorityConfig.low;
@@ -192,16 +291,17 @@ export default function NotificationsPage() {
                   return (
                     <Card
                       key={notif.id}
+                      onClick={() => !notif.read && toggleRead(notif.id)}
                       className={cn(
-                        "group border-0 bg-[#12121a] hover:bg-[#16161f] transition-all duration-200 border-slate-800/50 hover:border-slate-700/50",
+                        "group border-slate-800/50 bg-[#12121a] hover:bg-[#16161f] transition-all duration-200 hover:border-slate-700/50 overflow-hidden cursor-pointer",
                         !notif.read && "border-l-2 border-l-cyan-500/60"
                       )}
                     >
-                      <CardContent className="p-5">
-                        <div className="flex items-start gap-4">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
                           {/* Type Icon */}
-                          <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", typeMeta.bg)}>
-                            <TypeIcon className={cn("w-5 h-5", typeMeta.color)} />
+                          <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", typeMeta.bg)}>
+                            <TypeIcon className={cn("w-4 h-4", typeMeta.color)} />
                           </div>
 
                           {/* Content */}
@@ -220,17 +320,28 @@ export default function NotificationsPage() {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 {notif.priority && (
-                                  <Badge variant="outline" className={cn("text-[10px] font-medium border", priorityMeta.className)}>
+                                  <Badge variant="outline" className={cn("text-[10px] font-medium border hidden sm:inline-flex", priorityMeta.className)}>
                                     {priorityMeta.label}
                                   </Badge>
                                 )}
-                                <Badge variant="outline" className={cn("text-[10px] font-medium border", typeBadgeConfig[notif.type])}>
+                                <Badge variant="outline" className={cn("text-[10px] font-medium border hidden sm:inline-flex", typeBadgeConfig[notif.type])}>
                                   {notif.type.replace("_", " ")}
                                 </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dismissNotification(notif.id);
+                                  }}
+                                  className="h-7 w-7 p-0 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-1">
+                            <div className="flex items-center justify-between pt-0.5">
                               <div className="flex items-center gap-3 text-[11px] text-slate-600">
                                 <span className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
@@ -242,10 +353,24 @@ export default function NotificationsPage() {
                                     Unread
                                   </span>
                                 )}
+                                {/* Mobile badges */}
+                                <div className="flex items-center gap-1.5 sm:hidden">
+                                  {notif.priority && (
+                                    <Badge variant="outline" className={cn("text-[9px] font-medium border", priorityMeta.className)}>
+                                      {priorityMeta.label}
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className={cn("text-[9px] font-medium border", typeBadgeConfig[notif.type])}>
+                                    {notif.type.replace("_", " ")}
+                                  </Badge>
+                                </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 {notif.leadId && (
-                                  <Link href={`/leads/${notif.leadId}`}>
+                                  <Link
+                                    href={`/leads/${notif.leadId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -259,7 +384,10 @@ export default function NotificationsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => toggleRead(notif.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleRead(notif.id);
+                                  }}
                                   className="h-7 w-7 p-0 text-slate-600 hover:text-slate-300 hover:bg-slate-800 rounded-md"
                                 >
                                   {notif.read ? (
@@ -284,14 +412,26 @@ export default function NotificationsPage() {
                     <CheckCircle2 className="w-8 h-8 text-emerald-500/60" />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-400">
-                    {filter === "unread" ? "No unread notifications" : "No notifications"}
+                    {filter === "unread" ? "No unread notifications" : notifications.length === 0 ? "No notifications" : "No notifications"}
                   </h3>
                   <p className="text-slate-500 text-sm max-w-sm">
-                    {filter === "unread"
-                      ? "You're all caught up! New notifications will appear here."
-                      : "There are no notifications matching this filter."}
+                    {notifications.length === 0
+                      ? "All notifications have been cleared. Click Restore to bring them back."
+                      : filter === "unread"
+                        ? "You're all caught up! New notifications will appear here."
+                        : "There are no notifications matching this filter."}
                   </p>
-                  {filter !== "all" && (
+                  {notifications.length === 0 ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={restoreAll}
+                      className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 mt-2"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                      Restore notifications
+                    </Button>
+                  ) : filter !== "all" ? (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -300,7 +440,7 @@ export default function NotificationsPage() {
                     >
                       View all notifications
                     </Button>
-                  )}
+                  ) : null}
                 </CardContent>
               </Card>
             )}

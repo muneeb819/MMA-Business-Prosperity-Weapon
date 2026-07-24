@@ -1,21 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency, timeAgo, cn } from "@/lib/utils";
 import { mockLeads } from "@/lib/mock-data";
-import type { Lead } from "@/lib/types";
 import {
   FileText,
   Send,
@@ -26,21 +24,20 @@ import {
   Download,
   Sparkles,
   TrendingUp,
-  BarChart3,
   Target,
   Briefcase,
   Calendar,
   DollarSign,
-  Zap,
-  Brain,
-  Lightbulb,
   Users,
-  Globe,
   ArrowUpRight,
-  Plus,
   LayoutTemplate,
   Eye,
+  Search,
+  ArrowUpDown,
+  SlidersHorizontal,
   X,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 
 const proposalStatusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -57,6 +54,8 @@ const toneOptions = [
   { value: "persuasive", label: "Persuasive", description: "Emphasis on value proposition" },
   { value: "collaborative", label: "Collaborative", description: "Partnership-focused approach" },
 ];
+
+type SortOption = "newest" | "oldest" | "budget-high" | "budget-low" | "win-high" | "win-low";
 
 interface MockProposal {
   id: string;
@@ -78,7 +77,7 @@ interface MockProposal {
   portfolioSuggestions: string[];
 }
 
-const mockProposals: MockProposal[] = [
+const initialMockProposals: MockProposal[] = [
   {
     id: "prop-001",
     title: "Enterprise AI-Powered Analytics Platform",
@@ -156,31 +155,194 @@ const mockProposals: MockProposal[] = [
   },
 ];
 
+interface Toast {
+  id: number;
+  message: string;
+  type: "success" | "info" | "error";
+}
+
 export default function ProposalsPage() {
+  const [proposals, setProposals] = useState<MockProposal[]>(initialMockProposals);
   const [selectedProposal, setSelectedProposal] = useState<MockProposal | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [genLeadId, setGenLeadId] = useState("");
   const [genTone, setGenTone] = useState("professional");
   const [genInstructions, setGenInstructions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [detailTab, setDetailTab] = useState("cover");
+
+  const showToast = useCallback((message: string, type: Toast["type"] = "info") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  }, []);
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   const stats = useMemo(() => {
-    const drafts = mockProposals.filter((p) => p.status === "draft").length;
-    const submitted = mockProposals.filter((p) => p.status === "submitted").length;
-    const accepted = mockProposals.filter((p) => p.status === "accepted").length;
-    const avgWin = Math.round(mockProposals.reduce((sum, p) => sum + p.winProbability, 0) / mockProposals.length);
-    return { drafts, submitted, accepted, avgWin, total: mockProposals.length };
+    const drafts = proposals.filter((p) => p.status === "draft").length;
+    const submitted = proposals.filter((p) => p.status === "submitted").length;
+    const accepted = proposals.filter((p) => p.status === "accepted").length;
+    const avgWin = proposals.length
+      ? Math.round(proposals.reduce((sum, p) => sum + p.winProbability, 0) / proposals.length)
+      : 0;
+    return { drafts, submitted, accepted, avgWin, total: proposals.length };
+  }, [proposals]);
+
+  const filteredProposals = useMemo(() => {
+    let result = [...proposals];
+
+    if (statusFilter !== "all") {
+      result = result.filter((p) => p.status === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.clientName.toLowerCase().includes(q) ||
+          p.company.toLowerCase().includes(q)
+      );
+    }
+
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case "budget-high":
+        result.sort((a, b) => b.budget - a.budget);
+        break;
+      case "budget-low":
+        result.sort((a, b) => a.budget - b.budget);
+        break;
+      case "win-high":
+        result.sort((a, b) => b.winProbability - a.winProbability);
+        break;
+      case "win-low":
+        result.sort((a, b) => a.winProbability - b.winProbability);
+        break;
+    }
+
+    return result;
+  }, [proposals, statusFilter, searchQuery, sortBy]);
+
+  const handleSubmitProposal = useCallback(
+    (proposalId: string) => {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? { ...p, status: "submitted", submittedAt: new Date().toISOString() }
+            : p
+        )
+      );
+      setSelectedProposal((prev) =>
+        prev && prev.id === proposalId
+          ? { ...prev, status: "submitted", submittedAt: new Date().toISOString() }
+          : prev
+      );
+      showToast("Proposal submitted successfully!", "success");
+    },
+    [showToast]
+  );
+
+  const handleDuplicateProposal = useCallback(
+    (proposal: MockProposal) => {
+      const newId = `prop-${String(proposals.length + 1).padStart(3, "0")}`;
+      const duplicate: MockProposal = {
+        ...proposal,
+        id: newId,
+        title: `${proposal.title} (Copy)`,
+        status: "draft",
+        submittedAt: undefined,
+        createdAt: new Date().toISOString(),
+      };
+      setProposals((prev) => [duplicate, ...prev]);
+      setSelectedProposal(null);
+      showToast("Proposal duplicated as draft", "success");
+    },
+    [proposals.length, showToast]
+  );
+
+  const handleStartEdit = useCallback(
+    (proposal: MockProposal) => {
+      setIsEditing(true);
+      setEditTitle(proposal.title);
+    },
+    []
+  );
+
+  const handleSaveEdit = useCallback(() => {
+    if (!selectedProposal) return;
+    setProposals((prev) =>
+      prev.map((p) =>
+        p.id === selectedProposal.id ? { ...p, title: editTitle } : p
+      )
+    );
+    setSelectedProposal((prev) => (prev ? { ...prev, title: editTitle } : prev));
+    setIsEditing(false);
+    showToast("Proposal updated", "success");
+  }, [selectedProposal, editTitle, showToast]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditTitle("");
   }, []);
+
+  const handleExportPDF = useCallback(() => {
+    showToast("PDF export started - download will begin shortly", "info");
+  }, [showToast]);
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     await new Promise((r) => setTimeout(r, 2500));
+    const lead = mockLeads.find((l) => l.id === genLeadId);
+    const newProposal: MockProposal = {
+      id: `prop-${String(proposals.length + 1).padStart(3, "0")}`,
+      title: `${lead?.title || "New"} Proposal`,
+      clientName: lead?.clientName || "Unknown",
+      company: lead?.company || "Unknown",
+      status: "draft",
+      winProbability: Math.floor(Math.random() * 40) + 50,
+      budget: lead ? Math.floor((lead.budget.min + lead.budget.max) / 2) : 50000,
+      createdAt: new Date().toISOString(),
+      sections: {
+        coverLetter: "AI-generated cover letter will appear here.",
+        introduction: "AI-generated introduction will appear here.",
+        technicalPlan: "AI-generated technical plan will appear here.",
+        costEstimate: "AI-generated cost estimate will appear here.",
+        callToAction: "AI-generated call to action will appear here.",
+      },
+      portfolioSuggestions: [],
+    };
+    setProposals((prev) => [newProposal, ...prev]);
     setIsGenerating(false);
     setShowGenerateDialog(false);
     setGenLeadId("");
     setGenTone("professional");
     setGenInstructions("");
+    showToast("Proposal generated successfully!", "success");
   };
+
+  const statusFilters = [
+    { key: "all", label: "All", count: stats.total },
+    { key: "draft", label: "Draft", count: stats.drafts },
+    { key: "submitted", label: "Submitted", count: stats.submitted },
+    { key: "accepted", label: "Accepted", count: stats.accepted },
+  ];
 
   return (
     <div className="flex h-screen bg-[#07080F]">
@@ -196,13 +358,13 @@ export default function ProposalsPage() {
               { label: "Submitted", value: stats.submitted, icon: <Send className="w-5 h-5" />, color: "text-blue-400", bg: "from-blue-500/10 to-blue-600/5 border-blue-500/20" },
               { label: "Accepted", value: stats.accepted, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20" },
             ].map((stat, i) => (
-              <Card key={i} className={cn("bg-gradient-to-br border backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500", stat.bg)} style={{ animationDelay: `${i * 80}ms` }}>
+              <Card key={i} className={cn("bg-gradient-to-br border backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden", stat.bg)}>
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className={cn("p-2.5 rounded-xl bg-gradient-to-br border", stat.bg)}>
+                  <div className={cn("p-2.5 rounded-xl bg-gradient-to-br border shrink-0", stat.bg)}>
                     <span className={stat.color}>{stat.icon}</span>
                   </div>
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">{stat.label}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">{stat.label}</p>
                     <p className="text-xl font-bold text-white mt-0.5">{stat.value}</p>
                   </div>
                 </CardContent>
@@ -212,14 +374,14 @@ export default function ProposalsPage() {
 
           {/* Performance Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <Card className="bg-gradient-to-br from-violet-500/[0.06] to-purple-600/[0.02] border-violet-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: "350ms" }}>
+            <Card className="bg-gradient-to-br from-violet-500/[0.06] to-purple-600/[0.02] border-violet-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-violet-400" />
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Avg. Win Rate</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Target className="w-4 h-4 text-violet-400 shrink-0" />
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">Avg. Win Rate</span>
                   </div>
-                  <span className="text-lg font-bold text-violet-400">{stats.avgWin}%</span>
+                  <span className="text-lg font-bold text-violet-400 shrink-0">{stats.avgWin}%</span>
                 </div>
                 <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-all duration-1000" style={{ width: `${stats.avgWin}%` }} />
@@ -227,71 +389,141 @@ export default function ProposalsPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-emerald-500/[0.06] to-green-600/[0.02] border-emerald-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: "420ms" }}>
+            <Card className="bg-gradient-to-br from-emerald-500/[0.06] to-green-600/[0.02] border-emerald-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Conversion</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">Conversion</span>
                   </div>
-                  <span className="text-lg font-bold text-emerald-400">{stats.total ? Math.round((stats.accepted / stats.total) * 100) : 0}%</span>
+                  <span className="text-lg font-bold text-emerald-400 shrink-0">{stats.total ? Math.round((stats.accepted / stats.total) * 100) : 0}%</span>
                 </div>
-                <p className="text-[11px] text-zinc-600">{stats.accepted} of {stats.total} proposals accepted</p>
+                <p className="text-[11px] text-zinc-600 truncate">{stats.accepted} of {stats.total} proposals accepted</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-500/[0.06] to-orange-600/[0.02] border-amber-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: "490ms" }}>
+            <Card className="bg-gradient-to-br from-amber-500/[0.06] to-orange-600/[0.02] border-amber-500/15 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Pipeline Value</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <DollarSign className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">Pipeline Value</span>
                   </div>
-                  <span className="text-lg font-bold text-amber-400">{formatCurrency(mockProposals.reduce((s, p) => s + p.budget, 0))}</span>
+                  <span className="text-lg font-bold text-amber-400 shrink-0">{formatCurrency(proposals.reduce((s, p) => s + p.budget, 0))}</span>
                 </div>
-                <p className="text-[11px] text-zinc-600">Across all active proposals</p>
+                <p className="text-[11px] text-zinc-600 truncate">Across all active proposals</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* AI Generate Button */}
-          <div className="mt-6">
-            <Button
-              onClick={() => setShowGenerateDialog(true)}
-              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white font-semibold h-12 px-8 shadow-lg shadow-blue-500/25 animate-in fade-in slide-in-from-bottom-4 duration-500"
-              style={{ animationDelay: "560ms" }}
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              AI Generate Proposal
-              <ArrowUpRight className="w-4 h-4 ml-2 opacity-60" />
-            </Button>
+          {/* AI Generate Button + Toolbar */}
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <Button
+                onClick={() => setShowGenerateDialog(true)}
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white font-semibold h-11 px-6 shadow-lg shadow-blue-500/25 shrink-0"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Generate Proposal
+                <ArrowUpRight className="w-4 h-4 ml-2 opacity-60" />
+              </Button>
+
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                {/* Search */}
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search proposals..."
+                    className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-600 pl-9 h-10 text-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort */}
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white h-10 w-full sm:w-[160px] text-sm">
+                    <ArrowUpDown className="w-4 h-4 mr-2 text-zinc-500" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#12131C] border-white/10">
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="budget-high">Budget: High to Low</SelectItem>
+                    <SelectItem value="budget-low">Budget: Low to High</SelectItem>
+                    <SelectItem value="win-high">Win Rate: High to Low</SelectItem>
+                    <SelectItem value="win-low">Win Rate: Low to High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <SlidersHorizontal className="w-4 h-4 text-zinc-600" />
+              {statusFilters.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setStatusFilter(f.key)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border",
+                    statusFilter === f.key
+                      ? "bg-blue-500/15 border-blue-500/30 text-blue-300"
+                      : "bg-white/[0.02] border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+                  )}
+                >
+                  {f.label}
+                  <span className={cn("ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full", statusFilter === f.key ? "bg-blue-500/20 text-blue-300" : "bg-white/[0.05] text-zinc-600")}>
+                    {f.count}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Proposal Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6 pb-8">
-            {mockProposals.map((proposal, i) => {
+            {filteredProposals.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <FileText className="w-12 h-12 text-zinc-700 mb-3" />
+                <p className="text-zinc-500 text-sm font-medium">No proposals found</p>
+                <p className="text-zinc-600 text-xs mt-1">Try adjusting your search or filters</p>
+              </div>
+            )}
+            {filteredProposals.map((proposal, i) => {
               const sCfg = proposalStatusConfig[proposal.status] || proposalStatusConfig.draft;
               const prob = proposal.winProbability;
 
               return (
                 <div
                   key={proposal.id}
-                  onClick={() => setSelectedProposal(proposal)}
-                  className="card-hover group cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-white/15 hover:bg-white/[0.05] transition-all duration-500 animate-in fade-in slide-in-from-bottom-5 fill-mode-both"
-                  style={{ animationDelay: `${600 + i * 80}ms` }}
+                  onClick={() => {
+                    setSelectedProposal(proposal);
+                    setIsEditing(false);
+                    setDetailTab("cover");
+                  }}
+                  className="group cursor-pointer rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm hover:border-white/15 hover:bg-white/[0.05] transition-all duration-500 overflow-hidden"
                 >
                   <div className="p-5">
                     {/* Top row */}
-                    <div className="flex items-center justify-between mb-3">
-                      <Badge variant="outline" className={cn("text-[11px] font-semibold border px-2.5 py-0.5", sCfg.bg, sCfg.color)}>
+                    <div className="flex items-center justify-between mb-3 gap-2">
+                      <Badge variant="outline" className={cn("text-[11px] font-semibold border px-2.5 py-0.5 shrink-0", sCfg.bg, sCfg.color)}>
                         {proposal.status === "accepted" && <CheckCircle2 className="w-3 h-3 mr-1" />}
                         {proposal.status === "submitted" && <Send className="w-3 h-3 mr-1" />}
                         {proposal.status === "draft" && <Edit3 className="w-3 h-3 mr-1" />}
                         {sCfg.label}
                       </Badge>
-                      <div className="flex items-center gap-1.5 text-zinc-600 text-[10px]">
+                      <div className="flex items-center gap-1.5 text-zinc-600 text-[10px] shrink-0">
                         <Clock className="w-3 h-3" />
-{timeAgo(new Date(proposal.createdAt))}
+                        {timeAgo(new Date(proposal.createdAt))}
                       </div>
                     </div>
 
@@ -299,12 +531,12 @@ export default function ProposalsPage() {
                     <h3 className="text-white font-semibold text-[15px] leading-tight mb-1 group-hover:text-blue-300 transition-colors line-clamp-2">
                       {proposal.title}
                     </h3>
-                    <div className="flex items-center gap-2 text-zinc-500 text-xs mb-4">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      <span>{proposal.company}</span>
+                    <div className="flex items-center gap-2 text-zinc-500 text-xs mb-4 truncate">
+                      <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{proposal.company}</span>
                       <span className="text-zinc-700">·</span>
-                      <Users className="w-3.5 h-3.5" />
-                      <span>{proposal.clientName}</span>
+                      <Users className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{proposal.clientName}</span>
                     </div>
 
                     {/* Win Probability */}
@@ -322,20 +554,18 @@ export default function ProposalsPage() {
                     </div>
 
                     {/* Budget + Dates */}
-                    <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-semibold">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          {formatCurrency(proposal.budget)}
-                        </div>
+                    <div className="flex items-center justify-between pt-3 border-t border-white/[0.04] gap-2">
+                      <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-semibold shrink-0">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        {formatCurrency(proposal.budget)}
                       </div>
-                      <div className="flex items-center gap-3 text-[10px] text-zinc-600">
-                        <span className="flex items-center gap-1">
+                      <div className="flex items-center gap-3 text-[10px] text-zinc-600 min-w-0">
+                        <span className="flex items-center gap-1 shrink-0">
                           <Calendar className="w-3 h-3" />
                           Created {timeAgo(new Date(proposal.createdAt))}
                         </span>
                         {proposal.submittedAt && (
-                          <span className="flex items-center gap-1 text-blue-400/60">
+                          <span className="flex items-center gap-1 text-blue-400/60 shrink-0">
                             <Send className="w-3 h-3" />
                             Sent {timeAgo(new Date(proposal.submittedAt))}
                           </span>
@@ -349,32 +579,50 @@ export default function ProposalsPage() {
           </div>
 
           {/* Proposal Detail Dialog */}
-          <Dialog open={!!selectedProposal} onOpenChange={(open) => !open && setSelectedProposal(null)}>
-            <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-3xl max-h-[90vh] overflow-hidden p-0">
+          <Dialog open={!!selectedProposal} onOpenChange={(open) => { if (!open) { setSelectedProposal(null); setIsEditing(false); } }}>
+            <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-3xl max-h-[90vh] overflow-hidden p-0 z-50">
               {selectedProposal && (
                 <>
                   <div className="relative p-6 pb-4 border-b border-white/[0.06]">
                     <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.03] to-transparent pointer-events-none" />
                     <div className="relative">
-                      <div className="flex items-start justify-between mb-3">
-                        <Badge variant="outline" className={cn("text-[11px] font-semibold border px-2.5 py-1", proposalStatusConfig[selectedProposal.status]?.bg, proposalStatusConfig[selectedProposal.status]?.color)}>
+                      <div className="flex items-start justify-between mb-3 gap-3">
+                        <Badge variant="outline" className={cn("text-[11px] font-semibold border px-2.5 py-1 shrink-0", proposalStatusConfig[selectedProposal.status]?.bg, proposalStatusConfig[selectedProposal.status]?.color)}>
                           {proposalStatusConfig[selectedProposal.status]?.label}
                         </Badge>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           <div className="flex items-center gap-1.5 text-emerald-400 text-sm font-bold">
                             <DollarSign className="w-4 h-4" />
                             {formatCurrency(selectedProposal.budget)}
                           </div>
                         </div>
                       </div>
-                      <DialogTitle className="text-white text-xl font-bold leading-tight">{selectedProposal.title}</DialogTitle>
-                      <DialogDescription className="text-zinc-500 text-sm mt-1">
+                      {isEditing ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="bg-white/[0.03] border-white/[0.08] text-white text-xl font-bold h-auto py-1"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") handleCancelEdit(); }}
+                          />
+                          <Button size="sm" onClick={handleSaveEdit} className="bg-emerald-600 hover:bg-emerald-500 text-white shrink-0">
+                            <Check className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="text-zinc-400 hover:text-white shrink-0">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <DialogTitle className="text-white text-xl font-bold leading-tight line-clamp-2">{selectedProposal.title}</DialogTitle>
+                      )}
+                      <DialogDescription className="text-zinc-500 text-sm mt-1 truncate">
                         {selectedProposal.company} · {selectedProposal.clientName}
                       </DialogDescription>
                     </div>
                   </div>
 
-                  <Tabs defaultValue="cover" className="flex flex-col">
+                  <Tabs value={detailTab} onValueChange={setDetailTab} className="flex flex-col">
                     <div className="px-6 pt-4 border-b border-white/[0.06]">
                       <TabsList className="bg-white/[0.03] p-1 h-auto flex-wrap gap-1">
                         {[
@@ -393,18 +641,18 @@ export default function ProposalsPage() {
 
                     <ScrollArea className="max-h-[calc(90vh-360px)]">
                       {[
-                        { value: "cover", key: "coverLetter" as const, icon: <FileText className="w-4 h-4" /> },
-                        { value: "intro", key: "introduction" as const, icon: <Lightbulb className="w-4 h-4" /> },
-                        { value: "technical", key: "technicalPlan" as const, icon: <Brain className="w-4 h-4" /> },
-                        { value: "cost", key: "costEstimate" as const, icon: <DollarSign className="w-4 h-4" /> },
-                        { value: "cta", key: "callToAction" as const, icon: <Target className="w-4 h-4" /> },
+                        { value: "cover", key: "coverLetter" as const, icon: <FileText className="w-4 h-4" />, title: "Cover Letter" },
+                        { value: "intro", key: "introduction" as const, icon: <Sparkles className="w-4 h-4" />, title: "Introduction" },
+                        { value: "technical", key: "technicalPlan" as const, icon: <Target className="w-4 h-4" />, title: "Technical Approach" },
+                        { value: "cost", key: "costEstimate" as const, icon: <DollarSign className="w-4 h-4" />, title: "Cost Estimate" },
+                        { value: "cta", key: "callToAction" as const, icon: <Send className="w-4 h-4" />, title: "Call to Action" },
                       ].map((tab) => (
                         <TabsContent key={tab.value} value={tab.value} className="p-6 mt-0">
                           <div className="flex items-center gap-2 mb-4">
                             <span className="text-blue-400">{tab.icon}</span>
-                            <h3 className="text-white font-semibold text-sm">{tab.value === "cover" ? "Cover Letter" : tab.value === "intro" ? "Introduction" : tab.value === "technical" ? "Technical Approach" : tab.value === "cost" ? "Cost Estimate" : "Call to Action"}</h3>
+                            <h3 className="text-white font-semibold text-sm">{tab.title}</h3>
                           </div>
-                          <div className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                          <div className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] overflow-hidden break-words">
                             {selectedProposal.sections[tab.key]}
                           </div>
                         </TabsContent>
@@ -420,9 +668,14 @@ export default function ProposalsPage() {
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedProposal.portfolioSuggestions.map((item) => (
-                            <Badge key={item} variant="outline" className="text-xs font-medium text-zinc-400 bg-white/[0.03] border-white/[0.08] px-3 py-1.5 cursor-pointer hover:bg-white/[0.06] hover:text-white transition-colors">
+                            <Badge
+                              key={item}
+                              variant="outline"
+                              onClick={() => showToast(`Viewing portfolio: ${item}`, "info")}
+                              className="text-xs font-medium text-zinc-400 bg-white/[0.03] border-white/[0.08] px-3 py-1.5 cursor-pointer hover:bg-white/[0.06] hover:text-white transition-colors"
+                            >
                               <Eye className="w-3 h-3 mr-1.5" />
-                              {item}
+                              <span className="truncate max-w-[200px]">{item}</span>
                             </Badge>
                           ))}
                         </div>
@@ -430,22 +683,38 @@ export default function ProposalsPage() {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="p-6 pt-4 border-t border-white/[0.06] flex items-center gap-3">
+                    <div className="p-6 pt-4 border-t border-white/[0.06] flex items-center gap-3 flex-wrap">
                       {selectedProposal.status === "draft" && (
-                        <Button className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold h-11 shadow-lg shadow-blue-500/20">
+                        <Button
+                          onClick={() => handleSubmitProposal(selectedProposal.id)}
+                          className="flex-1 min-w-[140px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold h-11 shadow-lg shadow-blue-500/20"
+                        >
                           <Send className="w-4 h-4 mr-2" />
                           Submit Proposal
                         </Button>
                       )}
-                      <Button variant="outline" className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white h-11">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleStartEdit(selectedProposal)}
+                        disabled={isEditing}
+                        className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white h-11 disabled:opacity-40"
+                      >
                         <Edit3 className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
-                      <Button variant="outline" className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white h-11">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleDuplicateProposal(selectedProposal)}
+                        className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white h-11"
+                      >
                         <Copy className="w-4 h-4 mr-2" />
                         Duplicate
                       </Button>
-                      <Button variant="outline" className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 h-11">
+                      <Button
+                        variant="outline"
+                        onClick={handleExportPDF}
+                        className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 h-11"
+                      >
                         <Download className="w-4 h-4 mr-2" />
                         Export PDF
                       </Button>
@@ -458,7 +727,7 @@ export default function ProposalsPage() {
 
           {/* AI Generation Dialog */}
           <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
-            <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-lg">
+            <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-lg z-50">
               <DialogHeader>
                 <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-blue-500/20">
@@ -499,7 +768,7 @@ export default function ProposalsPage() {
                         key={tone.value}
                         onClick={() => setGenTone(tone.value)}
                         className={cn(
-                          "p-3 rounded-xl border text-left transition-all duration-300",
+                          "p-3 rounded-xl border text-left transition-all duration-300 overflow-hidden",
                           genTone === tone.value
                             ? "border-blue-500/40 bg-blue-500/[0.08] shadow-lg shadow-blue-500/10"
                             : "border-white/[0.06] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
@@ -549,6 +818,29 @@ export default function ProposalsPage() {
             </DialogContent>
           </Dialog>
         </ScrollArea>
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            className={cn(
+              "pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-5 fade-in duration-300",
+              toast.type === "success" && "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+              toast.type === "info" && "bg-blue-500/10 border-blue-500/30 text-blue-300",
+              toast.type === "error" && "bg-red-500/10 border-red-500/30 text-red-300"
+            )}
+          >
+            {toast.type === "success" && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+            {toast.type === "info" && <AlertCircle className="w-4 h-4 shrink-0" />}
+            {toast.type === "error" && <AlertCircle className="w-4 h-4 shrink-0" />}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button onClick={() => dismissToast(toast.id)} className="ml-2 opacity-60 hover:opacity-100 transition-opacity shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

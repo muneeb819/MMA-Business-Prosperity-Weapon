@@ -73,8 +73,9 @@ import {
   Share2,
   Bookmark,
   ExternalLink,
+  X,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
 function AnimatedCounter({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
   const [count, setCount] = useState(0)
@@ -150,7 +151,76 @@ function NotificationIcon({ type }: { type: string }) {
   return <>{iconMap[type] || iconMap.system}</>
 }
 
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl shadow-zinc-900/50">
+        <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+        <p className="text-sm text-zinc-100">{message}</p>
+        <button onClick={onClose} className="ml-2 text-zinc-400 hover:text-white transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardPage() {
+  const [activeAgentTab, setActiveAgentTab] = useState<"all" | "active" | "idle">("all")
+  const [agentViewExpanded, setAgentViewExpanded] = useState(false)
+  const [sortBy, setSortBy] = useState<"probability" | "revenue" | "date">("probability")
+  const [filterSource, setFilterSource] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [showInsightsModal, setShowInsightsModal] = useState(false)
+  const [showRevenueDetails, setShowRevenueDetails] = useState(false)
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isRefreshingActivity, setIsRefreshingActivity] = useState(false)
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg)
+  }, [])
+
+  const filteredAgents = mockAgents.filter((agent) => {
+    if (activeAgentTab === "active") {
+      return agent.status === "scanning" || agent.status === "analyzing" || agent.status === "generating"
+    }
+    if (activeAgentTab === "idle") {
+      return agent.status === "idle" || agent.status === "paused"
+    }
+    return true
+  })
+
+  const sortedLeads = [...mockLeads]
+    .sort((a, b) => {
+      if (sortBy === "probability") return b.successProbability - a.successProbability
+      if (sortBy === "revenue") return b.expectedRevenue - a.expectedRevenue
+      return new Date(b.foundAt).getTime() - new Date(a.foundAt).getTime()
+    })
+    .filter((lead) => {
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        return (
+          lead.clientName.toLowerCase().includes(q) ||
+          lead.company.toLowerCase().includes(q) ||
+          lead.title.toLowerCase().includes(q)
+        )
+      }
+      return true
+    })
+    .slice(0, 5)
+
+  const filteredNotifications = mockNotifications.filter((n) => {
+    if (selectedNotificationId) return n.id === selectedNotificationId
+    return true
+  })
+
   const stats = [
     {
       title: "Total Revenue",
@@ -208,10 +278,18 @@ export default function DashboardPage() {
     { label: "Q4 2026", value: 275000, max: 500000 },
   ]
 
+  const handleRefreshActivity = () => {
+    setIsRefreshingActivity(true)
+    setTimeout(() => {
+      setIsRefreshingActivity(false)
+      showToast("Activity feed refreshed")
+    }, 1000)
+  }
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-[1600px] mx-auto space-y-6">
@@ -221,19 +299,20 @@ export default function DashboardPage() {
               style={{ animationDelay: "0ms" }}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight">
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-bold tracking-tight truncate">
                     Executive Dashboard
                   </h1>
                   <p className="text-zinc-400 mt-1">
                     Welcome back. Here&apos;s your business at a glance.
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
                     className="border-zinc-800 hover:bg-zinc-800/50"
+                    onClick={() => showToast("Dashboard exported as PDF")}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export
@@ -241,6 +320,7 @@ export default function DashboardPage() {
                   <Button
                     size="sm"
                     className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20"
+                    onClick={() => setShowInsightsModal(true)}
                   >
                     <Sparkles className="w-4 h-4 mr-2" />
                     AI Insights
@@ -250,27 +330,27 @@ export default function DashboardPage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {stats.map((stat, index) => (
                 <Card
                   key={stat.title}
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: `${(index + 1) * 100}ms` }}
                 >
                   <CardContent className="p-5">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-2">
-                        <p className="text-sm text-zinc-400 font-medium">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-2 min-w-0 flex-1">
+                        <p className="text-sm text-zinc-400 font-medium truncate">
                           {stat.title}
                         </p>
-                        <p className="text-3xl font-bold tracking-tight">
+                        <p className="text-3xl font-bold tracking-tight whitespace-nowrap">
                           {formatStatValue(stat.value, stat.format)}
                         </p>
                         <div className="flex items-center gap-1.5">
                           {stat.change >= 0 ? (
-                            <TrendingUp className="w-4 h-4 text-emerald-400" />
+                            <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
                           ) : (
-                            <TrendingDown className="w-4 h-4 text-red-400" />
+                            <TrendingDown className="w-4 h-4 text-red-400 shrink-0" />
                           )}
                           <span
                             className={cn(
@@ -286,7 +366,7 @@ export default function DashboardPage() {
                       </div>
                       <div
                         className={cn(
-                          "p-3 rounded-xl bg-gradient-to-br shadow-lg",
+                          "p-3 rounded-xl bg-gradient-to-br shadow-lg shrink-0",
                           stat.gradient,
                           stat.glow
                         )}
@@ -302,19 +382,19 @@ export default function DashboardPage() {
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               {/* Left Column - AI Agents & Activity */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="xl:col-span-2 space-y-6 min-w-0">
                 {/* AI Agent Status */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "500ms" }}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 shrink-0">
                           <Bot className="w-5 h-5 text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">
                             AI Agent Fleet
                           </CardTitle>
@@ -324,36 +404,65 @@ export default function DashboardPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-zinc-400 hover:text-white"
-                      >
-                        View All <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant={activeAgentTab === "all" ? "default" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            activeAgentTab === "all" ? "bg-zinc-700 hover:bg-zinc-600" : "text-zinc-400 hover:text-white"
+                          )}
+                          onClick={() => { setActiveAgentTab("all"); setAgentViewExpanded(false) }}
+                        >
+                          All
+                        </Button>
+                        <Button
+                          variant={activeAgentTab === "active" ? "default" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            activeAgentTab === "active" ? "bg-emerald-600 hover:bg-emerald-500" : "text-zinc-400 hover:text-white"
+                          )}
+                          onClick={() => { setActiveAgentTab("active"); setAgentViewExpanded(false) }}
+                        >
+                          Active
+                        </Button>
+                        <Button
+                          variant={activeAgentTab === "idle" ? "default" : "ghost"}
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            activeAgentTab === "idle" ? "bg-amber-600 hover:bg-amber-500" : "text-zinc-400 hover:text-white"
+                          )}
+                          onClick={() => { setActiveAgentTab("idle"); setAgentViewExpanded(false) }}
+                        >
+                          Idle
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {mockAgents.slice(0, 4).map((agent, index) => (
+                      {filteredAgents.slice(0, agentViewExpanded ? undefined : 4).map((agent) => (
                         <div
                           key={agent.id}
                           className={cn(
-                            "p-4 rounded-xl border transition-all duration-300",
+                            "p-4 rounded-xl border transition-all duration-300 overflow-hidden",
                             "bg-zinc-800/30 border-zinc-800/50 hover:border-zinc-700/50",
                             "hover:bg-zinc-800/50 hover:shadow-lg hover:shadow-zinc-900/50",
                             "group cursor-pointer"
                           )}
+                          onClick={() => showToast(`Viewing agent: ${agent.name}`)}
                         >
                           <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-2.5">
-                              <PulseDot status={agent.status} />
-                              <span className="font-medium text-sm">{agent.name}</span>
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <PulseDot status={agent.status} className="shrink-0" />
+                              <span className="font-medium text-sm truncate">{agent.name}</span>
                             </div>
                             <Badge
                               variant="secondary"
                               className={cn(
-                                "text-xs",
+                                "text-xs shrink-0 ml-2",
                                 agent.status === "scanning" || agent.status === "analyzing" || agent.status === "generating"
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                   : agent.status === "idle"
@@ -386,21 +495,48 @@ export default function DashboardPage() {
                         </div>
                       ))}
                     </div>
+                    {filteredAgents.length > 4 && !agentViewExpanded && (
+                      <div className="mt-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-cyan-400 hover:text-cyan-300 text-xs"
+                          onClick={() => setAgentViewExpanded(true)}
+                        >
+                          Show all {filteredAgents.length} agents <ChevronRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                    {agentViewExpanded && filteredAgents.length > 4 && (
+                      <div className="mt-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-zinc-400 hover:text-white text-xs"
+                          onClick={() => setAgentViewExpanded(false)}
+                        >
+                          Show less
+                        </Button>
+                      </div>
+                    )}
+                    {filteredAgents.length === 0 && (
+                      <p className="text-center text-sm text-zinc-500 py-8">No agents match this filter.</p>
+                    )}
                   </CardContent>
                 </Card>
 
                 {/* Activity Monitor */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "600ms" }}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20 shrink-0">
                           <Activity className="w-5 h-5 text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">
                             Activity Monitor
                           </CardTitle>
@@ -412,21 +548,27 @@ export default function DashboardPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-zinc-400 hover:text-white"
+                        className={cn(
+                          "text-zinc-400 hover:text-white shrink-0",
+                          isRefreshingActivity && "animate-spin"
+                        )}
+                        onClick={handleRefreshActivity}
+                        disabled={isRefreshingActivity}
                       >
                         <RefreshCw className="w-4 h-4" />
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <ScrollArea className="h-[300px] pr-4">
                       <div className="space-y-1">
-                        {mockActivityLog.map((activity, index) => (
+                        {mockActivityLog.map((activity) => (
                           <div
                             key={activity.id}
-                            className="flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-800/30 transition-colors group"
+                            className="flex items-start gap-3 p-3 rounded-lg hover:bg-zinc-800/30 transition-colors group cursor-pointer"
+                            onClick={() => showToast(`Activity: ${activity.details.slice(0, 60)}...`)}
                           >
-                            <div className="mt-0.5">
+                            <div className="mt-0.5 shrink-0">
                               <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center group-hover:border-zinc-600 transition-colors">
                                 {activity.action.includes("lead") && <Users className="w-3.5 h-3.5 text-cyan-400" />}
                                 {activity.action.includes("proposal") && <FileText className="w-3.5 h-3.5 text-violet-400" />}
@@ -438,7 +580,7 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm leading-relaxed">
+                              <p className="text-sm leading-relaxed line-clamp-2">
                                 {activity.details}
                               </p>
                               <p className="text-xs text-zinc-500 mt-0.5">
@@ -454,16 +596,16 @@ export default function DashboardPage() {
 
                 {/* Revenue Chart */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "700ms" }}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20 shrink-0">
                           <BarChart3 className="w-5 h-5 text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">
                             Revenue Overview
                           </CardTitle>
@@ -475,19 +617,20 @@ export default function DashboardPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-zinc-400 hover:text-white"
+                        className="text-zinc-400 hover:text-white shrink-0"
+                        onClick={() => setShowRevenueDetails(!showRevenueDetails)}
                       >
-                        Details <ChevronRight className="w-4 h-4 ml-1" />
+                        {showRevenueDetails ? "Hide" : "Details"} <ChevronRight className={cn("w-4 h-4 ml-1 transition-transform", showRevenueDetails && "rotate-90")} />
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <div className="space-y-4">
                       {revenueData.map((item, index) => (
                         <div key={item.label} className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-zinc-400">{item.label}</span>
-                            <span className="font-medium">
+                            <span className="font-medium whitespace-nowrap">
                               {formatCurrency(item.value)}
                             </span>
                           </div>
@@ -501,27 +644,41 @@ export default function DashboardPage() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-shimmer" />
                           </div>
+                          {showRevenueDetails && (
+                            <div className="flex items-center justify-between text-xs text-zinc-500 pl-1">
+                              <span>{Math.round((item.value / item.max) * 100)}% of target ({formatCurrency(item.max)})</span>
+                              <span className={cn(index === 0 ? "text-emerald-400" : index === 1 ? "text-amber-400" : "text-zinc-400")}>
+                                {index === 0 ? "On track" : index === 1 ? "Below target" : "Needs attention"}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
+                    {showRevenueDetails && (
+                      <div className="mt-4 pt-4 border-t border-zinc-800/50 flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Total Annual Revenue</span>
+                        <span className="text-lg font-bold">{formatCurrency(revenueData.reduce((sum, d) => sum + d.value, 0))}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
 
               {/* Right Column - Leads, Sources, Notifications */}
-              <div className="space-y-6">
+              <div className="space-y-6 min-w-0">
                 {/* Top Priority Leads */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "550ms" }}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500 to-pink-600 shadow-lg shadow-rose-500/20 shrink-0">
                           <Target className="w-5 h-5 text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">
                             Priority Leads
                           </CardTitle>
@@ -530,94 +687,165 @@ export default function DashboardPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20">
+                      <Badge variant="secondary" className="bg-rose-500/10 text-rose-400 border-rose-500/20 shrink-0">
                         {mockLeads.filter((l) => l.successProbability >= 80).length} hot
                       </Badge>
                     </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+                        <input
+                          type="text"
+                          placeholder="Search leads..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full h-8 pl-8 pr-3 text-xs bg-zinc-800/50 border border-zinc-800 rounded-lg text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-600 transition-colors"
+                        />
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            sortBy === "probability" ? "bg-zinc-700 text-white" : "text-zinc-400"
+                          )}
+                          onClick={() => setSortBy("probability")}
+                          title="Sort by probability"
+                        >
+                          <Target className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            sortBy === "revenue" ? "bg-zinc-700 text-white" : "text-zinc-400"
+                          )}
+                          onClick={() => setSortBy("revenue")}
+                          title="Sort by revenue"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "text-xs h-7 px-2",
+                            sortBy === "date" ? "bg-zinc-700 text-white" : "text-zinc-400"
+                          )}
+                          onClick={() => setSortBy("date")}
+                          title="Sort by date"
+                        >
+                          <Clock className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <div className="space-y-3">
-                      {[...mockLeads]
-                        .sort((a, b) => b.successProbability - a.successProbability)
-                        .slice(0, 5)
-                        .map((lead, index) => (
-                          <div
-                            key={lead.id}
-                            className="p-3 rounded-xl bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700/50 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <p className="font-medium text-sm group-hover:text-white transition-colors">
-                                  {lead.clientName}
-                                </p>
-                                <p className="text-xs text-zinc-500 mt-0.5">
-                                  {lead.company} • {lead.title}
-                                </p>
-                              </div>
-                              <Badge
-                                variant="secondary"
-                                className={cn(
-                                  "text-xs",
-                                  lead.successProbability >= 90
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : lead.successProbability >= 70
-                                    ? "bg-amber-500/10 text-amber-400"
-                                    : "bg-zinc-500/10 text-zinc-400"
-                                )}
-                              >
-                                {lead.successProbability}%
-                              </Badge>
+                      {sortedLeads.map((lead) => (
+                        <div
+                          key={lead.id}
+                          className={cn(
+                            "p-3 rounded-xl bg-zinc-800/30 border transition-all cursor-pointer group",
+                            selectedLeadId === lead.id
+                              ? "border-cyan-500/50 bg-zinc-800/50"
+                              : "border-zinc-800/50 hover:border-zinc-700/50"
+                          )}
+                          onClick={() => {
+                            setSelectedLeadId(selectedLeadId === lead.id ? null : lead.id)
+                            showToast(`Selected lead: ${lead.clientName}`)
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm group-hover:text-white transition-colors truncate">
+                                {lead.clientName}
+                              </p>
+                              <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                                {lead.company} &bull; {lead.title}
+                              </p>
                             </div>
-                            <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                              <div
-                                className={cn(
-                                  "absolute inset-y-0 left-0 rounded-full transition-all duration-700",
-                                  lead.successProbability >= 90
-                                    ? "bg-gradient-to-r from-emerald-500 to-green-400"
-                                    : lead.successProbability >= 70
-                                    ? "bg-gradient-to-r from-amber-500 to-yellow-400"
-                                    : "bg-gradient-to-r from-zinc-500 to-zinc-400"
-                                )}
-                                style={{ width: `${lead.successProbability}%` }}
-                              />
-                            </div>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
-                              <span className="flex items-center gap-1">
-                                <DollarSign className="w-3 h-3" />
-                                {formatCurrency(lead.expectedRevenue)}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {timeAgo(new Date(lead.foundAt))}
-                              </span>
-                            </div>
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                "text-xs shrink-0 ml-2",
+                                lead.successProbability >= 90
+                                  ? "bg-emerald-500/10 text-emerald-400"
+                                  : lead.successProbability >= 70
+                                  ? "bg-amber-500/10 text-amber-400"
+                                  : "bg-zinc-500/10 text-zinc-400"
+                              )}
+                            >
+                              {lead.successProbability}%
+                            </Badge>
                           </div>
-                        ))}
+                          <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "absolute inset-y-0 left-0 rounded-full transition-all duration-700",
+                                lead.successProbability >= 90
+                                  ? "bg-gradient-to-r from-emerald-500 to-green-400"
+                                  : lead.successProbability >= 70
+                                  ? "bg-gradient-to-r from-amber-500 to-yellow-400"
+                                  : "bg-gradient-to-r from-zinc-500 to-zinc-400"
+                              )}
+                              style={{ width: `${lead.successProbability}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              {formatCurrency(lead.expectedRevenue)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {timeAgo(new Date(lead.foundAt))}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {sortedLeads.length === 0 && (
+                        <p className="text-center text-sm text-zinc-500 py-4">No leads match your search.</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Active Search Sources */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "650ms" }}
                 >
                   <CardHeader className="pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
-                        <Globe className="w-5 h-5 text-white" />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 shrink-0">
+                          <Globe className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                          <CardTitle className="text-lg">
+                            Search Sources
+                          </CardTitle>
+                          <CardDescription>
+                            Active monitoring channels
+                          </CardDescription>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-lg">
-                          Search Sources
-                        </CardTitle>
-                        <CardDescription>
-                          Active monitoring channels
-                        </CardDescription>
-                      </div>
+                      {filterSource && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-zinc-400 hover:text-white shrink-0"
+                          onClick={() => setFilterSource(null)}
+                        >
+                          <X className="w-3 h-3 mr-1" /> Clear
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <div className="flex flex-wrap gap-2">
                       {[
                         { name: "LinkedIn", icon: ExternalLink, count: 45 },
@@ -629,7 +857,16 @@ export default function DashboardPage() {
                       ].map((source) => (
                         <div
                           key={source.name}
-                          className="flex items-center gap-2 px-3 py-2 rounded-full bg-zinc-800/50 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 transition-all cursor-pointer group"
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-full border transition-all cursor-pointer group",
+                            filterSource === source.name
+                              ? "bg-cyan-500/10 border-cyan-500/30"
+                              : "bg-zinc-800/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800"
+                          )}
+                          onClick={() => {
+                            setFilterSource(filterSource === source.name ? null : source.name)
+                            showToast(`Filtering by: ${source.name}`)
+                          }}
                         >
                           <PulseDot status="active" className="!h-2 !w-2" />
                           <source.icon className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
@@ -647,16 +884,16 @@ export default function DashboardPage() {
 
                 {/* Notifications */}
                 <Card
-                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up"
+                  className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden"
                   style={{ animationDelay: "750ms" }}
                 >
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/20 shrink-0">
                           <Bell className="w-5 h-5 text-white" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <CardTitle className="text-lg">
                             Notifications
                           </CardTitle>
@@ -665,31 +902,53 @@ export default function DashboardPage() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Badge
-                        variant="secondary"
-                        className="bg-amber-500/10 text-amber-400 border-amber-500/20"
-                      >
-                        {mockNotifications.filter((n) => !n.read).length} new
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {selectedNotificationId && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-400 hover:text-white text-xs"
+                            onClick={() => setSelectedNotificationId(null)}
+                          >
+                            Show all
+                          </Button>
+                        )}
+                        <Badge
+                          variant="secondary"
+                          className="bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        >
+                          {mockNotifications.filter((n) => !n.read).length} new
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="overflow-hidden">
                     <ScrollArea className="h-[280px] pr-4">
                       <div className="space-y-2">
-                        {mockNotifications.map((notification) => (
+                        {filteredNotifications.map((notification) => (
                           <div
                             key={notification.id}
                             className={cn(
                               "p-3 rounded-lg border transition-all cursor-pointer",
-                              notification.read
-                                ? "bg-zinc-800/20 border-zinc-800/30"
-                                : "bg-zinc-800/40 border-zinc-700/50"
+                              selectedNotificationId === notification.id
+                                ? "bg-zinc-800/60 border-zinc-600/50"
+                                : notification.read
+                                ? "bg-zinc-800/20 border-zinc-800/30 hover:bg-zinc-800/30"
+                                : "bg-zinc-800/40 border-zinc-700/50 hover:bg-zinc-800/50"
                             )}
+                            onClick={() => {
+                              setSelectedNotificationId(
+                                selectedNotificationId === notification.id ? null : notification.id
+                              )
+                              if (!notification.read) {
+                                showToast("Notification marked as read")
+                              }
+                            }}
                           >
                             <div className="flex items-start gap-2.5">
                               <NotificationIcon type={notification.type} />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm leading-relaxed">
+                                <p className="text-sm leading-relaxed line-clamp-2">
                                   {notification.message}
                                 </p>
                                 <p className="text-xs text-zinc-500 mt-1">
@@ -697,7 +956,7 @@ export default function DashboardPage() {
                                 </p>
                               </div>
                               {!notification.read && (
-                                <span className="w-2 h-2 rounded-full bg-cyan-500 mt-1.5" />
+                                <span className="w-2 h-2 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
                               )}
                             </div>
                           </div>
@@ -711,6 +970,75 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+      )}
+
+      {/* AI Insights Modal */}
+      {showInsightsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowInsightsModal(false)}
+          />
+          <div className="relative w-full max-w-lg mx-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl shadow-zinc-900/50 overflow-hidden animate-fade-in-up">
+            <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">AI Insights</h2>
+                  <p className="text-xs text-zinc-400">Powered by MBPW Intelligence</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-zinc-400 hover:text-white"
+                onClick={() => setShowInsightsModal(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-medium">Revenue Opportunity</span>
+                </div>
+                <p className="text-sm text-zinc-300">3 government contracts worth $1.2M total show 89% success probability. Recommend immediate outreach.</p>
+              </div>
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-medium">Risk Alert</span>
+                </div>
+                <p className="text-sm text-zinc-300">Enterprise lead &quot;TechCorp&quot; has decreased engagement score by 15%. Follow-up recommended within 24 hours.</p>
+              </div>
+              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Brain className="w-4 h-4 text-violet-400" />
+                  <span className="text-sm font-medium">Agent Optimization</span>
+                </div>
+                <p className="text-sm text-zinc-300">Lead Scanning Agent efficiency improved 12% this week. Task queue processing at optimal levels.</p>
+              </div>
+            </div>
+            <div className="p-5 border-t border-zinc-800/50 flex justify-end">
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+                onClick={() => { setShowInsightsModal(false); showToast("Full report sent to your email") }}
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Send Full Report
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { mockAgents } from "@/lib/mock-data"
 import {
@@ -31,8 +32,23 @@ import {
   ArrowUpRight,
   Eye,
   MapPin,
+  Search,
+  X,
+  Download,
+  RefreshCw,
+  Save,
+  Filter,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, useMemo } from "react"
+
+function Code(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+    </svg>
+  )
+}
 
 function PulseDot({ status, className = "" }: { status: string; className?: string }) {
   const colors = {
@@ -165,6 +181,9 @@ const discoveries = [
     discoveredAt: "2 hours ago",
     tags: ["hot-lead", "decision-maker", "budget-confirmed"],
     status: "new",
+    contact: "john@cloudsync.io",
+    website: "https://cloudsync.io",
+    description: "Series A funded SaaS startup looking for cloud infrastructure optimization. Decision maker identified with confirmed budget.",
   },
   {
     id: "disc-2",
@@ -178,6 +197,9 @@ const discoveries = [
     discoveredAt: "5 hours ago",
     tags: ["enterprise", "long-cycle", "multi-stakeholder"],
     status: "contacted",
+    contact: "cto@meridianhealth.com",
+    website: "https://meridianhealth.com",
+    description: "Large healthcare provider undergoing digital transformation. Multi-stakeholder procurement process with 6-8 month cycle.",
   },
   {
     id: "disc-3",
@@ -191,6 +213,9 @@ const discoveries = [
     discoveredAt: "8 hours ago",
     tags: ["ai-project", "technical-buyer", "urgency-high"],
     status: "qualified",
+    contact: "vp-eng@vertexrobotics.com",
+    website: "https://vertexrobotics.com",
+    description: "Manufacturing company seeking AI implementation for quality control. Technical buyer identified with high urgency timeline.",
   },
   {
     id: "disc-4",
@@ -204,6 +229,9 @@ const discoveries = [
     discoveredAt: "1 day ago",
     tags: ["mid-market", "quick-close", "budget-flexible"],
     status: "proposal-sent",
+    contact: "hello@bloomdigital.co.uk",
+    website: "https://bloomdigital.co.uk",
+    description: "Digital agency looking to overhaul their marketing automation stack. Quick close potential with flexible budget.",
   },
   {
     id: "disc-5",
@@ -217,6 +245,9 @@ const discoveries = [
     discoveredAt: "1 day ago",
     tags: ["compliance", "security-focus", "enterprise"],
     status: "negotiation",
+    contact: "infra@pinnaclefin.com",
+    website: "https://pinnaclefin.com",
+    description: "Financial institution upgrading data infrastructure with strict compliance and security requirements.",
   },
   {
     id: "disc-6",
@@ -230,6 +261,9 @@ const discoveries = [
     discoveredAt: "2 days ago",
     tags: ["migration", "ecommerce", "growth-stage"],
     status: "new",
+    contact: "tech@novaretail.ca",
+    website: "https://novaretail.ca",
+    description: "Fast-growing retail company migrating to a new e-commerce platform. Growth-stage company with scaling needs.",
   },
 ]
 
@@ -254,11 +288,52 @@ const statusColors: Record<string, string> = {
   "negotiation": "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
 }
 
+const platformFilters = [
+  { id: "all", label: "All Platforms" },
+  { id: "linkedin", label: "LinkedIn" },
+  { id: "twitter", label: "Twitter/X" },
+  { id: "web", label: "Web" },
+  { id: "email", label: "Email" },
+  { id: "crunchbase", label: "Crunchbase" },
+  { id: "github", label: "GitHub" },
+]
+
+const countryFilters = [
+  { id: "all", label: "All Countries" },
+  { id: "us", label: "United States" },
+  { id: "uk", label: "United Kingdom" },
+  { id: "ca", label: "Canada" },
+  { id: "de", label: "Germany" },
+  { id: "au", label: "Australia" },
+]
+
+const technologyFilters = [
+  { id: "all", label: "All Tech" },
+  { id: "react", label: "React" },
+  { id: "node", label: "Node.js" },
+  { id: "python", label: "Python" },
+  { id: "aws", label: "AWS" },
+  { id: "ai", label: "AI/ML" },
+]
+
 export default function OpportunityHunterPage() {
   const [isRunning, setIsRunning] = useState(true)
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [categories, setCategories] = useState(searchCategories)
   const [searchFrequency, setSearchFrequency] = useState("15")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [minDealSize, setMinDealSize] = useState("50000")
+  const [targetRegion, setTargetRegion] = useState("global")
+  const [activePlatform, setActivePlatform] = useState("all")
+  const [activeCountry, setActiveCountry] = useState("all")
+  const [activeTechnology, setActiveTechnology] = useState("all")
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [selectedSource, setSelectedSource] = useState<typeof searchSources[0] | null>(null)
+  const [selectedDiscovery, setSelectedDiscovery] = useState<typeof discoveries[0] | null>(null)
+  const [showConfigDialog, setShowConfigDialog] = useState(false)
+  const [sourceStatuses, setSourceStatuses] = useState<Record<string, string>>(
+    Object.fromEntries(searchSources.map((s) => [s.id, s.status]))
+  )
 
   const hunterAgent = mockAgents.find((a) => a.type === "opportunity_hunter") || {
     id: "agent-1",
@@ -274,10 +349,43 @@ export default function OpportunityHunterPage() {
     icon: "search",
   }
 
-  const filteredDiscoveries = discoveries.filter((d) => {
-    if (selectedFilter === "all") return true
-    return d.status === selectedFilter
-  })
+  const filteredDiscoveries = useMemo(() => {
+    return discoveries.filter((d) => {
+      if (selectedFilter !== "all" && d.status !== selectedFilter) return false
+      if (activePlatform !== "all" && d.source.toLowerCase() !== activePlatform) return false
+      if (activeCountry !== "all") {
+        const countryMap: Record<string, string[]> = {
+          us: ["San Francisco", "New York", "Austin", "Chicago"],
+          uk: ["London"],
+          ca: ["Toronto"],
+        }
+        const locations = countryMap[activeCountry] || []
+        if (!locations.some((l) => d.location.includes(l))) return false
+      }
+      if (activeTechnology !== "all") {
+        const techTags: Record<string, string[]> = {
+          react: ["saas", "ecommerce", "migration"],
+          node: ["startup", "growth-stage"],
+          python: ["ai-project", "data"],
+          aws: ["cloud", "enterprise"],
+          ai: ["ai-project", "technical-buyer"],
+        }
+        const matches = techTags[activeTechnology] || []
+        if (!d.tags.some((t) => matches.some((m) => t.includes(m))) && !d.industry.toLowerCase().includes(activeTechnology)) return false
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        return (
+          d.title.toLowerCase().includes(q) ||
+          d.company.toLowerCase().includes(q) ||
+          d.location.toLowerCase().includes(q) ||
+          d.industry.toLowerCase().includes(q) ||
+          d.tags.some((t) => t.includes(q))
+        )
+      }
+      return true
+    })
+  }, [selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery])
 
   const toggleCategory = (id: string) => {
     setCategories((prev) =>
@@ -287,10 +395,48 @@ export default function OpportunityHunterPage() {
     )
   }
 
+  const toggleBookmark = (id: string) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const toggleSourceStatus = (id: string) => {
+    setSourceStatuses((prev) => ({
+      ...prev,
+      [id]: prev[id] === "active" ? "idle" : "active",
+    }))
+  }
+
+  const handleExport = () => {
+    const data = filteredDiscoveries.map((d) => ({
+      title: d.title,
+      company: d.company,
+      dealSize: d.dealSize,
+      score: d.score,
+      status: d.status,
+      source: d.source,
+      location: d.location,
+    }))
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "discoveries-export.json"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-[1600px] mx-auto space-y-6">
@@ -299,16 +445,16 @@ export default function OpportunityHunterPage() {
               className="animate-fade-in-up"
               style={{ animationDelay: "0ms" }}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3 flex-wrap">
                     <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                       Global Opportunity Hunter
                     </span>
                     <Badge
                       variant="secondary"
                       className={cn(
-                        "text-xs font-medium",
+                        "text-xs font-medium shrink-0",
                         isRunning
                           ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                           : "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
@@ -321,11 +467,12 @@ export default function OpportunityHunterPage() {
                     AI-powered lead discovery across global platforms
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                   <Button
                     variant="outline"
                     size="sm"
                     className="border-zinc-800 hover:bg-zinc-800/50"
+                    onClick={() => setShowConfigDialog(true)}
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Configure
@@ -361,13 +508,13 @@ export default function OpportunityHunterPage() {
               className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl animate-fade-in-up overflow-hidden relative"
               style={{ animationDelay: "100ms" }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-blue-500/5 to-violet-500/5" />
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-              <CardContent className="p-6 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-blue-500/5 to-violet-500/5 pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent pointer-events-none" />
+              <CardContent className="p-6 relative z-10">
                 <div className="flex flex-col md:flex-row md:items-center gap-6">
                   {/* Agent Info */}
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="relative">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="relative shrink-0">
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
                         <Bot className="w-8 h-8 text-white" />
                       </div>
@@ -378,17 +525,17 @@ export default function OpportunityHunterPage() {
                         />
                       </div>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-bold">{hunterAgent.name}</h3>
+                        <h3 className="text-xl font-bold truncate">{hunterAgent.name}</h3>
                         {isRunning && <TypingDots />}
                       </div>
-                      <p className="text-sm text-zinc-400 mt-1">
+                      <p className="text-sm text-zinc-400 mt-1 truncate">
                         {isRunning
                           ? hunterAgent.currentTask
                           : "Hunter is paused. Click start to resume."}
                       </p>
-                      <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-4 mt-3 flex-wrap">
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/50 border border-zinc-800">
                           <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                           <span className="text-xs font-medium">
@@ -412,7 +559,7 @@ export default function OpportunityHunterPage() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-8 md:border-l md:border-zinc-800 md:pl-8">
+                  <div className="flex items-center gap-8 md:border-l md:border-zinc-800 md:pl-8 shrink-0">
                     <div className="text-center">
                       <p className="text-3xl font-bold text-cyan-400">
                         {searchSources.reduce((a, s) => a + s.leadsFound, 0)}
@@ -421,7 +568,7 @@ export default function OpportunityHunterPage() {
                     </div>
                     <div className="text-center">
                       <p className="text-3xl font-bold text-emerald-400">
-                        {searchSources.filter((s) => s.status === "active").length}
+                        {Object.values(sourceStatuses).filter((s) => s === "active").length}
                       </p>
                       <p className="text-xs text-zinc-500 mt-1">Active Sources</p>
                     </div>
@@ -469,47 +616,46 @@ export default function OpportunityHunterPage() {
               {/* Search Sources Tab */}
               <TabsContent value="sources" className="mt-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {searchSources.map((source, index) => (
+                  {searchSources.map((source) => (
                     <Card
                       key={source.id}
-                      className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl group cursor-pointer overflow-hidden relative"
+                      className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl group overflow-hidden relative"
                     >
                       <div
                         className={cn(
-                          "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+                          "absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
                           source.gradient
                         )}
-                        style={{ opacity: 0 }}
                       />
-                      <CardContent className="p-5 relative">
+                      <CardContent className="p-5 relative z-10">
                         <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div
                               className={cn(
-                                "p-3 rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform duration-300",
+                                "p-3 rounded-xl bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform duration-300 shrink-0",
                                 source.gradient
                               )}
                             >
                               <source.icon className="w-5 h-5 text-white" />
                             </div>
-                            <div>
-                              <h3 className="font-semibold group-hover:text-white transition-colors">
+                            <div className="min-w-0">
+                              <h3 className="font-semibold group-hover:text-white transition-colors truncate">
                                 {source.name}
                               </h3>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <PulseDot
-                                  status={source.status}
+                                  status={sourceStatuses[source.id] || source.status}
                                   className="!h-1.5 !w-1.5"
                                 />
                                 <span className="text-xs text-zinc-500 capitalize">
-                                  {source.status}
+                                  {sourceStatuses[source.id] || source.status}
                                 </span>
                               </div>
                             </div>
                           </div>
                           <Badge
                             variant="secondary"
-                            className="bg-zinc-800/50 text-zinc-400"
+                            className="bg-zinc-800/50 text-zinc-400 shrink-0 ml-2"
                           >
                             {source.leadsFound} leads
                           </Badge>
@@ -537,13 +683,28 @@ export default function OpportunityHunterPage() {
                             <Clock className="w-3 h-3" />
                             {source.lastScan}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => toggleSourceStatus(source.id)}
+                            >
+                              {sourceStatuses[source.id] === "active" ? (
+                                <Pause className="w-3 h-3" />
+                              ) : (
+                                <Play className="w-3 h-3" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setSelectedSource(source)}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -553,8 +714,113 @@ export default function OpportunityHunterPage() {
 
               {/* Discoveries Tab */}
               <TabsContent value="discoveries" className="mt-6 space-y-6">
-                {/* Filters */}
+                {/* Search and Filter Bar */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px] max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Input
+                        placeholder="Search discoveries..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 bg-zinc-900/50 border-zinc-800/50 focus-visible:ring-cyan-500/20"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-zinc-800 hover:bg-zinc-800/50"
+                      onClick={handleExport}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-zinc-800 hover:bg-zinc-800/50"
+                      onClick={() => {
+                        setSearchQuery("")
+                        setSelectedFilter("all")
+                        setActivePlatform("all")
+                        setActiveCountry("all")
+                        setActiveTechnology("all")
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reset Filters
+                    </Button>
+                  </div>
+
+                  {/* Platform Filters */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-zinc-500 font-medium mr-1">Platform:</span>
+                    {platformFilters.map((pf) => (
+                      <button
+                        key={pf.id}
+                        onClick={() => setActivePlatform(pf.id)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
+                          activePlatform === pf.id
+                            ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                            : "bg-zinc-800/30 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
+                        )}
+                      >
+                        {pf.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Country and Technology Filters */}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500 font-medium">Country:</span>
+                      <Select value={activeCountry} onValueChange={setActiveCountry}>
+                        <SelectTrigger className="h-8 w-[160px] bg-zinc-900/50 border-zinc-800/50 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800">
+                          {countryFilters.map((cf) => (
+                            <SelectItem key={cf.id} value={cf.id} className="text-xs">
+                              {cf.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500 font-medium">Technology:</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {technologyFilters.map((tf) => (
+                          <button
+                            key={tf.id}
+                            onClick={() => setActiveTechnology(tf.id)}
+                            className={cn(
+                              "px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200 border",
+                              activeTechnology === tf.id
+                                ? "bg-violet-500/10 text-violet-400 border-violet-500/30"
+                                : "bg-zinc-800/30 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
+                            )}
+                          >
+                            {tf.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Filter Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="w-3.5 h-3.5 text-zinc-500" />
                   {["all", "new", "contacted", "qualified", "proposal-sent", "negotiation"].map(
                     (filter) => (
                       <Button
@@ -577,101 +843,122 @@ export default function OpportunityHunterPage() {
 
                 {/* Discovery List */}
                 <div className="space-y-3">
-                  {filteredDiscoveries.map((discovery, index) => (
-                    <Card
-                      key={discovery.id}
-                      className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl group cursor-pointer"
-                    >
-                      <CardContent className="p-5">
-                        <div className="flex items-start gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold group-hover:text-white transition-colors">
-                                    {discovery.title}
-                                  </h3>
-                                  <Badge
-                                    variant="secondary"
-                                    className={cn(
-                                      "text-xs capitalize",
-                                      statusColors[discovery.status]
-                                    )}
-                                  >
-                                    {discovery.status.replace("-", " ")}
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-zinc-400 mt-0.5">
-                                  {discovery.company} - {discovery.industry}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xl font-bold text-emerald-400">
-                                  {formatCurrency(discovery.dealSize)}
-                                </p>
-                                <div className="flex items-center gap-1 justify-end mt-1">
-                                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                  <span className="text-sm font-medium">
-                                    {discovery.score}%
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-xs text-zinc-500 mt-3">
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {discovery.location}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Globe className="w-3 h-3" />
-                                {discovery.source}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {discovery.discoveredAt}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-3 flex-wrap">
-                              {discovery.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="px-2 py-0.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-800"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
-                            >
-                              <Bookmark className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
-                            >
-                              <ArrowUpRight className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
+                  {filteredDiscoveries.length === 0 ? (
+                    <Card className="border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl">
+                      <CardContent className="p-12 text-center">
+                        <Search className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                        <p className="text-zinc-400 font-medium">No discoveries match your filters</p>
+                        <p className="text-zinc-600 text-sm mt-1">Try adjusting your search criteria</p>
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    filteredDiscoveries.map((discovery) => (
+                      <Card
+                        key={discovery.id}
+                        className="card-hover glass border-zinc-800/50 bg-zinc-900/50 backdrop-blur-xl group"
+                      >
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-4 mb-2">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-semibold group-hover:text-white transition-colors truncate">
+                                      {discovery.title}
+                                    </h3>
+                                    <Badge
+                                      variant="secondary"
+                                      className={cn(
+                                        "text-xs capitalize shrink-0",
+                                        statusColors[discovery.status]
+                                      )}
+                                    >
+                                      {discovery.status.replace("-", " ")}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-zinc-400 mt-0.5 truncate">
+                                    {discovery.company} - {discovery.industry}
+                                  </p>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-xl font-bold text-emerald-400">
+                                    {formatCurrency(discovery.dealSize)}
+                                  </p>
+                                  <div className="flex items-center gap-1 justify-end mt-1">
+                                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                    <span className="text-sm font-medium">
+                                      {discovery.score}%
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 text-xs text-zinc-500 mt-3 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {discovery.location}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Globe className="w-3 h-3" />
+                                  {discovery.source}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {discovery.discoveredAt}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                {discovery.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="px-2 py-0.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-800"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 shrink-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                onClick={() => setSelectedDiscovery(discovery)}
+                                title="View Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                  "h-8 w-8 p-0",
+                                  bookmarkedIds.has(discovery.id)
+                                    ? "text-amber-400 hover:text-amber-300"
+                                    : "text-zinc-400 hover:text-white"
+                                )}
+                                onClick={() => toggleBookmark(discovery.id)}
+                                title={bookmarkedIds.has(discovery.id) ? "Remove Bookmark" : "Bookmark"}
+                              >
+                                <Bookmark className={cn("w-4 h-4", bookmarkedIds.has(discovery.id) && "fill-amber-400")} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                onClick={() => window.open(discovery.website, "_blank")}
+                                title="Open Website"
+                              >
+                                <ArrowUpRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </TabsContent>
 
@@ -764,7 +1051,7 @@ export default function OpportunityHunterPage() {
                         <label className="text-sm font-medium text-zinc-300">
                           Minimum Deal Size
                         </label>
-                        <Select defaultValue="50000">
+                        <Select value={minDealSize} onValueChange={setMinDealSize}>
                           <SelectTrigger className="bg-zinc-800/50 border-zinc-800">
                             <SelectValue placeholder="Select minimum" />
                           </SelectTrigger>
@@ -782,7 +1069,7 @@ export default function OpportunityHunterPage() {
                         <label className="text-sm font-medium text-zinc-300">
                           Target Regions
                         </label>
-                        <Select defaultValue="global">
+                        <Select value={targetRegion} onValueChange={setTargetRegion}>
                           <SelectTrigger className="bg-zinc-800/50 border-zinc-800">
                             <SelectValue placeholder="Select regions" />
                           </SelectTrigger>
@@ -794,6 +1081,18 @@ export default function OpportunityHunterPage() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      <div className="pt-2">
+                        <Button
+                          className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+                          onClick={() => {
+                            setIsRunning(true)
+                          }}
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Configuration
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -802,15 +1101,195 @@ export default function OpportunityHunterPage() {
           </div>
         </main>
       </div>
-    </div>
-  )
-}
 
-function Code(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <polyline points="16 18 22 12 16 6" />
-      <polyline points="8 6 2 12 8 18" />
-    </svg>
+      {/* Source Detail Dialog */}
+      <Dialog open={!!selectedSource} onOpenChange={(open) => !open && setSelectedSource(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 z-50 max-w-lg">
+          {selectedSource && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className={cn("p-2 rounded-lg bg-gradient-to-br", selectedSource.gradient)}>
+                    <selectedSource.icon className="w-5 h-5 text-white" />
+                  </div>
+                  {selectedSource.name}
+                </DialogTitle>
+                <DialogDescription>{selectedSource.description}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Leads Found</p>
+                    <p className="text-xl font-bold text-cyan-400">{selectedSource.leadsFound}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Status</p>
+                    <p className="text-xl font-bold text-emerald-400 capitalize">{sourceStatuses[selectedSource.id]}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Accuracy</p>
+                    <p className="text-xl font-bold text-violet-400">{selectedSource.metrics.accuracy}%</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Speed</p>
+                    <p className="text-xl font-bold text-amber-400">{selectedSource.metrics.speed}%</p>
+                  </div>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  Last scan: {selectedSource.lastScan}
+                </div>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => toggleSourceStatus(selectedSource.id)}
+                >
+                  {sourceStatuses[selectedSource.id] === "active" ? (
+                    <>
+                      <Pause className="w-4 h-4 mr-2" />
+                      Pause Source
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Activate Source
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Discovery Detail Dialog */}
+      <Dialog open={!!selectedDiscovery} onOpenChange={(open) => !open && setSelectedDiscovery(null)}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 z-50 max-w-lg">
+          {selectedDiscovery && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {selectedDiscovery.title}
+                  <Badge
+                    variant="secondary"
+                    className={cn("text-xs capitalize", statusColors[selectedDiscovery.status])}
+                  >
+                    {selectedDiscovery.status.replace("-", " ")}
+                  </Badge>
+                </DialogTitle>
+                <DialogDescription>{selectedDiscovery.company}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <p className="text-sm text-zinc-400">{selectedDiscovery.description}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Deal Size</p>
+                    <p className="text-xl font-bold text-emerald-400">{formatCurrency(selectedDiscovery.dealSize)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
+                    <p className="text-xs text-zinc-500">Score</p>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      <p className="text-xl font-bold text-amber-400">{selectedDiscovery.score}%</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-zinc-400 flex-wrap">
+                  <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{selectedDiscovery.location}</span>
+                  <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5" />{selectedDiscovery.source}</span>
+                  <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" />{selectedDiscovery.contact}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedDiscovery.tags.map((tag) => (
+                    <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-800">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+                    onClick={() => {
+                      window.open(selectedDiscovery.website, "_blank")
+                    }}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Open Website
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-zinc-800 hover:bg-zinc-800/50"
+                    onClick={() => toggleBookmark(selectedDiscovery.id)}
+                  >
+                    <Bookmark className={cn("w-4 h-4", bookmarkedIds.has(selectedDiscovery.id) && "fill-amber-400 text-amber-400")} />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Config Dialog (from header Configure button) */}
+      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 z-50 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Quick Configuration</DialogTitle>
+            <DialogDescription>
+              Adjust core hunter settings
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Search Frequency</label>
+              <Select value={searchFrequency} onValueChange={setSearchFrequency}>
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="5">Every 5 minutes</SelectItem>
+                  <SelectItem value="15">Every 15 minutes</SelectItem>
+                  <SelectItem value="30">Every 30 minutes</SelectItem>
+                  <SelectItem value="60">Every hour</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Minimum Deal Size</label>
+              <Select value={minDealSize} onValueChange={setMinDealSize}>
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="10000">$10,000+</SelectItem>
+                  <SelectItem value="50000">$50,000+</SelectItem>
+                  <SelectItem value="100000">$100,000+</SelectItem>
+                  <SelectItem value="250000">$250,000+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-300">Target Region</label>
+              <Select value={targetRegion} onValueChange={setTargetRegion}>
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="global">Global</SelectItem>
+                  <SelectItem value="na">North America</SelectItem>
+                  <SelectItem value="eu">Europe</SelectItem>
+                  <SelectItem value="apac">Asia Pacific</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+              onClick={() => setShowConfigDialog(false)}
+            >
+              Apply Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
