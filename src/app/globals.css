@@ -99,14 +99,12 @@ body {
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
+    background: rgba(24, 24, 27, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(20px);
+    background: rgba(24, 24, 27, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
@@ -141,7 +139,7 @@ body {
   }
 
   .card-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   @media (hover: hover) {
@@ -150,15 +148,6 @@ body {
       box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.08);
     }
   }
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
 }
 
 @keyframes pulse-glow {
@@ -202,7 +191,7 @@ body {
 }
 
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s ease-out forwards;
+  animation: fade-in-up 200ms ease-out forwards;
 }
 
 @keyframes slide-in-left {
@@ -218,21 +207,6 @@ body {
 
 .animate-slide-in-left {
   animation: slide-in-left 0.3s ease-out forwards;
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out forwards;
 }
 
 @keyframes orbit {

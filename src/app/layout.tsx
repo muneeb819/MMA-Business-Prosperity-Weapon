@@ -22,7 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground overflow-x-hidden`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <meta name="theme-color" content="#07080F" />
+      </head>
+      <body className={`${inter.variable} font-sans antialiased bg-[#07080F] text-foreground overflow-x-hidden`}>
         {children}
       </body>
     </html>
