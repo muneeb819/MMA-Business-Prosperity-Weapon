@@ -14,6 +14,7 @@ import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { mockNotifications } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
 import { NotificationStats } from "@/components/notifications/NotificationStats";
 import { NotificationList } from "@/components/notifications/NotificationList";
@@ -26,6 +27,7 @@ export default function NotificationsPage() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [showPreferences, setShowPreferences] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [prefs, setPrefs] = useState<Record<PreferenceKey, boolean>>({
@@ -34,6 +36,25 @@ export default function NotificationsPage() {
     governmentContracts: true,
     systemUpdates: false,
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchNotifications() {
+      setLoading(true);
+      try {
+        const data = await api.notifications.list();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setNotifications(data);
+        }
+      } catch {
+        // API unavailable — keep mockNotifications
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchNotifications();
+    return () => { cancelled = true; };
+  }, []);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -62,22 +83,45 @@ export default function NotificationsPage() {
     urgent: notifications.filter((n) => n.priority === "high" || n.type === "urgent").length,
   }), [notifications]);
 
-  const markAllRead = useCallback(() => {
+  const markAllRead = useCallback(async () => {
+    try {
+      await api.notifications.markAllRead();
+    } catch {
+      // API unavailable — continue with local state
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     showToast("All notifications marked as read");
   }, [showToast]);
 
-  const toggleRead = useCallback((id: string) => {
+  const toggleRead = useCallback(async (id: string) => {
+    const notif = notifications.find((n) => n.id === id);
+    if (notif && !notif.read) {
+      try {
+        await api.notifications.markRead(id);
+      } catch {
+        // API unavailable — continue with local state
+      }
+    }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n))
     );
-  }, []);
+  }, [notifications]);
 
-  const dismissNotification = useCallback((id: string) => {
+  const dismissNotification = useCallback(async (id: string) => {
+    try {
+      await api.notifications.dismiss(id);
+    } catch {
+      // API unavailable — continue with local state
+    }
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
+    try {
+      await api.notifications.clearAll();
+    } catch {
+      // API unavailable — continue with local state
+    }
     setNotifications([]);
     showToast("All notifications cleared");
   }, [showToast]);
@@ -109,7 +153,7 @@ export default function NotificationsPage() {
                 <div>
                   <h1 className="text-2xl font-bold text-white">Notification Center</h1>
                   <p className="text-sm text-slate-500">
-                    {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}` : "All caught up"}
+                    {loading ? "Loading..." : unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}` : "All caught up"}
                   </p>
                 </div>
               </div>

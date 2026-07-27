@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { formatCurrency } from "@/lib/utils";
 import { mockCompanies } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import type { CRMCompany } from "@/lib/types";
 import { CrmStats } from "@/components/crm/CrmStats";
 import { CompanyList } from "@/components/crm/CompanyList";
@@ -39,6 +40,26 @@ export default function CRMPage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [companies, setCompanies] = useState<CRMCompany[]>(mockCompanies);
   const [companyToDelete, setCompanyToDelete] = useState<CRMCompany | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchCompanies() {
+      setLoading(true);
+      try {
+        const data = await api.crm.companies.list();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setCompanies(data);
+        }
+      } catch {
+        // API unavailable — keep mockCompanies
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchCompanies();
+    return () => { cancelled = true; };
+  }, []);
 
   const filteredCompanies = companies.filter((c) => {
     const match = c.name.toLowerCase().includes(search.toLowerCase()) || c.industry.toLowerCase().includes(search.toLowerCase());
@@ -63,11 +84,18 @@ export default function CRMPage() {
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); }, []);
 
-  const handleAddContact = (data: { firstName: string; lastName: string; email: string; phone: string; role: string; company: string; notes: string }) => {
+  const handleAddContact = async (data: { firstName: string; lastName: string; email: string; phone: string; role: string; company: string; notes: string }) => {
     const name = `${data.firstName} ${data.lastName}`.trim();
     if (!name || !data.email) { showToast("Name and email are required"); return; }
     const newContact = { id: `contact-${Date.now()}`, name, email: data.email, phone: data.phone, role: data.role || "Unknown", companyId: "" };
     const target = data.company.trim();
+
+    try {
+      await api.crm.contacts.create({ ...newContact, companyName: target });
+    } catch {
+      // API unavailable — continue with local state
+    }
+
     if (target) {
       setCompanies((prev) => {
         const updated = prev.map((c) => c.name.toLowerCase() === target.toLowerCase() ? { ...c, contacts: [...c.contacts, newContact] } : c);
@@ -84,15 +112,39 @@ export default function CRMPage() {
     setShowAddContact(false);
   };
 
-  const handleAddCompany = (data: { name: string; industry: string; country: string; revenue: string; website: string; notes: string }) => {
+  const handleAddCompany = async (data: { name: string; industry: string; country: string; revenue: string; website: string; notes: string }) => {
     if (!data.name.trim()) { showToast("Company name is required"); return; }
-    setCompanies((prev) => [...prev, {
+
+    const newCompany: CRMCompany = {
       id: `company-${Date.now()}`, name: data.name.trim(), industry: data.industry || "Unknown",
       country: data.country || "Unknown", revenue: Number(data.revenue) || 0, status: "prospect",
       website: data.website, notes: data.notes, contacts: [], leads: [], createdAt: new Date().toISOString(),
-    }]);
+    };
+
+    try {
+      const result = await api.crm.companies.create(newCompany);
+      if (result && typeof result === "object" && result.id) {
+        newCompany.id = result.id;
+      }
+    } catch {
+      // API unavailable — continue with local state
+    }
+
+    setCompanies((prev) => [...prev, newCompany]);
     showToast("Company added successfully");
     setShowAddCompany(false);
+  };
+
+  const handleDeleteCompany = async () => {
+    if (!companyToDelete) return;
+    try {
+      await api.crm.companies.delete(companyToDelete.id);
+    } catch {
+      // API unavailable — continue with local state
+    }
+    setCompanies((p) => p.filter((c) => c.id !== companyToDelete.id));
+    showToast(`${companyToDelete.name} removed`);
+    setCompanyToDelete(null);
   };
 
   return (
@@ -114,6 +166,12 @@ export default function CRMPage() {
               <Button onClick={() => setShowAddContact(true)} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/20"><UserPlus className="w-4 h-4 mr-2" />Add Contact</Button>
             </div>
           </div>
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-zinc-400">Loading CRM data...</span>
+            </div>
+          )}
           <CrmStats stats={stats} />
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900/80 border border-zinc-800/80 p-1 h-auto">
@@ -158,7 +216,7 @@ export default function CRMPage() {
           </DialogHeader>
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="ghost" onClick={() => setCompanyToDelete(null)} className="text-zinc-400 hover:text-white">Cancel</Button>
-            <Button onClick={() => { if (companyToDelete) { setCompanies((p) => p.filter((c) => c.id !== companyToDelete.id)); showToast(`${companyToDelete.name} removed`); setCompanyToDelete(null); } }} className="bg-red-600 hover:bg-red-500 text-white">Delete</Button>
+            <Button onClick={handleDeleteCompany} className="bg-red-600 hover:bg-red-500 text-white">Delete</Button>
           </div>
         </DialogContent>
       </Dialog>

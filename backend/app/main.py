@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.models.database import create_tables
 from app.routers import leads, proposals, agents, analytics, search, notifications, crm
 
 app = FastAPI(
@@ -16,6 +17,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+def on_startup():
+    create_tables()
+
+
 app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
 app.include_router(proposals.router, prefix="/api/proposals", tags=["Proposals"])
 app.include_router(agents.router, prefix="/api/agents", tags=["AI Agents"])
@@ -23,6 +30,19 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"]
 app.include_router(search.router, prefix="/api/search", tags=["AI Search"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(crm.router, prefix="/api/crm", tags=["CRM"])
+
+
+@app.post("/api/seed")
+def seed_database():
+    from app.models.seed import seed_all
+    from app.models.database import SessionLocal
+    db = SessionLocal()
+    try:
+        result = seed_all(db)
+        return result
+    finally:
+        db.close()
+
 
 @app.get("/")
 async def root():
@@ -36,6 +56,7 @@ async def root():
             "proposal_generator": "active",
         },
     }
+
 
 @app.get("/health")
 async def health():

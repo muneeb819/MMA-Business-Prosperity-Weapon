@@ -1,19 +1,43 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockLeads } from "@/lib/mock-data";
 import { initialMockProposals } from "@/lib/mock-proposals";
+import { api } from "@/lib/api";
 import { ProposalStats } from "@/components/proposals/ProposalStats";
 import { ProposalFilters } from "@/components/proposals/ProposalFilters";
 import { ProposalGrid } from "@/components/proposals/ProposalGrid";
 import { ProposalDetailDialog } from "@/components/proposals/ProposalDetailDialog";
 import { MockProposal, SortOption, Toast } from "@/components/proposals/types";
 
+function mapApiProposalToMock(p: any): MockProposal {
+  return {
+    id: p.id,
+    title: p.title,
+    clientName: p.clientName || "Client",
+    company: p.company || "Company",
+    status: p.status,
+    winProbability: p.winProbability || 0,
+    budget: p.budget || 0,
+    createdAt: p.createdAt,
+    submittedAt: p.submittedAt,
+    sections: {
+      coverLetter: p.coverLetter || p.sections?.coverLetter || "",
+      introduction: p.introduction || p.sections?.introduction || "",
+      technicalPlan: p.technicalPlan || p.sections?.technicalPlan || "",
+      costEstimate: p.costEstimate || p.sections?.costEstimate || "",
+      callToAction: p.callToAction || p.sections?.callToAction || "",
+    },
+    portfolioSuggestions: p.portfolioSuggestions || [],
+  };
+}
+
 export default function ProposalsPage() {
   const [proposals, setProposals] = useState<MockProposal[]>(initialMockProposals);
+  const [loading, setLoading] = useState(true);
   const [selectedProposal, setSelectedProposal] = useState<MockProposal | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [genLeadId, setGenLeadId] = useState("");
@@ -27,6 +51,25 @@ export default function ProposalsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [detailTab, setDetailTab] = useState("cover");
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchProposals() {
+      setLoading(true);
+      try {
+        const data = await api.proposals.list();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setProposals(data.map(mapApiProposalToMock));
+        }
+      } catch {
+        // API unavailable — keep mockProposals
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchProposals();
+    return () => { cancelled = true; };
+  }, []);
 
   const showToast = useCallback((message: string, type: Toast["type"] = "info") => {
     const id = Date.now();
@@ -74,7 +117,12 @@ export default function ProposalsPage() {
   }, [proposals, statusFilter, searchQuery, sortBy]);
 
   const handleSubmitProposal = useCallback(
-    (proposalId: string) => {
+    async (proposalId: string) => {
+      try {
+        await api.proposals.submit(proposalId);
+      } catch {
+        // API unavailable — continue with local state
+      }
       setProposals((prev) =>
         prev.map((p) =>
           p.id === proposalId ? { ...p, status: "submitted", submittedAt: new Date().toISOString() } : p
@@ -91,16 +139,24 @@ export default function ProposalsPage() {
   );
 
   const handleDuplicateProposal = useCallback(
-    (proposal: MockProposal) => {
-      const duplicate: MockProposal = {
-        ...proposal,
-        id: `prop-${Date.now()}`,
-        title: `${proposal.title} (Copy)`,
-        status: "draft",
-        submittedAt: undefined,
-        createdAt: new Date().toISOString(),
-      };
-      setProposals((prev) => [duplicate, ...prev]);
+    async (proposal: MockProposal) => {
+      try {
+        const result = await api.proposals.duplicate(proposal.id);
+        if (result && typeof result === "object") {
+          setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
+        }
+      } catch {
+        // API unavailable — do local duplicate
+        const duplicate: MockProposal = {
+          ...proposal,
+          id: `prop-${Date.now()}`,
+          title: `${proposal.title} (Copy)`,
+          status: "draft",
+          submittedAt: undefined,
+          createdAt: new Date().toISOString(),
+        };
+        setProposals((prev) => [duplicate, ...prev]);
+      }
       setSelectedProposal(null);
       showToast("Proposal duplicated as draft", "success");
     },
@@ -112,8 +168,13 @@ export default function ProposalsPage() {
     setEditTitle(proposal.title);
   }, []);
 
-  const handleSaveEdit = useCallback(() => {
+  const handleSaveEdit = useCallback(async () => {
     if (!selectedProposal) return;
+    try {
+      await api.proposals.update(selectedProposal.id, { title: editTitle } as any);
+    } catch {
+      // API unavailable — continue with local state
+    }
     setProposals((prev) =>
       prev.map((p) => (p.id === selectedProposal.id ? { ...p, title: editTitle } : p))
     );
@@ -133,27 +194,39 @@ export default function ProposalsPage() {
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    await new Promise((r) => setTimeout(r, 2500));
-    const lead = mockLeads.find((l) => l.id === genLeadId);
-    const newProposal: MockProposal = {
-      id: `prop-${Date.now()}`,
-      title: `${lead?.title || "New"} Proposal`,
-      clientName: lead?.clientName || "Unknown",
-      company: lead?.company || "Unknown",
-      status: "draft",
-      winProbability: Math.floor(Math.random() * 40) + 50,
-      budget: lead ? Math.floor((lead.budget.min + lead.budget.max) / 2) : 50000,
-      createdAt: new Date().toISOString(),
-      sections: {
-        coverLetter: "AI-generated cover letter will appear here.",
-        introduction: "AI-generated introduction will appear here.",
-        technicalPlan: "AI-generated technical plan will appear here.",
-        costEstimate: "AI-generated cost estimate will appear here.",
-        callToAction: "AI-generated call to action will appear here.",
-      },
-      portfolioSuggestions: [],
-    };
-    setProposals((prev) => [newProposal, ...prev]);
+    try {
+      const result = await api.proposals.generate({
+        leadId: genLeadId,
+        tone: genTone,
+        instructions: genInstructions || undefined,
+      });
+      if (result && typeof result === "object") {
+        setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
+      }
+    } catch {
+      // API unavailable — do local generation
+      await new Promise((r) => setTimeout(r, 2500));
+      const lead = mockLeads.find((l) => l.id === genLeadId);
+      const newProposal: MockProposal = {
+        id: `prop-${Date.now()}`,
+        title: `${lead?.title || "New"} Proposal`,
+        clientName: lead?.clientName || "Unknown",
+        company: lead?.company || "Unknown",
+        status: "draft",
+        winProbability: Math.floor(Math.random() * 40) + 50,
+        budget: lead ? Math.floor((lead.budget.min + lead.budget.max) / 2) : 50000,
+        createdAt: new Date().toISOString(),
+        sections: {
+          coverLetter: "AI-generated cover letter will appear here.",
+          introduction: "AI-generated introduction will appear here.",
+          technicalPlan: "AI-generated technical plan will appear here.",
+          costEstimate: "AI-generated cost estimate will appear here.",
+          callToAction: "AI-generated call to action will appear here.",
+        },
+        portfolioSuggestions: [],
+      };
+      setProposals((prev) => [newProposal, ...prev]);
+    }
     setIsGenerating(false);
     setShowGenerateDialog(false);
     setGenLeadId("");
@@ -179,6 +252,12 @@ export default function ProposalsPage() {
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <ScrollArea className="flex-1 px-6 pb-6">
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-zinc-400">Loading proposals...</span>
+            </div>
+          )}
           <ProposalStats stats={stats} totalBudget={totalBudget} />
 
           <div className="mt-6 space-y-4">

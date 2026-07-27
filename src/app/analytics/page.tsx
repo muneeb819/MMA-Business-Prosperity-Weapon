@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatCurrency, formatNumber, cn } from "@/lib/utils";
 import { mockAnalytics } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import { AnalyticsData } from "@/lib/types";
 import { KpiCards } from "@/components/analytics/KpiCards";
 import { RevenueChart } from "@/components/analytics/RevenueChart";
@@ -33,6 +34,8 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 }
 
 export default function AnalyticsPage() {
+  const [data, setData] = useState<AnalyticsData>(mockAnalytics);
+  const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("1y");
   const [activeTab, setActiveTab] = useState("revenue");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,7 +48,25 @@ export default function AnalyticsPage() {
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const [showAllAgents, setShowAllAgents] = useState(false);
 
-  const data: AnalyticsData = mockAnalytics;
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchAnalytics() {
+      setLoading(true);
+      try {
+        const result = await api.analytics.get(selectedPeriod);
+        if (!cancelled && result && typeof result === "object" && "totalLeads" in result) {
+          setData(result);
+        }
+      } catch {
+        // API unavailable — keep mockAnalytics
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchAnalytics();
+    return () => { cancelled = true; };
+  }, [selectedPeriod]);
+
   const filteredMonthlyRevenue = useCallback(() => {
     const all = data.monthlyRevenue;
     switch (selectedPeriod) {
@@ -110,7 +131,7 @@ export default function AnalyticsPage() {
               <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 shrink-0"><BarChart3 className="w-6 h-6 text-violet-400" /></div>
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent truncate">Analytics</h1>
-                <p className="text-sm text-zinc-500 truncate">AI-powered business intelligence</p>
+                <p className="text-sm text-zinc-500 truncate">{loading ? "Loading analytics..." : "AI-powered business intelligence"}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0 flex-wrap">
@@ -131,6 +152,12 @@ export default function AnalyticsPage() {
               </Button>
             </div>
           </div>
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <span className="ml-3 text-sm text-zinc-400">Loading analytics data...</span>
+            </div>
+          )}
           <KpiCards kpis={kpis} />
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900/80 border border-zinc-800/80 p-1 h-auto">

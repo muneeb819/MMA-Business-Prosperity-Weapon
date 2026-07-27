@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check } from "lucide-react";
 import { mockLeads } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import type { Lead } from "@/lib/types";
 import { PAGE_SIZE, type SortKey } from "@/components/leads/leads-config";
 import LeadStats from "@/components/leads/LeadStats";
@@ -15,6 +16,7 @@ import LeadDetailDialog from "@/components/leads/LeadDetailDialog";
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
@@ -28,6 +30,29 @@ export default function LeadsPage() {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.seed().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchLeads() {
+      setLoading(true);
+      try {
+        const data = await api.leads.list();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setLeads(data);
+        }
+      } catch {
+        // API unavailable — keep mockLeads
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchLeads();
+    return () => { cancelled = true; };
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -111,7 +136,12 @@ export default function LeadsPage() {
     showToast(`Exported ${filteredLeads.length} leads`);
   }, [filteredLeads, showToast]);
 
-  const handleDeleteLead = useCallback((leadId: string) => {
+  const handleDeleteLead = useCallback(async (leadId: string) => {
+    try {
+      await api.leads.delete(leadId);
+    } catch {
+      // API unavailable — continue with local state
+    }
     setLeads((prev) => prev.filter((l) => l.id !== leadId));
     setDeletedIds((prev) => new Set(prev).add(leadId));
     setSelectedLead(null);
@@ -120,7 +150,15 @@ export default function LeadsPage() {
     showToast("Lead deleted");
   }, [showToast]);
 
-  const handleArchiveLead = useCallback((leadId: string) => {
+  const handleArchiveLead = useCallback(async (leadId: string) => {
+    const isArchiving = !archivedIds.has(leadId);
+    try {
+      if (isArchiving) {
+        await api.leads.archive(leadId);
+      }
+    } catch {
+      // API unavailable — continue with local state
+    }
     setArchivedIds((prev) => {
       const next = new Set(prev);
       if (next.has(leadId)) { next.delete(leadId); showToast("Lead unarchived"); }
@@ -129,9 +167,14 @@ export default function LeadsPage() {
     });
     setSelectedLead(null);
     setEditingLeadId(null);
-  }, [showToast]);
+  }, [archivedIds, showToast]);
 
-  const handleSaveLead = useCallback((leadId: string, form: Partial<Lead>) => {
+  const handleSaveLead = useCallback(async (leadId: string, form: Partial<Lead>) => {
+    try {
+      await api.leads.update(leadId, form);
+    } catch {
+      // API unavailable — continue with local state
+    }
     setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...form } : l)));
     setSelectedLead((prev) => (prev && prev.id === leadId ? { ...prev, ...form } : prev));
     showToast("Changes saved");
@@ -165,6 +208,12 @@ export default function LeadsPage() {
         <TopBar />
         <ScrollArea className="flex-1">
           <div className="px-6 pb-6">
+            {loading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                <span className="ml-3 text-sm text-zinc-400">Loading leads...</span>
+              </div>
+            )}
             <LeadStats activeLeadCount={activeLeadCount} totalBudget={totalBudget} avgProbability={avgProbability} statusCounts={statusCounts} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
             <LeadFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} statusFilter={statusFilter} setStatusFilter={setStatusFilter} urgencyFilter={urgencyFilter} setUrgencyFilter={setUrgencyFilter} sortBy={sortBy} setSortBy={setSortBy} viewMode={viewMode} setViewMode={setViewMode} filteredLeadsLength={filteredLeads.length} showCount={showCount} clearFilters={clearFilters} handleExport={handleExport} />
             <LeadGrid visibleLeads={visibleLeads} viewMode={viewMode} onSelectLead={setSelectedLead} hasMore={hasMore} filteredLeadsLength={filteredLeads.length} showCount={showCount} onShowMore={handleShowMore} clearFilters={clearFilters} />
