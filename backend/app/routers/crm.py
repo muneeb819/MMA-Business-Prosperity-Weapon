@@ -57,7 +57,7 @@ class ContactBase(BaseModel):
     email: str = ""
     phone: str = ""
     role: str = ""
-    company_id: Optional[str] = None
+    companyId: Optional[str] = None
 
 
 class ContactResponse(BaseModel):
@@ -66,7 +66,7 @@ class ContactResponse(BaseModel):
     email: str = ""
     phone: str = ""
     role: str = ""
-    company_id: Optional[str] = None
+    companyId: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -82,6 +82,7 @@ def _company_to_dict(company: Company, contacts: List[Contact] = None) -> dict:
         "revenue": company.revenue or 0,
         "status": company.status or "prospect",
         "notes": company.notes or "",
+        "leads": [],
         "contacts": [
             {
                 "id": c.id,
@@ -89,11 +90,11 @@ def _company_to_dict(company: Company, contacts: List[Contact] = None) -> dict:
                 "email": c.email or "",
                 "phone": c.phone or "",
                 "role": c.role or "",
-                "company_id": c.company_id,
+                "companyId": c.company_id,
             }
             for c in (contacts or [])
         ],
-        "created_at": company.created_at.isoformat() if company.created_at else None,
+        "createdAt": company.created_at.isoformat() if company.created_at else None,
     }
 
 
@@ -107,7 +108,7 @@ def _company_list_dict(company: Company) -> dict:
         "revenue": company.revenue or 0,
         "status": company.status or "prospect",
         "notes": company.notes or "",
-        "created_at": company.created_at.isoformat() if company.created_at else None,
+        "createdAt": company.created_at.isoformat() if company.created_at else None,
     }
 
 
@@ -118,13 +119,13 @@ def _contact_to_dict(contact: Contact) -> dict:
         "email": contact.email or "",
         "phone": contact.phone or "",
         "role": contact.role or "",
-        "company_id": contact.company_id,
+        "companyId": contact.company_id,
     }
 
 
 # --- Company Endpoints ---
 
-@router.get("/companies", response_model=List[CompanyListItem])
+@router.get("/companies")
 def get_companies(
     search: Optional[str] = None,
     status: Optional[str] = None,
@@ -160,7 +161,7 @@ def get_company(company_id: str, db: Session = Depends(get_db)):
     return _company_to_dict(company, contacts)
 
 
-@router.post("/companies", response_model=CompanyListItem, status_code=201)
+@router.post("/companies", status_code=201)
 def create_company(company: CompanyBase, db: Session = Depends(get_db)):
     db_company = Company(
         id=str(uuid.uuid4()),
@@ -179,7 +180,7 @@ def create_company(company: CompanyBase, db: Session = Depends(get_db)):
     return _company_list_dict(db_company)
 
 
-@router.put("/companies/{company_id}", response_model=CompanyListItem)
+@router.put("/companies/{company_id}")
 def update_company(company_id: str, company: CompanyBase, db: Session = Depends(get_db)):
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
@@ -212,7 +213,7 @@ def delete_company(company_id: str, db: Session = Depends(get_db)):
 
 # --- Contact Endpoints ---
 
-@router.get("/contacts", response_model=List[ContactResponse])
+@router.get("/contacts")
 def get_contacts(
     search: Optional[str] = None,
     company_id: Optional[str] = None,
@@ -238,7 +239,7 @@ def get_contacts(
     return [_contact_to_dict(c) for c in contacts]
 
 
-@router.get("/contacts/{contact_id}", response_model=ContactResponse)
+@router.get("/contacts/{contact_id}")
 def get_contact(contact_id: str, db: Session = Depends(get_db)):
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if not contact:
@@ -246,7 +247,7 @@ def get_contact(contact_id: str, db: Session = Depends(get_db)):
     return _contact_to_dict(contact)
 
 
-@router.post("/contacts", response_model=ContactResponse, status_code=201)
+@router.post("/contacts", status_code=201)
 def create_contact(contact: ContactBase, db: Session = Depends(get_db)):
     db_contact = Contact(
         id=str(uuid.uuid4()),
@@ -254,7 +255,7 @@ def create_contact(contact: ContactBase, db: Session = Depends(get_db)):
         email=contact.email,
         phone=contact.phone,
         role=contact.role,
-        company_id=contact.company_id,
+        company_id=contact.companyId,
     )
     db.add(db_contact)
     db.commit()
@@ -262,7 +263,7 @@ def create_contact(contact: ContactBase, db: Session = Depends(get_db)):
     return _contact_to_dict(db_contact)
 
 
-@router.put("/contacts/{contact_id}", response_model=ContactResponse)
+@router.put("/contacts/{contact_id}")
 def update_contact(contact_id: str, contact: ContactBase, db: Session = Depends(get_db)):
     db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if not db_contact:
@@ -272,7 +273,7 @@ def update_contact(contact_id: str, contact: ContactBase, db: Session = Depends(
     db_contact.email = contact.email
     db_contact.phone = contact.phone
     db_contact.role = contact.role
-    db_contact.company_id = contact.company_id
+    db_contact.company_id = contact.companyId
 
     db.commit()
     db.refresh(db_contact)

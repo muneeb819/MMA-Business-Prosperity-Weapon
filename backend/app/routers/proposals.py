@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 class ProposalBase(BaseModel):
-    lead_id: str
+    leadId: str
     title: str
     cover_letter: str = ""
     introduction: str = ""
@@ -25,7 +25,7 @@ class ProposalBase(BaseModel):
 
 class ProposalResponse(BaseModel):
     id: str
-    lead_id: str
+    leadId: str
     title: str
     cover_letter: str = ""
     introduction: str = ""
@@ -50,25 +50,36 @@ class GenerateRequest(BaseModel):
 
 
 def _proposal_to_dict(prop: Proposal) -> dict:
+    lead = prop.lead if prop.lead_id else None
     return {
         "id": prop.id,
-        "lead_id": prop.lead_id or "",
+        "leadId": prop.lead_id or "",
         "title": prop.title,
-        "cover_letter": prop.cover_letter or "",
+        "clientName": (lead.client_name or "Client") if lead else "Client",
+        "company": (lead.company or "Company") if lead else "Company",
+        "coverLetter": prop.cover_letter or "",
         "introduction": prop.introduction or "",
-        "technical_plan": prop.technical_plan or "",
+        "technicalPlan": prop.technical_plan or "",
         "timeline": prop.timeline or "",
-        "cost_estimate": prop.cost_estimate or "",
-        "portfolio_suggestions": prop.portfolio_suggestions or [],
-        "call_to_action": prop.call_to_action or "",
-        "win_probability": prop.win_probability or 0,
+        "costEstimate": prop.cost_estimate or "",
+        "portfolioSuggestions": prop.portfolio_suggestions or [],
+        "callToAction": prop.call_to_action or "",
+        "winProbability": prop.win_probability or 0,
+        "budget": ((lead.budget_min or 0) + (lead.budget_max or 0)) / 2 if lead else 0,
         "status": prop.status or "draft",
-        "created_at": prop.created_at.isoformat() if prop.created_at else None,
-        "submitted_at": prop.submitted_at.isoformat() if prop.submitted_at else None,
+        "createdAt": prop.created_at.isoformat() if prop.created_at else None,
+        "submittedAt": prop.submitted_at.isoformat() if prop.submitted_at else None,
+        "sections": {
+            "coverLetter": prop.cover_letter or "",
+            "introduction": prop.introduction or "",
+            "technicalPlan": prop.technical_plan or "",
+            "costEstimate": prop.cost_estimate or "",
+            "callToAction": prop.call_to_action or "",
+        },
     }
 
 
-@router.get("/", response_model=List[ProposalResponse])
+@router.get("/")
 def get_proposals(
     status: Optional[str] = None,
     lead_id: Optional[str] = None,
@@ -87,7 +98,7 @@ def get_proposals(
     return [_proposal_to_dict(p) for p in proposals]
 
 
-@router.get("/{proposal_id}", response_model=ProposalResponse)
+@router.get("/{proposal_id}")
 def get_proposal(proposal_id: str, db: Session = Depends(get_db)):
     prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
     if not prop:
@@ -95,11 +106,11 @@ def get_proposal(proposal_id: str, db: Session = Depends(get_db)):
     return _proposal_to_dict(prop)
 
 
-@router.post("/", response_model=ProposalResponse, status_code=201)
+@router.post("/", status_code=201)
 def create_proposal(proposal: ProposalBase, db: Session = Depends(get_db)):
     db_prop = Proposal(
         id=str(uuid.uuid4()),
-        lead_id=proposal.lead_id,
+        lead_id=proposal.leadId,
         title=proposal.title,
         cover_letter=proposal.cover_letter,
         introduction=proposal.introduction,
@@ -117,13 +128,13 @@ def create_proposal(proposal: ProposalBase, db: Session = Depends(get_db)):
     return _proposal_to_dict(db_prop)
 
 
-@router.put("/{proposal_id}", response_model=ProposalResponse)
+@router.put("/{proposal_id}")
 def update_proposal(proposal_id: str, proposal: ProposalBase, db: Session = Depends(get_db)):
     db_prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
     if not db_prop:
         raise HTTPException(status_code=404, detail="Proposal not found")
 
-    db_prop.lead_id = proposal.lead_id
+    db_prop.lead_id = proposal.leadId
     db_prop.title = proposal.title
     db_prop.cover_letter = proposal.cover_letter
     db_prop.introduction = proposal.introduction
@@ -149,7 +160,7 @@ def delete_proposal(proposal_id: str, db: Session = Depends(get_db)):
     return {"message": "Proposal deleted successfully"}
 
 
-@router.post("/{proposal_id}/submit", response_model=ProposalResponse)
+@router.post("/{proposal_id}/submit")
 def submit_proposal(proposal_id: str, db: Session = Depends(get_db)):
     db_prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
     if not db_prop:
@@ -167,7 +178,7 @@ def submit_proposal(proposal_id: str, db: Session = Depends(get_db)):
     return _proposal_to_dict(db_prop)
 
 
-@router.post("/{proposal_id}/duplicate", response_model=ProposalResponse, status_code=201)
+@router.post("/{proposal_id}/duplicate", status_code=201)
 def duplicate_proposal(proposal_id: str, db: Session = Depends(get_db)):
     db_prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
     if not db_prop:
@@ -194,7 +205,7 @@ def duplicate_proposal(proposal_id: str, db: Session = Depends(get_db)):
     return _proposal_to_dict(new_prop)
 
 
-@router.post("/generate", response_model=ProposalResponse, status_code=201)
+@router.post("/generate", status_code=201)
 async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_db)):
     db_lead = db.query(Lead).filter(Lead.id == request.leadId).first()
     if not db_lead:

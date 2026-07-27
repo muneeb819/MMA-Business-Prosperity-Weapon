@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case, distinct, text
+from sqlalchemy import func
 from typing import List
 from pydantic import BaseModel
 from app.models.database import get_db
@@ -44,18 +44,18 @@ class IndustryTrend(BaseModel):
 
 
 class DashboardAnalytics(BaseModel):
-    total_leads: int
-    total_proposals: int
-    win_rate: float
-    total_revenue: float
-    avg_deal_size: float
-    conversion_rate: float
-    top_countries: List[CountryStat]
-    top_technologies: List[TechStat]
-    monthly_revenue: List[MonthlyRevenue]
-    platform_breakdown: List[PlatformStat]
-    agent_performance: List[AgentPerf]
-    industry_trends: List[IndustryTrend]
+    totalLeads: int
+    totalProposals: int
+    winRate: float
+    totalRevenue: float
+    avgDealSize: float
+    conversionRate: float
+    topCountries: List[CountryStat]
+    topTechnologies: List[TechStat]
+    monthlyRevenue: List[MonthlyRevenue]
+    platformBreakdown: List[PlatformStat]
+    agentPerformance: List[AgentPerf]
+    industryTrends: List[IndustryTrend]
 
 
 def _safe_float(val, default=0.0):
@@ -141,11 +141,11 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
 
     proposal_counts_raw = (
         db.query(
-            func.extract("month", Proposal.created_at).label("month"),
+            func.strftime("%m", Proposal.created_at).label("month"),
             func.count(Proposal.id).label("cnt"),
         )
         .filter(Proposal.created_at.isnot(None))
-        .group_by(text("month"))
+        .group_by(func.strftime("%m", Proposal.created_at))
         .all()
     )
     for month_num, cnt in proposal_counts_raw:
@@ -202,18 +202,18 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
     ]
 
     return DashboardAnalytics(
-        total_leads=total_leads,
-        total_proposals=total_proposals,
-        win_rate=win_rate,
-        total_revenue=total_revenue,
-        avg_deal_size=round(avg_deal_size, 2),
-        conversion_rate=conversion_rate,
-        top_countries=top_countries,
-        top_technologies=top_technologies,
-        monthly_revenue=monthly_revenue,
-        platform_breakdown=platform_breakdown,
-        agent_performance=agent_performance,
-        industry_trends=industry_trends,
+        totalLeads=total_leads,
+        totalProposals=total_proposals,
+        winRate=win_rate,
+        totalRevenue=total_revenue,
+        avgDealSize=round(avg_deal_size, 2),
+        conversionRate=conversion_rate,
+        topCountries=top_countries,
+        topTechnologies=top_technologies,
+        monthlyRevenue=monthly_revenue,
+        platformBreakdown=platform_breakdown,
+        agentPerformance=agent_performance,
+        industryTrends=industry_trends,
     )
 
 
@@ -243,11 +243,11 @@ def get_revenue_analytics(db: Session = Depends(get_db)):
 
     proposal_data = (
         db.query(
-            func.extract("month", Proposal.created_at).label("month"),
+            func.strftime("%m", Proposal.created_at).label("month"),
             func.count(Proposal.id).label("cnt"),
         )
         .filter(Proposal.created_at.isnot(None))
-        .group_by(text("month"))
+        .group_by(func.strftime("%m", Proposal.created_at))
         .all()
     )
     for month_num, cnt in proposal_data:

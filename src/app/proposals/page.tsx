@@ -14,24 +14,25 @@ import { ProposalDetailDialog } from "@/components/proposals/ProposalDetailDialo
 import { MockProposal, SortOption, Toast } from "@/components/proposals/types";
 
 function mapApiProposalToMock(p: any): MockProposal {
+  const sections = p.sections || {};
   return {
     id: p.id,
     title: p.title,
     clientName: p.clientName || "Client",
     company: p.company || "Company",
-    status: p.status,
+    status: p.status || "draft",
     winProbability: p.winProbability || 0,
-    budget: p.budget || 0,
-    createdAt: p.createdAt,
-    submittedAt: p.submittedAt,
+    budget: typeof p.budget === "number" ? p.budget : (p.budget?.max || p.budget_max || 0),
+    createdAt: p.createdAt || p.created_at || new Date().toISOString(),
+    submittedAt: p.submittedAt || p.submitted_at || undefined,
     sections: {
-      coverLetter: p.coverLetter || p.sections?.coverLetter || "",
-      introduction: p.introduction || p.sections?.introduction || "",
-      technicalPlan: p.technicalPlan || p.sections?.technicalPlan || "",
-      costEstimate: p.costEstimate || p.sections?.costEstimate || "",
-      callToAction: p.callToAction || p.sections?.callToAction || "",
+      coverLetter: p.coverLetter || sections.coverLetter || p.cover_letter || "",
+      introduction: p.introduction || sections.introduction || "",
+      technicalPlan: p.technicalPlan || sections.technicalPlan || p.technical_plan || "",
+      costEstimate: p.costEstimate || sections.costEstimate || p.cost_estimate || "",
+      callToAction: p.callToAction || sections.callToAction || p.call_to_action || "",
     },
-    portfolioSuggestions: p.portfolioSuggestions || [],
+    portfolioSuggestions: p.portfolioSuggestions || p.portfolio_suggestions || [],
   };
 }
 

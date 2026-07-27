@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import uuid
+import random
 from sqlalchemy.orm import Session
 
 from app.models.database import SessionLocal
@@ -123,7 +124,6 @@ def sync_connector(connector_id: str):
         connector.status = "syncing"
         connector.last_sync_at = datetime.utcnow()
         connector.sync_count += 1
-        import random
         new_leads = random.randint(1, 8)
         connector.leads_found += new_leads
         connector.updated_at = datetime.utcnow()

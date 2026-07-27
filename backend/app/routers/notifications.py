@@ -28,14 +28,14 @@ def _notif_to_dict(n: Notification) -> dict:
         "type": n.type or "system",
         "title": n.title,
         "message": n.message or "",
-        "lead_id": n.lead_id,
+        "leadId": n.lead_id,
         "read": n.read or False,
         "priority": n.priority or "medium",
-        "created_at": n.created_at.isoformat() if n.created_at else None,
+        "createdAt": n.created_at.isoformat() if n.created_at else None,
     }
 
 
-@router.get("/", response_model=List[NotificationResponse])
+@router.get("/")
 def get_notifications(
     filter_type: Optional[str] = Query(None, alias="filter"),
     skip: int = Query(0, ge=0),
@@ -55,7 +55,7 @@ def get_notifications(
     return [_notif_to_dict(n) for n in notifications]
 
 
-@router.put("/{notification_id}/read", response_model=NotificationResponse)
+@router.put("/{notification_id}/read")
 def toggle_notification_read(notification_id: str, db: Session = Depends(get_db)):
     n = db.query(Notification).filter(Notification.id == notification_id).first()
     if not n:

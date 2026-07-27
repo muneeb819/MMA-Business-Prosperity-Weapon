@@ -43,7 +43,22 @@ export default function LeadsPage() {
       try {
         const data = await api.leads.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setLeads(data);
+          const mapped = data.map((l: any) => ({
+            ...l,
+            clientName: l.clientName || l.client_name || "",
+            budget: l.budget || { min: l.budget_min || 0, max: l.budget_max || 0 },
+            jobType: l.jobType || l.job_type || "contract",
+            riskLevel: l.riskLevel || l.risk_level || "low",
+            successProbability: l.successProbability ?? l.success_probability ?? 50,
+            expectedRevenue: l.expectedRevenue ?? l.expected_revenue ?? 0,
+            projectSize: l.projectSize || l.project_size || "medium",
+            paymentMethod: l.paymentMethod || l.payment_method || "Escrow",
+            clientHistory: l.clientHistory || l.client_history || "",
+            foundAt: l.foundAt || l.found_at || new Date().toISOString(),
+            analyzedAt: l.analyzedAt || l.analyzed_at || undefined,
+            proposalId: l.proposalId || l.proposal_id || "",
+          }));
+          setLeads(mapped as Lead[]);
         }
       } catch {
         // API unavailable — keep mockLeads

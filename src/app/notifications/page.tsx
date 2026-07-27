@@ -44,7 +44,11 @@ export default function NotificationsPage() {
       try {
         const data = await api.notifications.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setNotifications(data);
+          setNotifications(data.map((n: any) => ({
+            ...n,
+            leadId: n.leadId || n.lead_id || undefined,
+            createdAt: n.createdAt || n.created_at || new Date().toISOString(),
+          })));
         }
       } catch {
         // API unavailable — keep mockNotifications

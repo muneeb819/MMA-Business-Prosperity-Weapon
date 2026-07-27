@@ -12,28 +12,28 @@ router = APIRouter()
 class LeadBase(BaseModel):
     title: str
     description: str = ""
-    client_name: str = ""
+    clientName: str = ""
     company: str = ""
     email: str = ""
     phone: str = ""
     country: str = ""
-    budget_min: float = 0
-    budget_max: float = 0
+    budgetMin: float = 0
+    budgetMax: float = 0
     deadline: str = ""
     technologies: List[str] = []
     skills: List[str] = []
     platform: str = ""
-    job_type: str = ""
+    jobType: str = ""
     status: str = "new"
     urgency: str = "medium"
     difficulty: float = 50
-    success_probability: float = 50
-    risk_level: str = "medium"
-    expected_revenue: float = 0
+    successProbability: float = 50
+    riskLevel: str = "medium"
+    expectedRevenue: float = 0
     competition: int = 0
-    project_size: str = "medium"
-    payment_method: str = "Escrow"
-    client_history: str = ""
+    projectSize: str = "medium"
+    paymentMethod: str = "Escrow"
+    clientHistory: str = ""
     url: str = ""
     notes: str = ""
     tags: List[str] = []
@@ -43,13 +43,13 @@ class LeadResponse(BaseModel):
     id: str
     title: str
     description: str = ""
-    client_name: str = ""
+    clientName: str = ""
     company: str = ""
     email: str = ""
     phone: str = ""
     country: str = ""
-    budget_min: float = 0
-    budget_max: float = 0
+    budgetMin: float = 0
+    budgetMax: float = 0
     deadline: str = ""
     technologies: List[str] = []
     skills: List[str] = []
@@ -90,37 +90,37 @@ def _lead_to_dict(lead: Lead) -> dict:
         "id": lead.id,
         "title": lead.title,
         "description": lead.description or "",
-        "client_name": lead.client_name or "",
+        "clientName": lead.client_name or "",
         "company": lead.company or "",
         "email": lead.email or "",
         "phone": lead.phone or "",
         "country": lead.country or "",
-        "budget_min": lead.budget_min or 0,
-        "budget_max": lead.budget_max or 0,
+        "budget": {"min": lead.budget_min or 0, "max": lead.budget_max or 0},
         "deadline": lead.deadline or "",
         "technologies": lead.technologies or [],
         "skills": lead.skills or [],
         "platform": lead.platform or "",
-        "job_type": lead.job_type or "",
+        "jobType": lead.job_type or "",
         "status": lead.status or "new",
         "urgency": lead.urgency or "medium",
         "difficulty": lead.difficulty or 50,
-        "success_probability": lead.success_probability or 50,
-        "risk_level": lead.risk_level or "medium",
-        "expected_revenue": lead.expected_revenue or 0,
+        "successProbability": lead.success_probability or 50,
+        "riskLevel": lead.risk_level or "medium",
+        "expectedRevenue": lead.expected_revenue or 0,
         "competition": lead.competition or 0,
-        "project_size": lead.project_size or "medium",
-        "payment_method": lead.payment_method or "Escrow",
-        "client_history": lead.client_history or "",
+        "projectSize": lead.project_size or "medium",
+        "paymentMethod": lead.payment_method or "Escrow",
+        "clientHistory": lead.client_history or "",
         "url": lead.url or "",
         "notes": lead.notes or "",
         "tags": lead.tags or [],
-        "found_at": lead.found_at.isoformat() if lead.found_at else None,
-        "analyzed_at": lead.analyzed_at.isoformat() if lead.analyzed_at else None,
+        "foundAt": lead.found_at.isoformat() if lead.found_at else None,
+        "analyzedAt": lead.analyzed_at.isoformat() if lead.analyzed_at else None,
+        "proposalId": "",
     }
 
 
-@router.get("/", response_model=List[LeadResponse])
+@router.get("/")
 def get_leads(
     status: Optional[str] = None,
     urgency: Optional[str] = None,
@@ -140,7 +140,14 @@ def get_leads(
     if country:
         query = query.filter(Lead.country == country)
     if technology:
-        query = query.filter(Lead.technologies.any(technology))
+        try:
+            query = query.filter(Lead.technologies.any(technology))
+        except Exception:
+            all_leads = query.all()
+            query = db.query(Lead).filter(Lead.id.in_([
+                l.id for l in all_leads
+                if l.technologies and technology in l.technologies
+            ]))
     if search:
         search_term = f"%{search}%"
         query = query.filter(
@@ -177,7 +184,7 @@ def get_lead_stats(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/{lead_id}", response_model=LeadResponse)
+@router.get("/{lead_id}")
 def get_lead(lead_id: str, db: Session = Depends(get_db)):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not lead:
@@ -185,35 +192,35 @@ def get_lead(lead_id: str, db: Session = Depends(get_db)):
     return _lead_to_dict(lead)
 
 
-@router.post("/", response_model=LeadResponse, status_code=201)
+@router.post("/", status_code=201)
 def create_lead(lead: LeadBase, db: Session = Depends(get_db)):
     import uuid
     db_lead = Lead(
         id=str(uuid.uuid4()),
         title=lead.title,
         description=lead.description,
-        client_name=lead.client_name,
+        client_name=lead.clientName,
         company=lead.company,
         email=lead.email,
         phone=lead.phone,
         country=lead.country,
-        budget_min=lead.budget_min,
-        budget_max=lead.budget_max,
+        budget_min=lead.budgetMin,
+        budget_max=lead.budgetMax,
         deadline=lead.deadline,
         technologies=lead.technologies,
         skills=lead.skills,
         platform=lead.platform,
-        job_type=lead.job_type,
+        job_type=lead.jobType,
         status=lead.status,
         urgency=lead.urgency,
         difficulty=lead.difficulty,
-        success_probability=lead.success_probability,
-        risk_level=lead.risk_level,
-        expected_revenue=lead.expected_revenue,
+        success_probability=lead.successProbability,
+        risk_level=lead.riskLevel,
+        expected_revenue=lead.expectedRevenue,
         competition=lead.competition,
-        project_size=lead.project_size,
-        payment_method=lead.payment_method,
-        client_history=lead.client_history,
+        project_size=lead.projectSize,
+        payment_method=lead.paymentMethod,
+        client_history=lead.clientHistory,
         url=lead.url,
         notes=lead.notes,
         tags=lead.tags,
@@ -224,7 +231,7 @@ def create_lead(lead: LeadBase, db: Session = Depends(get_db)):
     return _lead_to_dict(db_lead)
 
 
-@router.put("/{lead_id}", response_model=LeadResponse)
+@router.put("/{lead_id}")
 def update_lead(lead_id: str, lead: LeadBase, db: Session = Depends(get_db)):
     db_lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not db_lead:
@@ -232,28 +239,28 @@ def update_lead(lead_id: str, lead: LeadBase, db: Session = Depends(get_db)):
 
     db_lead.title = lead.title
     db_lead.description = lead.description
-    db_lead.client_name = lead.client_name
+    db_lead.client_name = lead.clientName
     db_lead.company = lead.company
     db_lead.email = lead.email
     db_lead.phone = lead.phone
     db_lead.country = lead.country
-    db_lead.budget_min = lead.budget_min
-    db_lead.budget_max = lead.budget_max
+    db_lead.budget_min = lead.budgetMin
+    db_lead.budget_max = lead.budgetMax
     db_lead.deadline = lead.deadline
     db_lead.technologies = lead.technologies
     db_lead.skills = lead.skills
     db_lead.platform = lead.platform
-    db_lead.job_type = lead.job_type
+    db_lead.job_type = lead.jobType
     db_lead.status = lead.status
     db_lead.urgency = lead.urgency
     db_lead.difficulty = lead.difficulty
-    db_lead.success_probability = lead.success_probability
-    db_lead.risk_level = lead.risk_level
-    db_lead.expected_revenue = lead.expected_revenue
+    db_lead.success_probability = lead.successProbability
+    db_lead.risk_level = lead.riskLevel
+    db_lead.expected_revenue = lead.expectedRevenue
     db_lead.competition = lead.competition
-    db_lead.project_size = lead.project_size
-    db_lead.payment_method = lead.payment_method
-    db_lead.client_history = lead.client_history
+    db_lead.project_size = lead.projectSize
+    db_lead.payment_method = lead.paymentMethod
+    db_lead.client_history = lead.clientHistory
     db_lead.url = lead.url
     db_lead.notes = lead.notes
     db_lead.tags = lead.tags
@@ -274,7 +281,7 @@ def delete_lead(lead_id: str, db: Session = Depends(get_db)):
     return {"message": "Lead deleted successfully"}
 
 
-@router.put("/{lead_id}/archive", response_model=LeadResponse)
+@router.put("/{lead_id}/archive")
 def toggle_archive_lead(lead_id: str, db: Session = Depends(get_db)):
     db_lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not db_lead:
