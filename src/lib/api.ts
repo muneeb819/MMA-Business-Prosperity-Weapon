@@ -87,7 +87,18 @@ export const api = {
   },
   search: {
     search: (data: any) =>
-      fetchAPI("/api/search", { method: "POST", body: JSON.stringify(data) }),
+      fetchAPI("/api/search/natural-language", { method: "POST", body: JSON.stringify(data) }),
+    sources: () => fetchAPI("/api/search/sources"),
+    toggleSource: (name: string) =>
+      fetchAPI(`/api/search/sources/${name}/toggle`, { method: "POST" }),
+  },
+  ai: {
+    status: () => fetchAPI("/api/ai/status"),
+    insights: () => fetchAPI("/api/ai/insights"),
+    interpret: (query: string) =>
+      fetchAPI("/api/ai/interpret", { method: "POST", body: JSON.stringify({ query }) }),
+    analyzeLead: (leadId: string) =>
+      fetchAPI(`/api/leads/${leadId}/analyze`, { method: "POST" }),
   },
   agents: {
     list: () => fetchAPI("/api/agents"),

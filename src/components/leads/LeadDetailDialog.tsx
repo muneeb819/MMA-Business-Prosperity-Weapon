@@ -48,6 +48,8 @@ interface LeadDetailDialogProps {
   onGenerateProposal: (lead: Lead) => void;
   onSendEmail: (lead: Lead) => void;
   onViewOriginal: (lead: Lead) => void;
+  onAnalyze?: (lead: Lead) => void;
+  analyzingLeadId?: string | null;
 }
 
 const LeadDetailDialog = memo(function LeadDetailDialog({
@@ -67,6 +69,8 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
   onGenerateProposal,
   onSendEmail,
   onViewOriginal,
+  onAnalyze,
+  analyzingLeadId,
 }: LeadDetailDialogProps) {
   const handleClose = () => {
     setSelectedLead(null);
@@ -276,6 +280,24 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                     >
                       <FileText className="w-4 h-4 mr-2" />
                       Generate Proposal
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => onAnalyze?.(selectedLead)}
+                      disabled={analyzingLeadId === selectedLead.id}
+                      className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-white h-11 disabled:opacity-50"
+                    >
+                      {analyzingLeadId === selectedLead.id ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          AI Analyze
+                        </>
+                      )}
                     </Button>
                     <Button
                       variant="outline"

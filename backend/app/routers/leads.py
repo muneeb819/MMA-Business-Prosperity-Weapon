@@ -300,8 +300,15 @@ async def analyze_lead(lead_id: str, db: Session = Depends(get_db)):
     analysis = await ai_service.analyze_lead({
         "title": db_lead.title,
         "description": db_lead.description,
+        "budget_min": db_lead.budget_min,
         "budget_max": db_lead.budget_max,
         "country": db_lead.country,
+        "technologies": db_lead.technologies or [],
+        "platform": db_lead.platform,
+        "job_type": db_lead.job_type,
+        "client_name": db_lead.client_name,
+        "company": db_lead.company,
+        "competition": db_lead.competition,
     })
 
     db_lead.success_probability = analysis.get("success_probability", db_lead.success_probability)
@@ -309,6 +316,14 @@ async def analyze_lead(lead_id: str, db: Session = Depends(get_db)):
     db_lead.risk_level = analysis.get("risk_level", db_lead.risk_level)
     db_lead.expected_revenue = analysis.get("expected_revenue", db_lead.expected_revenue)
     db_lead.status = "qualified"
+    db_lead.notes = analysis.get("recommendation", db_lead.notes or "")
+
+    existing_tags = list(db_lead.tags or [])
+    new_tags = analysis.get("tags", [])
+    for t in new_tags:
+        if t not in existing_tags:
+            existing_tags.append(t)
+    db_lead.tags = existing_tags
 
     from datetime import datetime
     db_lead.analyzed_at = datetime.utcnow()

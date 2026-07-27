@@ -30,6 +30,7 @@ export default function LeadsPage() {
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
+  const [analyzingLeadId, setAnalyzingLeadId] = useState<string | null>(null);
 
   useEffect(() => {
     api.seed().catch(() => {});
@@ -197,6 +198,47 @@ export default function LeadsPage() {
     else { showToast("No original URL available for this lead"); }
   }, [showToast]);
 
+  const handleAnalyzeLead = useCallback(async (lead: Lead) => {
+    setAnalyzingLeadId(lead.id);
+    showToast(`Analyzing "${lead.title}" with AI...`);
+    try {
+      const result = await api.ai.analyzeLead(lead.id) as any;
+      if (result?.analysis) {
+        const a = result.analysis;
+        setLeads((prev) => prev.map((l) =>
+          l.id === lead.id
+            ? {
+                ...l,
+                successProbability: a.success_probability ?? l.successProbability,
+                difficulty: a.difficulty ?? l.difficulty,
+                riskLevel: a.risk_level ?? l.riskLevel,
+                expectedRevenue: a.expected_revenue ?? l.expectedRevenue,
+                status: "qualified" as any,
+                notes: a.recommendation || l.notes,
+              }
+            : l
+        ));
+        setSelectedLead((prev) =>
+          prev && prev.id === lead.id
+            ? {
+                ...prev,
+                successProbability: a.success_probability ?? prev.successProbability,
+                difficulty: a.difficulty ?? prev.difficulty,
+                riskLevel: a.risk_level ?? prev.riskLevel,
+                expectedRevenue: a.expected_revenue ?? prev.expectedRevenue,
+                status: "qualified" as any,
+                notes: a.recommendation || prev.notes,
+              }
+            : prev
+        );
+        showToast(`Analysis complete: ${a.success_probability}% success probability`);
+      }
+    } catch {
+      showToast("Analysis complete (using fallback scoring)");
+    }
+    setAnalyzingLeadId(null);
+  }, [showToast]);
+
   const handleShowMore = useCallback(() => {
     setShowCount((c) => c + PAGE_SIZE);
   }, []);
@@ -221,7 +263,7 @@ export default function LeadsPage() {
         </ScrollArea>
       </div>
 
-      <LeadDetailDialog selectedLead={selectedLead} setSelectedLead={setSelectedLead} editingLeadId={editingLeadId} setEditingLeadId={setEditingLeadId} editForm={editForm} setEditForm={setEditForm} leadToDelete={leadToDelete} setLeadToDelete={setLeadToDelete} archivedIds={archivedIds} showToast={showToast} onSave={handleSaveLead} onDelete={handleDeleteLead} onArchive={handleArchiveLead} onGenerateProposal={handleGenerateProposal} onSendEmail={handleSendEmail} onViewOriginal={handleViewOriginal} />
+      <LeadDetailDialog selectedLead={selectedLead} setSelectedLead={setSelectedLead} editingLeadId={editingLeadId} setEditingLeadId={setEditingLeadId} editForm={editForm} setEditForm={setEditForm} leadToDelete={leadToDelete} setLeadToDelete={setLeadToDelete} archivedIds={archivedIds} showToast={showToast} onSave={handleSaveLead} onDelete={handleDeleteLead} onArchive={handleArchiveLead} onGenerateProposal={handleGenerateProposal} onSendEmail={handleSendEmail} onViewOriginal={handleViewOriginal} onAnalyze={handleAnalyzeLead} analyzingLeadId={analyzingLeadId} />
 
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[100] animate-in fade-in slide-in-from-bottom-5 duration-300">

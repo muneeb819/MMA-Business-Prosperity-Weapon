@@ -44,8 +44,9 @@ class ProposalResponse(BaseModel):
 
 
 class GenerateRequest(BaseModel):
-    lead_id: str
+    leadId: str
     tone: str = "professional"
+    instructions: str = ""
 
 
 def _proposal_to_dict(prop: Proposal) -> dict:
@@ -195,7 +196,7 @@ def duplicate_proposal(proposal_id: str, db: Session = Depends(get_db)):
 
 @router.post("/generate", response_model=ProposalResponse, status_code=201)
 async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_db)):
-    db_lead = db.query(Lead).filter(Lead.id == request.lead_id).first()
+    db_lead = db.query(Lead).filter(Lead.id == request.leadId).first()
     if not db_lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
@@ -208,14 +209,17 @@ async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_
             "budget_max": db_lead.budget_max,
             "client_name": db_lead.client_name,
             "company": db_lead.company,
-            "technologies": db_lead.technologies,
+            "technologies": db_lead.technologies or [],
+            "country": db_lead.country,
+            "competition": db_lead.competition,
         },
         tone=request.tone,
+        instructions=request.instructions,
     )
 
     new_prop = Proposal(
         id=str(uuid.uuid4()),
-        lead_id=request.lead_id,
+        lead_id=request.leadId,
         title=generated.get("title", f"Proposal for {db_lead.title}"),
         cover_letter=generated.get("cover_letter", ""),
         introduction=generated.get("introduction", ""),

@@ -51,6 +51,7 @@ export default function ProposalsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [detailTab, setDetailTab] = useState("cover");
+  const [availableLeads, setAvailableLeads] = useState<Array<{id: string; title: string; company: string; clientName: string}>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +68,23 @@ export default function ProposalsPage() {
         if (!cancelled) setLoading(false);
       }
     }
+    async function fetchLeads() {
+      try {
+        const data = await api.leads.list();
+        if (!cancelled && Array.isArray(data) && data.length > 0) {
+          setAvailableLeads(data.map((l: any) => ({
+            id: l.id,
+            title: l.title,
+            company: l.company || "Unknown",
+            clientName: l.clientName || l.client_name || "Client",
+          })));
+        }
+      } catch {
+        // API unavailable — keep mockLeads
+      }
+    }
     fetchProposals();
+    fetchLeads();
     return () => { cancelled = true; };
   }, []);
 
@@ -312,6 +329,7 @@ export default function ProposalsPage() {
         handleGenerate={handleGenerate}
         toasts={toasts}
         dismissToast={dismissToast}
+        availableLeads={availableLeads}
       />
     </div>
   );

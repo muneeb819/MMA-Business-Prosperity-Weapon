@@ -58,6 +58,7 @@ interface ProposalDetailDialogProps {
   handleGenerate: () => void;
   toasts: Toast[];
   dismissToast: (id: number) => void;
+  availableLeads?: Array<{id: string; title: string; company: string; clientName: string}>;
 }
 
 const detailTabs = [
@@ -96,6 +97,7 @@ function ProposalDetailDialogInner({
   handleGenerate,
   toasts,
   dismissToast,
+  availableLeads = [],
 }: ProposalDetailDialogProps) {
   return (
     <>
@@ -254,7 +256,7 @@ function ProposalDetailDialogInner({
                   <SelectValue placeholder="Choose a lead to generate proposal for" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#12131C] border-white/10">
-                  {mockLeads.map((lead) => (
+                  {(availableLeads.length > 0 ? availableLeads : mockLeads).map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
                       {lead.title} — {lead.company}
                     </SelectItem>

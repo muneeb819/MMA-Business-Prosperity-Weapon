@@ -4,8 +4,9 @@ import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
 import { mockAgents, mockLeads, mockNotifications, mockActivityLog, mockAnalytics } from "@/lib/mock-data"
+import { api } from "@/lib/api"
 import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle } from "lucide-react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { StatsGrid } from "@/components/dashboard/StatsGrid"
 import { RevenueOverview } from "@/components/dashboard/RevenueOverview"
 import { AgentFleet } from "@/components/dashboard/AgentFleet"
@@ -45,6 +46,17 @@ export default function DashboardPage() {
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isRefreshingActivity, setIsRefreshingActivity] = useState(false)
+  const [aiInsights, setAiInsights] = useState<{ summary: string; top_recommendations: string[]; market_trends: string[]; risk_alerts: string[] } | null>(null)
+  const [loadingInsights, setLoadingInsights] = useState(false)
+
+  useEffect(() => {
+    if (showInsightsModal && !aiInsights) {
+      setLoadingInsights(true);
+      api.ai.insights()
+        .then((data) => { setAiInsights(data as any); setLoadingInsights(false); })
+        .catch(() => { setLoadingInsights(false); });
+    }
+  }, [showInsightsModal, aiInsights]);
 
   const showToast = useCallback((msg: string) => setToastMessage(msg), [])
 
@@ -118,15 +130,57 @@ export default function DashboardPage() {
               <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white" onClick={() => setShowInsightsModal(false)}><X className="w-4 h-4" /></Button>
             </div>
             <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
-              {insightItems.map((item) => (
-                <div key={item.title} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <item.icon className={`w-4 h-4 ${item.iconClass}`} />
-                    <span className="text-sm font-medium">{item.title}</span>
-                  </div>
-                  <p className="text-sm text-zinc-300">{item.body}</p>
+              {loadingInsights ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="ml-3 text-sm text-zinc-400">Generating AI insights...</span>
                 </div>
-              ))}
+              ) : aiInsights ? (
+                <>
+                  {aiInsights.summary && (
+                    <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+                      <p className="text-sm text-cyan-300/80">{aiInsights.summary}</p>
+                    </div>
+                  )}
+                  {aiInsights.top_recommendations?.map((rec, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" />
+                        <span className="text-sm font-medium">Recommendation {i + 1}</span>
+                      </div>
+                      <p className="text-sm text-zinc-300">{rec}</p>
+                    </div>
+                  ))}
+                  {aiInsights.risk_alerts?.map((alert, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        <span className="text-sm font-medium">Risk Alert</span>
+                      </div>
+                      <p className="text-sm text-zinc-300">{alert}</p>
+                    </div>
+                  ))}
+                  {aiInsights.market_trends?.map((trend, i) => (
+                    <div key={i} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Brain className="w-4 h-4 text-violet-400" />
+                        <span className="text-sm font-medium">Market Trend</span>
+                      </div>
+                      <p className="text-sm text-zinc-300">{trend}</p>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                insightItems.map((item) => (
+                  <div key={item.title} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <item.icon className={`w-4 h-4 ${item.iconClass}`} />
+                      <span className="text-sm font-medium">{item.title}</span>
+                    </div>
+                    <p className="text-sm text-zinc-300">{item.body}</p>
+                  </div>
+                ))
+              )}
             </div>
             <div className="p-5 border-t border-zinc-800/50 flex justify-end">
               <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white" onClick={() => { setShowInsightsModal(false); showToast("Full report sent to your email") }}>
