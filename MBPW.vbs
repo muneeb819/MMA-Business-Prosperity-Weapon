@@ -15,7 +15,7 @@ WshShell.Run "cmd /c curl -s -X POST http://localhost:8000/api/seed >nul 2>&1", 
 WScript.Sleep 1000
 
 ' Start frontend
-WshShell.Run "cmd /c title MBPW-Frontend && cd /d """ & projectDir & """ && ""C:\Users\Taurus Tech\nodejs-v20\node-v20.19.0-win-x64\node.exe"" node_modules\.bin\next dev --turbopack", 1, False
+WshShell.Run "cmd /c title MBPW-Frontend && cd /d """ & projectDir & """ && ""C:\Users\Taurus Tech\nodejs-v20\node-v20.19.0-win-x64\node.exe"" node_modules\next\dist\bin\next dev --turbopack", 1, False
 WScript.Sleep 10000
 
 ' Open browser

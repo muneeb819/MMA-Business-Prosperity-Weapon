@@ -27,7 +27,7 @@ curl -s -X POST http://localhost:8000/api/seed >nul 2>&1
 
 :: Start Frontend
 echo [5/5] Starting frontend on port 3000...
-start "MBPW-Frontend" cmd /c "cd /d "%~dp0" && "C:\Users\Taurus Tech\nodejs-v20\node-v20.19.0-win-x64\node.exe" node_modules\.bin\next dev --turbopack"
+start "MBPW-Frontend" cmd /c "cd /d "%~dp0" && "C:\Users\Taurus Tech\nodejs-v20\node-v20.19.0-win-x64\node.exe" node_modules\next\dist\bin\next dev --turbopack"
 
 :: Wait then open browser
 echo.
