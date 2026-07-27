@@ -147,6 +147,16 @@ export default function CRMPage() {
     setCompanyToDelete(null);
   };
 
+  const handleSaveCompany = async (companyId: string, data: Partial<CRMCompany>) => {
+    try {
+      await api.crm.companies.update(companyId, data);
+    } catch {
+      // API unavailable — continue with local state
+    }
+    setCompanies((prev) => prev.map((c) => c.id === companyId ? { ...c, ...data } : c));
+    setSelectedCompany((prev) => prev && prev.id === companyId ? { ...prev, ...data } : prev);
+  };
+
   return (
     <div className="flex h-screen bg-zinc-950 text-white">
       <Sidebar />
@@ -207,7 +217,7 @@ export default function CRMPage() {
       </main>
       <AddContactDialog open={showAddContact} onOpenChange={setShowAddContact} onAdd={handleAddContact} />
       <AddCompanyDialog open={showAddCompany} onOpenChange={setShowAddCompany} onAdd={handleAddCompany} />
-      <CompanyDetail company={selectedCompany} open={!!selectedCompany} onOpenChange={(o) => { if (!o) setSelectedCompany(null); }} onShowToast={showToast} />
+      <CompanyDetail company={selectedCompany} open={!!selectedCompany} onOpenChange={(o) => { if (!o) setSelectedCompany(null); }} onShowToast={showToast} onSave={handleSaveCompany} />
       <Dialog open={!!companyToDelete} onOpenChange={(o) => { if (!o) setCompanyToDelete(null); }}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-sm z-[100]">
           <DialogHeader>

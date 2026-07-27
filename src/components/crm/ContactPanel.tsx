@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Mail, Phone, MessageSquare, UserPlus } from "lucide-react";
+import { Users, Search, Mail, Phone, MessageSquare, UserPlus, ExternalLink } from "lucide-react";
 
 interface Contact {
   id: string;
@@ -22,6 +22,14 @@ interface ContactPanelProps {
   onContactSearchChange: (v: string) => void;
   onAddContact: () => void;
   onShowToast: (msg: string) => void;
+}
+
+function openMailto(email: string, subject: string) {
+  window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}`, "_blank");
+}
+
+function openTel(phone: string) {
+  window.open(`tel:${phone}`, "_self");
 }
 
 export const ContactPanel = memo(function ContactPanel({
@@ -69,32 +77,37 @@ export const ContactPanel = memo(function ContactPanel({
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-white">{contact.name}</h4>
                     <p className="text-sm text-zinc-500 truncate">{contact.role} at {contact.companyName}</p>
+                    {contact.email && <p className="text-xs text-zinc-600 truncate">{contact.email}</p>}
+                    {contact.phone && <p className="text-xs text-zinc-600">{contact.phone}</p>}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10"
-                      onClick={() => onShowToast(`Email sent to ${contact.name}`)}
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-                      onClick={() => onShowToast(`Calling ${contact.name}...`)}
-                    >
-                      <Phone className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-9 w-9 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
-                      onClick={() => onShowToast(`Message sent to ${contact.name}`)}
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {contact.email && (
+                      <Button
+                        size="icon" variant="ghost"
+                        className="h-9 w-9 text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10"
+                        onClick={() => { openMailto(contact.email, `Re: ${contact.companyName}`); onShowToast(`Opening email to ${contact.name}`); }}
+                      >
+                        <Mail className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {contact.phone && (
+                      <Button
+                        size="icon" variant="ghost"
+                        className="h-9 w-9 text-zinc-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+                        onClick={() => { openTel(contact.phone); onShowToast(`Calling ${contact.name}...`); }}
+                      >
+                        <Phone className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {contact.email && (
+                      <Button
+                        size="icon" variant="ghost"
+                        className="h-9 w-9 text-zinc-500 hover:text-violet-400 hover:bg-violet-500/10"
+                        onClick={() => { openMailto(contact.email, `Message from MBPW`); onShowToast(`Composing message to ${contact.name}`); }}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

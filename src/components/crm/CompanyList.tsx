@@ -122,11 +122,11 @@ export const CompanyList = memo(function CompanyList({
                     className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-9"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onShowToast(`Edit mode for ${company.name}`);
+                      onSelectCompany(company);
                     }}
                   >
                     <Edit3 className="w-3 h-3 mr-1" />
-                    Edit
+                    View / Edit
                   </Button>
                   <Button
                     size="sm"
@@ -134,7 +134,13 @@ export const CompanyList = memo(function CompanyList({
                     className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-9"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onShowToast(`Email sent to ${company.name}`);
+                      const email = company.contacts[0]?.email;
+                      if (email) {
+                        window.open(`mailto:${email}?subject=${encodeURIComponent(`Partnership: ${company.name}`)}`, "_blank");
+                        onShowToast(`Opening email to ${company.name}`);
+                      } else {
+                        onShowToast(`No email available for ${company.name}`);
+                      }
                     }}
                   >
                     <Mail className="w-3 h-3 mr-1" />

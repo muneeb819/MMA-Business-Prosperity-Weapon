@@ -189,7 +189,13 @@ export default function LeadsPage() {
   }, [showToast]);
 
   const handleSendEmail = useCallback((lead: Lead) => {
-    showToast(`Opening email to ${lead.clientName} (${lead.email})`);
+    const email = (lead as any).email || "";
+    if (email) {
+      window.open(`mailto:${email}?subject=${encodeURIComponent(`Re: ${lead.title}`)}&body=${encodeURIComponent(`Dear ${lead.clientName},\n\n`)}`, "_blank");
+      showToast(`Opening email to ${lead.clientName}`);
+    } else {
+      showToast(`No email address for ${lead.clientName}`);
+    }
     setSelectedLead(null);
   }, [showToast]);
 
