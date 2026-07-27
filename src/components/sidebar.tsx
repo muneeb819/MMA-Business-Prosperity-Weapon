@@ -20,6 +20,7 @@ import {
   Sparkles,
   Menu,
   X,
+  Cable,
 } from "lucide-react"
 
 const navigation = [
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-teal-400" },
   { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
   { name: "AI Search", href: "/ai-search", icon: Search, color: "from-amber-500 to-orange-400" },
+  { name: "Connectors", href: "/connectors", icon: Cable, color: "from-teal-500 to-cyan-400" },
   { name: "Notifications", href: "/notifications", icon: Bell, color: "from-rose-500 to-pink-400" },
   { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
   { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },

@@ -94,6 +94,22 @@ class Notification(Base):
     priority = Column(String, default="medium")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Connector(Base):
+    __tablename__ = "connectors"
+    
+    id = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)
+    platform = Column(String)
+    status = Column(String, default="inactive")
+    config = Column(JSON, default={})
+    last_sync_at = Column(DateTime, nullable=True)
+    sync_count = Column(Integer, default=0)
+    leads_found = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
 class AgentLog(Base):
     __tablename__ = "agent_logs"
     

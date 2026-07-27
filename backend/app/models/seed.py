@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models.schema import Lead, Proposal, Company, Contact, Notification, AgentLog
+from app.models.schema import Lead, Proposal, Company, Contact, Notification, AgentLog, Connector
 
 
 def seed_all(db: Session) -> dict:
@@ -539,12 +539,21 @@ Best regards""",
         AgentLog(id="log-8", agent_id="agent-3", action="Proposal Updated", details="E-Commerce Redesign proposal updated with client feedback", status="success", timestamp=now - timedelta(hours=1, minutes=20)),
     ]
 
+    connectors = [
+        Connector(id="conn-001", name="Upwork Scraper", type="scraper", platform="upwork", status="active", config={"keywords": ["react", "next.js", "full stack"], "minBudget": 5000}, last_sync_at=now - timedelta(hours=2), sync_count=47, leads_found=231, created_at=now - timedelta(days=30)),
+        Connector(id="conn-002", name="Indeed Monitor", type="scraper", platform="indeed", status="active", config={"keywords": ["software engineer", "frontend"], "countries": ["US", "UK"]}, last_sync_at=now - timedelta(hours=6), sync_count=120, leads_found=584, created_at=now - timedelta(days=45)),
+        Connector(id="conn-003", name="LinkedIn RSS", type="rss", platform="linkedin", status="inactive", config={"feeds": ["remote-jobs"]}, last_sync_at=now - timedelta(days=3), sync_count=12, leads_found=45, created_at=now - timedelta(days=15)),
+        Connector(id="conn-004", name="Freelancer API", type="api", platform="freelancer", status="error", config={"apiKey": "placeholder"}, last_sync_at=now - timedelta(days=1), sync_count=5, leads_found=18, error_message="API key expired — please update credentials", created_at=now - timedelta(days=10)),
+        Connector(id="conn-005", name="Dice.com Crawler", type="scraper", platform="dice", status="active", config={"keywords": ["devops", "cloud", "aws"]}, last_sync_at=now - timedelta(hours=1), sync_count=89, leads_found=412, created_at=now - timedelta(days=60)),
+    ]
+
     db.add_all(leads)
     db.add_all(proposals)
     db.add_all(companies)
     db.add_all(contacts)
     db.add_all(notifications)
     db.add_all(agent_logs)
+    db.add_all(connectors)
     db.commit()
 
     return {
@@ -557,5 +566,6 @@ Best regards""",
             "contacts": len(contacts),
             "notifications": len(notifications),
             "agent_logs": len(agent_logs),
+            "connectors": len(connectors),
         },
     }

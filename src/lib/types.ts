@@ -141,3 +141,18 @@ export interface SearchQuery {
   createdAt: string
   status: 'running' | 'completed' | 'error'
 }
+
+export interface Connector {
+  id: string
+  name: string
+  type: 'scraper' | 'api' | 'rss' | 'webhook'
+  platform?: string
+  status: 'active' | 'inactive' | 'syncing' | 'error'
+  config: Record<string, any>
+  lastSyncAt?: string
+  syncCount: number
+  leadsFound: number
+  errorMessage?: string
+  createdAt: string
+  updatedAt?: string
+}

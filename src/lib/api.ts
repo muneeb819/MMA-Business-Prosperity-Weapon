@@ -1,4 +1,4 @@
-import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData } from "./types";
+import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData, Connector } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -112,6 +112,17 @@ export const api = {
   dashboard: {
     get: () => fetchAPI("/api/dashboard"),
     insights: () => fetchAPI("/api/dashboard/insights"),
+  },
+  connectors: {
+    list: () => fetchAPI<Connector[]>("/api/connectors"),
+    create: (data: { name: string; type: string; platform?: string; config?: Record<string, any> }) =>
+      fetchAPI<Connector>("/api/connectors", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<Connector>) =>
+      fetchAPI<Connector>(`/api/connectors/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    sync: (id: string) =>
+      fetchAPI(`/api/connectors/${id}/sync`, { method: "POST" }),
+    delete: (id: string) =>
+      fetchAPI(`/api/connectors/${id}`, { method: "DELETE" }),
   },
   seed: () => fetchAPI("/api/seed", { method: "POST" }),
 };
