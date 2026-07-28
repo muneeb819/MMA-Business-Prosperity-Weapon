@@ -27,7 +27,20 @@ import {
   Database,
   Globe,
   Rss,
+  Check,
+  X,
 } from "lucide-react";
+
+function Toast({ message, onClose }: { message: string; onClose: () => void }) {
+  useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
+  return (
+    <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl shadow-black/50 animate-in slide-in-from-bottom-5">
+      <Check className="w-4 h-4 text-teal-400 shrink-0" />
+      <span className="text-sm text-white">{message}</span>
+      <button onClick={onClose} className="ml-2 text-zinc-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+    </div>
+  );
+}
 
 const connectorTypeConfig: Record<string, { label: string; icon: any; color: string }> = {
   scraper: { label: "Scraper", icon: Globe, color: "text-cyan-400" },
@@ -44,6 +57,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 };
 
 export default function ConnectorsPage() {
+  useEffect(() => { document.title = "Connectors | MBPW"; }, []);
   const [connectors, setConnectors] = useState<Connector[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -51,6 +65,9 @@ export default function ConnectorsPage() {
   const [newType, setNewType] = useState("scraper");
   const [newPlatform, setNewPlatform] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => { setToastMsg(msg); }, []);
 
   const fetchConnectors = useCallback(async () => {
     try {
@@ -70,30 +87,35 @@ export default function ConnectorsPage() {
     try {
       await api.connectors.sync(id);
       await fetchConnectors();
-    } catch {} finally {
+      showToast("Sync completed");
+    } catch { showToast("Sync failed"); } finally {
       setSyncingId(null);
     }
-  }, [fetchConnectors]);
+  }, [fetchConnectors, showToast]);
 
   const handleToggle = useCallback(async (c: Connector) => {
-    await api.connectors.update(c.id, { status: c.status === "active" ? "inactive" : "active" });
+    const newStatus = c.status === "active" ? "inactive" : "active";
+    await api.connectors.update(c.id, { status: newStatus });
     await fetchConnectors();
-  }, [fetchConnectors]);
+    showToast(newStatus === "active" ? "Connector started" : "Connector paused");
+  }, [fetchConnectors, showToast]);
 
   const handleDelete = useCallback(async (id: string) => {
     await api.connectors.delete(id);
     await fetchConnectors();
-  }, [fetchConnectors]);
+    showToast("Connector removed");
+  }, [fetchConnectors, showToast]);
 
   const handleAdd = useCallback(async () => {
-    if (!newName.trim()) return;
+    if (!newName.trim()) { showToast("Name is required"); return; }
     await api.connectors.create({ name: newName, type: newType, platform: newPlatform || undefined });
     setShowAdd(false);
     setNewName("");
     setNewType("scraper");
     setNewPlatform("");
     await fetchConnectors();
-  }, [newName, newType, newPlatform, fetchConnectors]);
+    showToast("Connector created");
+  }, [newName, newType, newPlatform, fetchConnectors, showToast]);
 
   const totalLeads = connectors.reduce((sum, c) => sum + (c.leadsFound || 0), 0);
   const activeCount = connectors.filter((c) => c.status === "active").length;
@@ -289,6 +311,7 @@ export default function ConnectorsPage() {
           </div>
         </ScrollArea>
       </main>
+      {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>
   );
 }

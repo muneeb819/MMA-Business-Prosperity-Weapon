@@ -35,6 +35,7 @@ const insightItems = [
 ]
 
 export default function DashboardPage() {
+  useEffect(() => { document.title = "Dashboard | MBPW"; }, []);
   const [activeAgentTab, setActiveAgentTab] = useState<"all" | "active" | "idle">("all")
   const [agentViewExpanded, setAgentViewExpanded] = useState(false)
   const [sortBy, setSortBy] = useState<"probability" | "revenue" | "date">("probability")

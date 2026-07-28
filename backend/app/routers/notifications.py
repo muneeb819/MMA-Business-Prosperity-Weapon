@@ -35,6 +35,12 @@ def _notif_to_dict(n: Notification) -> dict:
     }
 
 
+@router.get("/unread-count")
+def unread_notification_count(db: Session = Depends(get_db)):
+    count = db.query(Notification).filter(Notification.read == False).count()
+    return {"count": count}
+
+
 @router.get("/")
 def get_notifications(
     filter_type: Optional[str] = Query(None, alias="filter"),

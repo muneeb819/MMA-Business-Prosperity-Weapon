@@ -139,18 +139,17 @@ Write in a {tone_desc} tone.
 
 Generate a proposal and return ONLY a valid JSON object with these fields:
 - title: project title
-- cover_letter: 3-4 paragraph cover letter addressing the client directly
-- introduction: 2-3 paragraphs introducing your company and understanding of the project
-- technical_plan: detailed technical approach with numbered phases
+- cover_letter: 3-4 paragraph cover letter addressing the client directly by name, referencing their specific project, company, and industry
+- introduction: 2-3 paragraphs introducing your company and demonstrating deep understanding of the client's specific needs, mentioning their technologies and country context
+- technical_plan: detailed technical approach with numbered phases, referencing the specific technologies and requirements of this project
 - timeline: estimated timeline string (e.g. "8-12 weeks")
 - cost_estimate: formatted cost range string (e.g. "$45,000 - $65,000")
-- portfolio_suggestions: array of 2-3 related project names that demonstrate relevant experience
-- call_to_action: compelling closing paragraph
-- win_probability: integer 0-100
+- portfolio_suggestions: array of 2-3 related project names that demonstrate relevant experience for this specific industry
+- call_to_action: compelling closing paragraph that references the client's specific goals
 
 Return ONLY valid JSON, no markdown blocks."""
 
-        user = f"""Generate a proposal for this project:
+        user = f"""Generate a comprehensive, context-aware proposal for this project:
 
 Title: {lead_data.get('title', 'N/A')}
 Description: {lead_data.get('description', 'N/A')}
@@ -176,6 +175,9 @@ Competition: {lead_data.get('competition', 'Unknown')} other bidders"""
         client = lead_data.get("client_name", "Client")
         company = lead_data.get("company", "their organization")
         techs = lead_data.get("technologies", [])
+        country = lead_data.get("country", "Global")
+        description = lead_data.get("description", "")
+        industry_guess = self._guess_industry(title, description, techs)
 
         return {
             "title": f"Proposal for {title}",
@@ -187,6 +189,110 @@ Competition: {lead_data.get('competition', 'Unknown')} other bidders"""
             "portfolio_suggestions": ["Enterprise SaaS Platform", "Cloud Migration Project", "Mobile App Development"],
             "call_to_action": f"We are excited about the possibility of partnering with {company} on this initiative. Our team is ready to begin immediately and can schedule a detailed kickoff meeting at your convenience.\n\nPlease don't hesitate to reach out with any questions or to discuss specific requirements further.",
             "win_probability": 68,
+        }
+
+    def _guess_industry(self, title: str, description: str, technologies: list) -> str:
+        text = (title + " " + description).lower()
+        keywords = {
+            "healthcare": ["health", "medical", "hospital", "clinical", "patient", "pharma"],
+            "fintech": ["bank", "finance", "payment", "fintech", "insurance", "trading"],
+            "ecommerce": ["ecommerce", "e-commerce", "shop", "store", "retail", "product"],
+            "education": ["education", "learning", "course", "student", "training", "academic"],
+            "realestate": ["real estate", "property", "rental", "listing", "mortgage"],
+            "logistics": ["logistic", "supply chain", "delivery", "fleet", "shipping", "inventory"],
+            "media": ["media", "content", "streaming", "publisher", "social", "video"],
+            "saas": ["saas", "platform", "subscription", "multi-tenant", "cloud-based"],
+        }
+        for industry, terms in keywords.items():
+            if any(t in text for t in terms):
+                return industry
+        return "technology"
+
+    async def generate_proposal_email(
+        self,
+        lead_data: Dict[str, Any],
+        proposal_data: Dict[str, Any],
+        tone: str = "professional",
+        custom_message: str = "",
+    ) -> Dict[str, Any]:
+        if not self._is_available():
+            return self._generate_email_fallback(lead_data, proposal_data, custom_message)
+
+        tone_descriptions = {
+            "professional": "formal, competent, and business-appropriate",
+            "friendly": "warm, approachable, and relationship-building",
+            "confident": "bold, authoritative, and results-oriented",
+            "technical": "detail-oriented and technically precise",
+            "consultative": "strategic, insightful, and advisory",
+            "premium": "high-end, exclusive, and value-focused",
+        }
+        tone_desc = tone_descriptions.get(tone, "professional and clear")
+
+        system = f"""You are a business development email writer for an IT services company.
+Write in a {tone_desc} tone.
+
+Generate a professional email to send a proposal to a potential client.
+Return ONLY a valid JSON object with these fields:
+- subject: compelling email subject line (max 80 chars) that references the specific project and company
+- salutation: personalized greeting using the client's name
+- body: 3-4 paragraph email body that:
+  1. Thanks the client and references the specific project by name
+  2. Highlights key aspects of the proposal relevant to their specific needs and industry
+  3. Explains why our team is the right fit (references required technologies, industry context)
+  4. Ends with a clear call to action for a follow-up meeting
+- closing: professional closing line
+- signature: sender signature block
+
+Return ONLY valid JSON, no markdown blocks."""
+
+        user = f"""Generate a contextual email for this proposal:
+
+Lead:
+- Title: {lead_data.get('title', 'N/A')}
+- Description: {lead_data.get('description', 'N/A')}
+- Client: {lead_data.get('client_name', 'N/A')} at {lead_data.get('company', 'N/A')}
+- Country: {lead_data.get('country', 'Global')}
+- Technologies: {', '.join(lead_data.get('technologies', [])) or 'Not specified'}
+- Budget: ${lead_data.get('budget_min', 0):,.0f} - ${lead_data.get('budget_max', 0):,.0f}
+
+Proposal Summary:
+- Title: {proposal_data.get('title', 'N/A')}
+- Timeline: {proposal_data.get('timeline', 'N/A')}
+- Cost: {proposal_data.get('cost_estimate', 'N/A')}
+- Win Probability: {proposal_data.get('win_probability', 'N/A')}%"""
+
+        if custom_message:
+            user += f"\n\nAdditional message from sender:\n{custom_message}"
+
+        try:
+            return await self._chat_json(system, user, temperature=0.7)
+        except Exception as e:
+            logger.warning(f"AI email generation failed, using fallback: {e}")
+            return self._generate_email_fallback(lead_data, proposal_data, custom_message)
+
+    def _generate_email_fallback(self, lead_data: Dict[str, Any], proposal_data: Dict[str, Any], custom_message: str = "") -> Dict[str, Any]:
+        client = lead_data.get("client_name", "Client")
+        company = lead_data.get("company", "their organization")
+        title = lead_data.get("title", "Project")
+        techs = lead_data.get("technologies", [])
+        budget = f"${lead_data.get('budget_min', 0):,.0f} - ${lead_data.get('budget_max', 0):,.0f}"
+        cost = proposal_data.get("cost_estimate", budget)
+        timeline = proposal_data.get("timeline", "TBD")
+
+        body = f"Thank you for the opportunity to present our proposal for the {title} project at {company}. We've carefully analyzed your requirements and designed a solution that addresses your specific needs.\n\n"
+        body += f"Our proposal includes a comprehensive technical approach covering {', '.join(techs) if techs else 'all required technologies'}, with an estimated timeline of {timeline} and a budget of {cost}. We believe our expertise and methodology make us an ideal partner for this initiative.\n\n"
+        if techs:
+            body += f"Your technology stack ({', '.join(techs)}) aligns well with our core competencies. Our team has delivered multiple projects using these technologies, ensuring we can hit the ground running and deliver exceptional results.\n\n"
+        if custom_message:
+            body += f"{custom_message}\n\n"
+        body += "We are available to discuss the proposal in detail at your earliest convenience and can schedule a kickoff meeting within the week. Please review the attached proposal document and let us know your thoughts."
+
+        return {
+            "subject": f"Proposal for {title} — {company}",
+            "salutation": f"Dear {client},",
+            "body": body,
+            "closing": "We look forward to partnering with you on this exciting initiative.",
+            "signature": "Best regards,\nThe Business Development Team\nMMA Business Prosperity Weapon",
         }
 
     async def natural_language_search(self, query: str, available_filters: Optional[List[str]] = None) -> Dict[str, Any]:

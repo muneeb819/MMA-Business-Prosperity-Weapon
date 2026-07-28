@@ -37,6 +37,7 @@ function mapApiProposalToMock(p: any): MockProposal {
 }
 
 export default function ProposalsPage() {
+  useEffect(() => { document.title = "Proposals | MBPW"; }, []);
   const [proposals, setProposals] = useState<MockProposal[]>(initialMockProposals);
   const [loading, setLoading] = useState(true);
   const [selectedProposal, setSelectedProposal] = useState<MockProposal | null>(null);

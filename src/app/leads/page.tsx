@@ -15,6 +15,7 @@ import LeadGrid from "@/components/leads/LeadGrid";
 import LeadDetailDialog from "@/components/leads/LeadDetailDialog";
 
 export default function LeadsPage() {
+  useEffect(() => { document.title = "Leads | MBPW"; }, []);
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");

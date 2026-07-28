@@ -14,7 +14,7 @@ import { RevenueChart } from "@/components/analytics/RevenueChart";
 import { CountryBreakdown } from "@/components/analytics/CountryBreakdown";
 import { TechBreakdown } from "@/components/analytics/TechBreakdown";
 import { AgentPerformance } from "@/components/analytics/AgentPerformance";
-import { BarChart3, DollarSign, Target, Globe, Zap, Download, Layers, Brain, TrendingUp, Briefcase, FileText, RefreshCw } from "lucide-react";
+import { BarChart3, DollarSign, Target, Globe, Zap, Download, Layers, Brain, TrendingUp, Briefcase, FileText, RefreshCw, ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
 
 type SortField = "count" | "revenue" | "name";
 type SortDir = "asc" | "desc";
@@ -34,6 +34,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 }
 
 export default function AnalyticsPage() {
+  useEffect(() => { document.title = "Analytics | MBPW"; }, []);
   const [data, setData] = useState<AnalyticsData>(mockAnalytics);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("1y");
@@ -110,6 +111,27 @@ export default function AnalyticsPage() {
     { label: "Conversion Rate", value: `${data.conversionRate}%`, trend: "+5.4%", up: true, icon: Zap, color: "text-blue-400", glow: "bg-blue-500/10" },
   ];
 
+  const handleExportCSV = useCallback(() => {
+    const rows = [["Metric", "Value"], ...kpis.map((k) => [k.label, k.value])];
+    rows.push([], ["Country", "Count", "Revenue"]);
+    data.topCountries.forEach((c) => rows.push([c.country, String(c.count), String(c.revenue)]));
+    rows.push([], ["Technology", "Count"]);
+    data.topTechnologies.forEach((t) => rows.push([t.tech, String(t.count)]));
+    rows.push([], ["Platform", "Leads"]);
+    data.platformBreakdown.forEach((p) => rows.push([p.platform, String(p.leads)]));
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analytics-report-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Report exported as CSV");
+  }, [kpis, data, showToast]);
+
   const techBreakdownProps = {
     techItems: sortedTech, platformItems: sortedPlatforms,
     techSort, platformSort,
@@ -147,8 +169,8 @@ export default function AnalyticsPage() {
                 onClick={() => { setIsRefreshing(true); setTimeout(() => setIsRefreshing(false), 1200); }} disabled={isRefreshing}>
                 <RefreshCw className={cn("w-4 h-4 mr-2", isRefreshing && "animate-spin")} />{isRefreshing ? "Refreshing..." : "Refresh"}
               </Button>
-              <Button variant="outline" className="border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-800" onClick={() => showToast("Report exported successfully")}>
-                <Download className="w-4 h-4 mr-2" />Export Report
+              <Button variant="outline" className="border-zinc-800/80 bg-zinc-900/60 hover:bg-zinc-800" onClick={handleExportCSV}>
+                <Download className="w-4 h-4 mr-2" />Export CSV
               </Button>
             </div>
           </div>
@@ -177,7 +199,52 @@ export default function AnalyticsPage() {
               <TechBreakdown {...techBreakdownProps} />
             </TabsContent>
             <TabsContent value="platforms" className="mt-4">
-              <TechBreakdown {...techBreakdownProps} />
+              <div className="bg-zinc-900/80 border-zinc-800/80 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-lg font-semibold text-white">Leads by Platform</h3>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => toggleSort(platformSort, setPlatformSort, "count")}
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 min-h-9 ${platformSort.field === "count" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}>
+                      Count <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "count" ? "text-violet-400" : ""}`} />
+                    </button>
+                    <button onClick={() => toggleSort(platformSort, setPlatformSort, "name")}
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 min-h-9 ${platformSort.field === "name" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}>
+                      Name <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "name" ? "text-violet-400" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6 space-y-4">
+                  {sortedPlatforms.length === 0 ? (
+                    <p className="text-sm text-zinc-500 text-center py-8">No platform data available</p>
+                  ) : (
+                    <>
+                      {(showAllPlatforms ? sortedPlatforms : sortedPlatforms.slice(0, 5)).map((p) => {
+                        const maxLeads = Math.max(...sortedPlatforms.map((x) => x.leads), 1);
+                        return (
+                          <div key={p.platform} className="flex items-center gap-4">
+                            <span className="text-sm font-medium text-zinc-300 w-28 shrink-0 truncate">{p.platform}</span>
+                            <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
+                              <div className="h-full rounded-lg bg-gradient-to-r from-blue-600/80 to-blue-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3"
+                                style={{ width: `${(p.leads / maxLeads) * 100}%` }}>
+                                <span className="text-xs font-semibold text-white drop-shadow-lg">{p.leads}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {sortedPlatforms.length > 5 && (
+                        <button onClick={() => setShowAllPlatforms(!showAllPlatforms)}
+                          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40">
+                          {showAllPlatforms ? <>Show Less <ChevronUp className="w-3 h-3" /></> : <>See All ({sortedPlatforms.length}) <ChevronDown className="w-3 h-3" /></>}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
             </TabsContent>
             <TabsContent value="ai-agents" className="mt-4">
               <AgentPerformance agents={data.agentPerformance} totalCount={data.agentPerformance.length} showAll={showAllAgents} onToggleShowAll={() => setShowAllAgents(!showAllAgents)} />

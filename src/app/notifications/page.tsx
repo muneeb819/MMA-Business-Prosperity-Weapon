@@ -23,6 +23,7 @@ import { NotificationPreferences, PreferenceKey } from "@/components/notificatio
 type FilterType = "all" | "unread" | "high_value" | "urgent";
 
 export default function NotificationsPage() {
+  useEffect(() => { document.title = "Notifications | MBPW"; }, []);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [filter, setFilter] = useState<FilterType>("all");
   const [showPreferences, setShowPreferences] = useState(false);

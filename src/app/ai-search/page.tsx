@@ -59,6 +59,7 @@ function mapSearchResultToLead(r: any): Lead {
 }
 
 export default function AISearchPage() {
+  useEffect(() => { document.title = "AI Search | MBPW"; }, []);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Lead[]>([]);
   const [countryFilter, setCountryFilter] = useState("All Countries");
@@ -66,7 +67,13 @@ export default function AISearchPage() {
   const [budgetMax, setBudgetMax] = useState("");
   const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("relevance");
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("mbpw_saved_searches");
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -80,6 +87,10 @@ export default function AISearchPage() {
   }, []);
 
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
+
+  useEffect(() => {
+    localStorage.setItem("mbpw_saved_searches", JSON.stringify(savedSearches));
+  }, [savedSearches]);
 
   const applyFilters = useCallback(
     (leads: Lead[]) => {

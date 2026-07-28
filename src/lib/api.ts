@@ -45,6 +45,8 @@ export const api = {
       fetchAPI(`/api/proposals/${id}/duplicate`, { method: "POST" }),
     generate: (data: { leadId: string; tone: string; instructions?: string }) =>
       fetchAPI("/api/proposals/generate", { method: "POST", body: JSON.stringify(data) }),
+    sendEmail: (id: string, data: { recipient_email: string; subject?: string; message?: string }) =>
+      fetchAPI(`/api/proposals/${id}/send-email`, { method: "POST", body: JSON.stringify(data) }),
   },
   crm: {
     companies: {
@@ -80,6 +82,8 @@ export const api = {
       fetchAPI(`/api/notifications/${id}`, { method: "DELETE" }),
     clearAll: () =>
       fetchAPI("/api/notifications", { method: "DELETE" }),
+    unreadCount: () =>
+      fetchAPI<{ count: number }>("/api/notifications/unread-count"),
   },
   analytics: {
     get: (period?: string) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatCurrency, cn } from "@/lib/utils";
 import { mockLeads } from "@/lib/mock-data";
+import { api } from "@/lib/api";
 import {
   FileText,
   Send,
@@ -27,6 +28,8 @@ import {
   X,
   Check,
   AlertCircle,
+  Mail,
+  Loader2,
 } from "lucide-react";
 import { MockProposal, Toast, proposalStatusConfig, toneOptions } from "./types";
 
@@ -99,6 +102,37 @@ function ProposalDetailDialogInner({
   dismissToast,
   availableLeads = [],
 }: ProposalDetailDialogProps) {
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendEmail = useCallback(async () => {
+    if (!emailRecipient.trim()) { showToast("Recipient email is required", "error"); return; }
+    if (!selectedProposal) return;
+    setIsSending(true);
+    try {
+      const result = await api.proposals.sendEmail(selectedProposal.id, {
+        recipient_email: emailRecipient.trim(),
+        subject: emailSubject.trim() || undefined,
+        message: emailMessage.trim() || undefined,
+      }) as any;
+      if (result?.success) {
+        showToast(`Proposal sent to ${emailRecipient.trim()}`, "success");
+      } else {
+        showToast("Email configured but sending failed — check SMTP settings in .env", "info");
+      }
+    } catch {
+      showToast("Email service unavailable — configure SMTP in .env to send", "info");
+    }
+    setIsSending(false);
+    setShowEmailDialog(false);
+    setEmailRecipient("");
+    setEmailSubject("");
+    setEmailMessage("");
+  }, [emailRecipient, emailSubject, emailMessage, selectedProposal, showToast]);
+
   return (
     <>
       <Dialog open={!!selectedProposal} onOpenChange={(open) => { if (!open) { setSelectedProposal(null); setIsEditing(false); } }}>
@@ -226,6 +260,19 @@ function ProposalDetailDialogInner({
                     <Download className="w-4 h-4 mr-2" />
                     Export PDF
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEmailRecipient(selectedProposal.company ? `contact@${selectedProposal.company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com` : "");
+                      setEmailSubject(`Proposal: ${selectedProposal.title}`);
+                      setEmailMessage("");
+                      setShowEmailDialog(true);
+                    }}
+                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-blue-400 h-11"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Email
+                  </Button>
                 </div>
               </Tabs>
             </>
@@ -316,6 +363,75 @@ function ProposalDetailDialogInner({
               )}
             </Button>
             <Button variant="ghost" onClick={() => setShowGenerateDialog(false)} className="text-zinc-500 hover:text-white h-11 px-4">
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-lg z-50">
+          <DialogHeader>
+            <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-blue-500/20">
+                <Mail className="w-5 h-5 text-blue-400" />
+              </div>
+              Send Proposal via Email
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 text-sm">
+              An AI-generated email with the proposal will be sent to the recipient. Configure SMTP in .env to enable delivery.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Recipient Email *</label>
+              <Input
+                value={emailRecipient}
+                onChange={(e) => setEmailRecipient(e.target.value)}
+                placeholder="client@company.com"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-blue-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Subject</label>
+              <Input
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                placeholder="Proposal: {title}"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-blue-500/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Custom Message (optional)</label>
+              <Textarea
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                placeholder="Add a personal note to include in the email body..."
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 min-h-[80px] resize-none focus:border-blue-500/50 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              onClick={handleSendEmail}
+              disabled={!emailRecipient.trim() || isSending}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-semibold h-11 shadow-lg shadow-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Send Email
+                </>
+              )}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowEmailDialog(false)} className="text-zinc-500 hover:text-white h-11 px-4">
               Cancel
             </Button>
           </div>

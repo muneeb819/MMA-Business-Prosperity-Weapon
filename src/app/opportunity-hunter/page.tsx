@@ -38,6 +38,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 }
 
 export default function OpportunityHunterPage() {
+  useEffect(() => { document.title = "Opportunity Hunter | MBPW"; }, []);
   const [isRunning, setIsRunning] = useState(true)
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [categories, setCategories] = useState(initialCategories)

@@ -1,3 +1,7 @@
+import smtplib
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -47,6 +51,12 @@ class GenerateRequest(BaseModel):
     leadId: str
     tone: str = "professional"
     instructions: str = ""
+
+
+class SendEmailRequest(BaseModel):
+    recipient_email: str
+    subject: str = ""
+    message: str = ""
 
 
 def _proposal_to_dict(prop: Proposal) -> dict:
@@ -247,3 +257,157 @@ async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_
     db.commit()
     db.refresh(new_prop)
     return _proposal_to_dict(new_prop)
+
+
+@router.post("/{proposal_id}/send-email")
+async def send_proposal_email(proposal_id: str, request: SendEmailRequest, db: Session = Depends(get_db)):
+    db_prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
+    if not db_prop:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+
+    db_lead = db.query(Lead).filter(Lead.id == db_prop.lead_id).first()
+    if not db_lead:
+        raise HTTPException(status_code=404, detail="Associated lead not found")
+
+    from app.services.ai_service import ai_service
+
+    lead_data = {
+        "title": db_lead.title,
+        "description": db_lead.description,
+        "budget_min": db_lead.budget_min,
+        "budget_max": db_lead.budget_max,
+        "client_name": db_lead.client_name,
+        "company": db_lead.company,
+        "technologies": db_lead.technologies or [],
+        "country": db_lead.country,
+        "competition": db_lead.competition,
+    }
+    proposal_data = {
+        "title": db_prop.title,
+        "timeline": db_prop.timeline,
+        "cost_estimate": db_prop.cost_estimate,
+        "win_probability": db_prop.win_probability,
+    }
+
+    email_content = await ai_service.generate_proposal_email(
+        lead_data=lead_data,
+        proposal_data=proposal_data,
+        tone="professional",
+        custom_message=request.message,
+    )
+
+    subject = request.subject or email_content.get("subject", f"Proposal for {db_lead.title}")
+    body_html = _build_email_html(
+        email_content.get("salutation", f"Dear {db_lead.client_name},"),
+        email_content.get("body", ""),
+        email_content.get("closing", ""),
+        email_content.get("signature", ""),
+        db_prop,
+        db_lead,
+    )
+    body_text = f"{email_content.get('salutation', '')}\n\n{email_content.get('body', '')}\n\n{email_content.get('closing', '')}\n\n{email_content.get('signature', '')}"
+
+    sent = _send_smtp_email(
+        recipient=request.recipient_email,
+        subject=subject,
+        body_html=body_html,
+        body_text=body_text,
+    )
+
+    return {
+        "success": sent,
+        "recipient": request.recipient_email,
+        "subject": subject,
+        "emailContent": email_content,
+        "proposalId": proposal_id,
+    }
+
+
+def _build_email_html(salutation: str, body: str, closing: str, signature: str, proposal: Proposal, lead: Lead) -> str:
+    sections_html = ""
+    for label, field in [
+        ("Cover Letter", proposal.cover_letter),
+        ("Introduction", proposal.introduction),
+        ("Technical Approach", proposal.technical_plan),
+        ("Cost Estimate", proposal.cost_estimate),
+        ("Call to Action", proposal.call_to_action),
+    ]:
+        if field:
+            sections_html += f"""
+            <tr>
+                <td style="padding:8px 0 4px;font-size:13px;font-weight:600;color:#3b82f6;border-bottom:1px solid #e5e7eb">{label}</td>
+            </tr>
+            <tr>
+                <td style="padding:4px 0 12px;font-size:12px;color:#374151;white-space:pre-wrap;line-height:1.6">{field}</td>
+            </tr>"""
+
+    return f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',system-ui,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+<tr><td style="padding:32px 32px 16px;background:linear-gradient(135deg,#1e3a5f,#3b82f6)">
+<h1 style="margin:0;font-size:20px;color:#ffffff;font-weight:700">Proposal: {proposal.title}</h1>
+<p style="margin:6px 0 0;font-size:13px;color:#93c5fd">{lead.client_name} &middot; {lead.company}</p>
+</td></tr>
+<tr><td style="padding:24px 32px 8px">
+<p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6">{salutation}</p>
+<p style="margin:12px 0 0;font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap">{body}</p>
+</td></tr>
+<tr><td style="padding:16px 32px 8px">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+<tr><td style="padding:12px 16px">
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="font-size:12px;color:#6b7280;padding:2px 0">Timeline</td><td style="font-size:12px;color:#1f2937;text-align:right;padding:2px 0">{proposal.timeline or 'TBD'}</td></tr>
+<tr><td style="font-size:12px;color:#6b7280;padding:2px 0">Budget</td><td style="font-size:12px;color:#059669;text-align:right;padding:2px 0;font-weight:600">{proposal.cost_estimate or f'${lead.budget_min or 0:,.0f} - ${lead.budget_max or 0:,.0f}'}</td></tr>
+<tr><td style="font-size:12px;color:#6b7280;padding:2px 0">Win Probability</td><td style="font-size:12px;color:#1f2937;text-align:right;padding:2px 0">{proposal.win_probability or 50}%</td></tr>
+</table>
+</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:8px 32px">
+<table width="100%" cellpadding="0" cellspacing="0">
+{sections_html}
+</table>
+</td></tr>
+<tr><td style="padding:8px 32px 24px">
+<p style="margin:0;font-size:13px;color:#374151;line-height:1.6;white-space:pre-wrap">{closing}</p>
+<p style="margin:12px 0 0;font-size:12px;color:#6b7280;white-space:pre-wrap">{signature}</p>
+</td></tr>
+<tr><td style="padding:16px 32px;background:#f3f4f6;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#9ca3af">
+Generated by MMA Business Prosperity Weapon &middot; {datetime.utcnow().strftime('%Y-%m-%d')}
+</td></tr>
+</table>
+</td></tr></table>
+</body>
+</html>"""
+
+
+def _send_smtp_email(recipient: str, subject: str, body_html: str, body_text: str) -> bool:
+    smtp_host = os.getenv("SMTP_HOST", "")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER", "")
+    smtp_password = os.getenv("SMTP_PASSWORD", "")
+    smtp_from = os.getenv("SMTP_FROM_EMAIL", "noreply@mbpw.ai")
+    smtp_from_name = os.getenv("SMTP_FROM_NAME", "MMA Business Prosperity Weapon")
+
+    if not smtp_host or not smtp_user or not smtp_password:
+        return False
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{smtp_from_name} <{smtp_from}>"
+    msg["To"] = recipient
+
+    msg.attach(MIMEText(body_text, "plain", "utf-8"))
+    msg.attach(MIMEText(body_html, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_from, [recipient], msg.as_string())
+        return True
+    except Exception as e:
+        return False
