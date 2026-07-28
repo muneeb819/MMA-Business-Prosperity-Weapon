@@ -3,10 +3,10 @@
 import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
 import { Button } from "@/components/ui/button"
-import { mockAgents, mockLeads, mockNotifications, mockActivityLog, mockAnalytics } from "@/lib/mock-data"
-import { api } from "@/lib/api"
-import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle } from "lucide-react"
+import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle, Loader2 } from "lucide-react"
 import { useState, useCallback, useEffect } from "react"
+import { api } from "@/lib/api"
+import type { Lead, Notification, Agent, ActivityLog, AnalyticsData } from "@/lib/types"
 import { StatsGrid } from "@/components/dashboard/StatsGrid"
 import { RevenueOverview } from "@/components/dashboard/RevenueOverview"
 import { AgentFleet } from "@/components/dashboard/AgentFleet"
@@ -50,6 +50,35 @@ export default function DashboardPage() {
   const [aiInsights, setAiInsights] = useState<{ summary: string; top_recommendations: string[]; market_trends: string[]; risk_alerts: string[] } | null>(null)
   const [loadingInsights, setLoadingInsights] = useState(false)
 
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [activities, setActivities] = useState<ActivityLog[]>([])
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchAll() {
+      try {
+        const [leadsData, notifsData, agentsData, analyticsData] = await Promise.all([
+          api.leads.list().catch(() => [] as any),
+          api.notifications.list().catch(() => [] as any),
+          api.agents.list().catch(() => [] as any),
+          api.analytics.get().catch(() => null),
+        ])
+        if (cancelled) return
+        if (Array.isArray(leadsData) && leadsData.length > 0) setLeads(leadsData as Lead[])
+        if (Array.isArray(notifsData) && notifsData.length > 0) setNotifications(notifsData as Notification[])
+        if (Array.isArray(agentsData) && agentsData.length > 0) setAgents(agentsData as Agent[])
+        if (analyticsData) setAnalytics(analyticsData as AnalyticsData)
+      } catch { /* keep defaults */ }
+      if (!cancelled) setLoading(false)
+    }
+    fetchAll()
+    return () => { cancelled = true }
+  }, [])
+
   useEffect(() => {
     if (showInsightsModal && !aiInsights) {
       setLoadingInsights(true);
@@ -70,8 +99,15 @@ export default function DashboardPage() {
     setExpandedNotificationId((prev) => (prev === id ? null : id))
   }, [])
 
-  const maxMonthlyRevenue = Math.max(...mockAnalytics.monthlyRevenue.map((m) => m.revenue))
-  const revenueData = mockAnalytics.monthlyRevenue.map((m) => ({ label: m.month, value: m.revenue, max: maxMonthlyRevenue }))
+  const activeAnalytics = analytics
+  const currentLeads = leads.length > 0 ? leads : []
+  const currentNotifications = notifications.length > 0 ? notifications : []
+  const currentAgents = agents.length > 0 ? agents : []
+  const currentActivities = activities.length > 0 ? activities : []
+
+  const revenueMonths = activeAnalytics?.monthlyRevenue || []
+  const maxMonthlyRevenue = revenueMonths.length > 0 ? Math.max(...revenueMonths.map((m: any) => m.revenue)) : 0
+  const revenueData = revenueMonths.map((m: any) => ({ label: m.month, value: m.revenue, max: maxMonthlyRevenue }))
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
@@ -97,19 +133,28 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <StatsGrid totalRevenue={mockAnalytics.totalRevenue} leadsCount={mockLeads.length} conversionRate={mockAnalytics.conversionRate} />
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                <span className="ml-3 text-sm text-zinc-400">Loading dashboard...</span>
+              </div>
+            ) : (
+              <>
+                <StatsGrid totalRevenue={activeAnalytics?.totalRevenue || 0} leadsCount={currentLeads.length} conversionRate={activeAnalytics?.conversionRate || 0} />
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2 space-y-6 min-w-0">
-                <AgentFleet agents={mockAgents} activeAgentTab={activeAgentTab} isExpanded={agentViewExpanded} onTabChange={setActiveAgentTab} onToggleExpanded={setAgentViewExpanded} onAgentClick={(n) => showToast(`Viewing agent: ${n}`)} />
-                <ActivityFeed activities={mockActivityLog} isRefreshing={isRefreshingActivity} onRefresh={handleRefreshActivity} onActivityClick={(d) => showToast(`Activity: ${d.slice(0, 60)}...`)} />
-                <RevenueOverview revenueData={revenueData} showDetails={showRevenueDetails} onToggleDetails={() => setShowRevenueDetails(!showRevenueDetails)} />
-              </div>
-              <div className="space-y-6 min-w-0">
-                <LeadPipeline leads={mockLeads} selectedLeadId={selectedLeadId} sortBy={sortBy} filterSource={filterSource} searchQuery={searchQuery} onSortChange={setSortBy} onFilterSourceChange={setFilterSource} onSearchChange={setSearchQuery} onLeadSelect={setSelectedLeadId} onSourceClick={(n) => showToast(`Filtering by: ${n}`)} />
-                <NotificationsPanel notifications={mockNotifications} expandedNotificationId={expandedNotificationId} onToggleExpand={handleNotificationExpand} onCollapse={() => setExpandedNotificationId(null)} onNotificationRead={() => showToast("Notification marked as read")} />
-              </div>
-            </div>
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  <div className="xl:col-span-2 space-y-6 min-w-0">
+                    <AgentFleet agents={currentAgents} activeAgentTab={activeAgentTab} isExpanded={agentViewExpanded} onTabChange={setActiveAgentTab} onToggleExpanded={setAgentViewExpanded} onAgentClick={(n) => showToast(`Viewing agent: ${n}`)} />
+                    <ActivityFeed activities={currentActivities} isRefreshing={isRefreshingActivity} onRefresh={handleRefreshActivity} onActivityClick={(d) => showToast(`Activity: ${d.slice(0, 60)}...`)} />
+                    <RevenueOverview revenueData={revenueData} showDetails={showRevenueDetails} onToggleDetails={() => setShowRevenueDetails(!showRevenueDetails)} />
+                  </div>
+                  <div className="space-y-6 min-w-0">
+                    <LeadPipeline leads={currentLeads} selectedLeadId={selectedLeadId} sortBy={sortBy} filterSource={filterSource} searchQuery={searchQuery} onSortChange={setSortBy} onFilterSourceChange={setFilterSource} onSearchChange={setSearchQuery} onLeadSelect={setSelectedLeadId} onSourceClick={(n) => showToast(`Filtering by: ${n}`)} />
+                    <NotificationsPanel notifications={currentNotifications} expandedNotificationId={expandedNotificationId} onToggleExpand={handleNotificationExpand} onCollapse={() => setExpandedNotificationId(null)} onNotificationRead={() => showToast("Notification marked as read")} />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </main>
       </div>

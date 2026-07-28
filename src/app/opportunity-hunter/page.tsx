@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { mockAgents } from "@/lib/mock-data"
-import { Globe, Play, Pause, Settings, Sparkles, X, CheckCircle } from "lucide-react"
-import { useState, useMemo, useEffect } from "react"
+import { Globe, Play, Pause, Settings, Sparkles, X, CheckCircle, Loader2 } from "lucide-react"
+import { useState, useMemo, useEffect, useCallback } from "react"
+import { api } from "@/lib/api"
+import type { Agent, ActivityLog } from "@/lib/types"
 import { HunterStats } from "@/components/opportunity-hunter/HunterStats"
 import { SourceCards } from "@/components/opportunity-hunter/SourceCards"
 import { FilterBar } from "@/components/opportunity-hunter/FilterBar"
@@ -58,8 +59,45 @@ export default function OpportunityHunterPage() {
   )
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [savedConfig, setSavedConfig] = useState({ minDealSize: "50000", targetRegion: "global", searchFrequency: "15" })
+  const [agents, setAgents] = useState<Agent[]>([])
+  const [agentActivities, setAgentActivities] = useState<ActivityLog[]>([])
+  const [loadingAgents, setLoadingAgents] = useState(true)
 
-  const hunterAgent = mockAgents.find((a) => a.type === "opportunity_hunter") || {
+  useEffect(() => {
+    let cancelled = false
+    async function fetchData() {
+      try {
+        const [agentsData, activity] = await Promise.all([
+          api.agents.list().catch(() => [] as any),
+          api.agents.activity("agent-1").catch(() => ({ logs: [] })),
+        ])
+        if (cancelled) return
+        if (Array.isArray(agentsData) && agentsData.length > 0) {
+          const mapped = agentsData.map((a: any) => ({
+            id: a.id,
+            name: a.name,
+            type: a.type,
+            status: a.status,
+            lastActive: a.last_active || a.lastActive || new Date().toISOString(),
+            tasksCompleted: a.tasks_completed ?? a.tasksCompleted ?? 0,
+            currentTask: a.current_task || a.currentTask || "",
+            uptime: a.uptime ?? 99.9,
+            efficiency: a.efficiency ?? 95,
+            description: a.description || "",
+            icon: a.icon || "search",
+          }))
+          setAgents(mapped as Agent[])
+        }
+        if (activity) setAgentActivities(((activity as any).logs || []) as ActivityLog[])
+      } catch { /* keep defaults */ }
+      if (!cancelled) setLoadingAgents(false)
+    }
+    fetchData()
+    return () => { cancelled = true }
+  }, [])
+
+  const allAgents = agents.length > 0 ? agents : []
+  const hunterAgent = allAgents.find((a) => a.type === "opportunity_hunter") || {
     id: "agent-1", name: "Opportunity Hunter AI", type: "opportunity_hunter" as const,
     status: (isRunning ? "scanning" : "idle") as "scanning" | "idle",
     lastActive: new Date().toISOString(), currentTask: "Scanning LinkedIn for high-intent prospects...",

@@ -113,10 +113,6 @@ export const api = {
     activity: (id: string) =>
       fetchAPI(`/api/agents/${id}/activity`),
   },
-  dashboard: {
-    get: () => fetchAPI("/api/dashboard"),
-    insights: () => fetchAPI("/api/dashboard/insights"),
-  },
   connectors: {
     list: () => fetchAPI<Connector[]>("/api/connectors"),
     create: (data: { name: string; type: string; platform?: string; config?: Record<string, any> }) =>
