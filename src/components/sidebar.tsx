@@ -22,6 +22,10 @@ import {
   X,
   Cable,
   BookOpen,
+  Shield,
+  CalendarDays,
+  LineChart,
+  UserCog,
 } from "lucide-react"
 
 const navigation = [
@@ -32,9 +36,13 @@ const navigation = [
   { name: "AI Search", href: "/ai-search", icon: Search, color: "from-amber-500 to-orange-400" },
   { name: "Connectors", href: "/connectors", icon: Cable, color: "from-teal-500 to-cyan-400" },
   { name: "Knowledge Base", href: "/knowledge", icon: BookOpen, color: "from-emerald-500 to-teal-400" },
-  { name: "Notifications", href: "/notifications", icon: Bell, color: "from-rose-500 to-pink-400" },
   { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
   { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },
+  { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-teal-400" },
+  { name: "Calendar", href: "/calendar", icon: CalendarDays, color: "from-orange-500 to-pink-400" },
+  { name: "Team", href: "/team", icon: UserCog, color: "from-pink-500 to-purple-400" },
+  { name: "Notifications", href: "/notifications", icon: Bell, color: "from-rose-500 to-pink-400" },
+  { name: "Admin", href: "/admin", icon: Shield, color: "from-red-500 to-orange-400" },
 ]
 
 export function Sidebar() {

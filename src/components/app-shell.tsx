@@ -18,8 +18,12 @@ const pageLabels: Record<string, string> = {
   "/notifications": "Notifications",
   "/crm": "CRM",
   "/analytics": "Analytics",
+  "/reports": "Reports",
+  "/calendar": "Calendar",
+  "/team": "Team",
   "/favorites": "Favorites",
   "/settings": "Settings",
+  "/admin": "Admin",
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -48,13 +52,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       if ((e.metaKey || e.ctrlKey) && e.key) {
         const num = parseInt(e.key)
         if (num >= 1 && num <= 9) {
-          const pages = ["/", "/opportunity-hunter", "/leads", "/proposals", "/ai-search", "/connectors", "/knowledge", "/notifications", "/crm"]
+          const pages = ["/", "/opportunity-hunter", "/leads", "/proposals", "/ai-search", "/connectors", "/knowledge", "/crm", "/reports"]
           if (pages[num - 1]) {
             e.preventDefault()
             router.push(pages[num - 1])
           }
         }
         if (e.key === "0") { e.preventDefault(); router.push("/analytics") }
+        if (e.key === "a") { e.preventDefault(); router.push("/admin") }
+        if (e.key === "t") { e.preventDefault(); router.push("/team") }
+        if (e.key === "l") { e.preventDefault(); router.push("/calendar") }
         if (e.key === "b") { e.preventDefault(); document.dispatchEvent(new CustomEvent("mbpw:toggle-sidebar")) }
         if (e.key === "e") { e.preventDefault(); document.dispatchEvent(new CustomEvent("mbpw:export")) }
         if (e.key === "/") { e.preventDefault(); document.querySelector<HTMLInputElement>('input[placeholder*="Search"]')?.focus() }
@@ -83,6 +90,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 { keys: "⌘K", desc: "Command palette" },
                 { keys: "⌘1-9", desc: "Navigate to pages" },
                 { keys: "⌘0", desc: "Go to Analytics" },
+                { keys: "⌘A", desc: "Admin Panel" },
+                { keys: "⌘T", desc: "Team page" },
+                { keys: "⌘L", desc: "Calendar" },
                 { keys: "⌘B", desc: "Toggle sidebar" },
                 { keys: "⌘E", desc: "Export dashboard" },
                 { keys: "⌘/", desc: "Focus search bar" },

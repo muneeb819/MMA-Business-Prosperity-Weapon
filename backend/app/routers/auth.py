@@ -98,6 +98,14 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="User not found or inactive")
     return user
 
+def require_role(min_role: str = "admin"):
+    async def role_checker(current_user: UserModel = Depends(get_current_user)):
+        role_levels = {"user": 0, "admin": 1, "superadmin": 2}
+        if role_levels.get(current_user.role, 0) < role_levels.get(min_role, 1):
+            raise HTTPException(status_code=403, detail=f"Requires {min_role} role or higher")
+        return current_user
+    return role_checker
+
 def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     if not credentials:
         return None

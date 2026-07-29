@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3, Home, Cable, BookOpen, Star, Settings } from "lucide-react"
+import { ChevronRight, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3, Home, Cable, BookOpen, Star, Settings, Shield, LineChart, CalendarDays, UserCog } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const iconMap: Record<string, any> = {
@@ -18,6 +18,10 @@ const iconMap: Record<string, any> = {
   knowledge: BookOpen,
   favorites: Star,
   settings: Settings,
+  admin: Shield,
+  reports: LineChart,
+  calendar: CalendarDays,
+  team: UserCog,
 }
 
 const labelMap: Record<string, string> = {
@@ -33,6 +37,10 @@ const labelMap: Record<string, string> = {
   knowledge: "Knowledge Base",
   favorites: "Favorites",
   settings: "Settings",
+  admin: "Admin",
+  reports: "Reports",
+  calendar: "Calendar",
+  team: "Team",
 }
 
 export function Breadcrumbs({ className }: { className?: string }) {

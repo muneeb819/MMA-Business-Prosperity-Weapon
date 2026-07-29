@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,8 +60,18 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="relative w-full max-w-md">
-          <div className="text-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative w-full max-w-md"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-center mb-8"
+          >
             <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white font-bold text-2xl mb-4 shadow-2xl shadow-blue-500/30">
               MBPW
             </div>
@@ -70,9 +81,14 @@ export default function LoginPage() {
             <p className="text-zinc-400 mt-1">
               {isRegister ? "Set up your MBPW workspace" : "MMA Business Prosperity Weapon"}
             </p>
-          </div>
+          </motion.div>
 
-          <div className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-8 backdrop-blur-xl shadow-2xl"
+          >
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-zinc-300 mb-1.5 block">Email</label>
@@ -112,30 +128,44 @@ export default function LoginPage() {
                 {isRegister ? "Already have an account? Sign in" : "Don't have an account? Register"}
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
 
-      <div className="hidden lg:flex w-96 bg-zinc-900/50 border-l border-zinc-800/50 p-8 flex-col">
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
+        className="hidden lg:flex w-96 bg-zinc-900/50 border-l border-zinc-800/50 p-8 flex-col"
+      >
         <div className="text-center mb-8">
           <h2 className="text-lg font-bold text-gradient">AI-Powered Platform</h2>
           <p className="text-sm text-zinc-400 mt-1">Everything you need to win business</p>
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.05 } } }}
+          className="flex-1 space-y-3 overflow-y-auto"
+        >
           {features.map((f, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/30 border border-zinc-800/30 hover:bg-zinc-800/50 transition-all animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
+            <motion.div
+              key={i}
+              variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
+              className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/30 border border-zinc-800/30 hover:bg-zinc-800/50 transition-all"
+            >
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${f.color} flex items-center justify-center shrink-0`}>
                 <f.icon className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm font-medium text-zinc-300">{f.label}</span>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-500/10 text-center">
           <p className="text-xs text-zinc-400">Powered by Advanced AI</p>
           <p className="text-[10px] text-zinc-500 mt-1">Discover · Analyze · Win</p>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
