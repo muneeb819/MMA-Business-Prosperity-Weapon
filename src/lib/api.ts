@@ -1,6 +1,6 @@
 import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData, Connector } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -103,6 +103,10 @@ export const api = {
       fetchAPI("/api/ai/interpret", { method: "POST", body: JSON.stringify({ query }) }),
     analyzeLead: (leadId: string) =>
       fetchAPI(`/api/leads/${leadId}/analyze`, { method: "POST" }),
+    briefing: () => fetchAPI("/api/ai/briefing"),
+    checkQuality: (data: any) =>
+      fetchAPI("/api/ai/check-quality", { method: "POST", body: JSON.stringify(data) }),
+    leadDecision: (leadId: string) => fetchAPI(`/api/ai/leads/${leadId}/decision`),
   },
   agents: {
     list: () => fetchAPI("/api/agents"),
@@ -123,6 +127,17 @@ export const api = {
       fetchAPI(`/api/connectors/${id}/sync`, { method: "POST" }),
     delete: (id: string) =>
       fetchAPI(`/api/connectors/${id}`, { method: "DELETE" }),
+  },
+  knowledge: {
+    list: (params?: Record<string, string>) =>
+      fetchAPI(`/api/knowledge?${new URLSearchParams(params || {})}`),
+    get: (id: string) => fetchAPI(`/api/knowledge/${id}`),
+    create: (data: { title: string; entryType: string; content: string; tags?: string[]; source?: string; sourceUrl?: string }) =>
+      fetchAPI("/api/knowledge", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: any) =>
+      fetchAPI(`/api/knowledge/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    delete: (id: string) => fetchAPI(`/api/knowledge/${id}`, { method: "DELETE" }),
+    types: () => fetchAPI<string[]>("/api/knowledge/types/list"),
   },
   seed: () => fetchAPI("/api/seed", { method: "POST" }),
 };

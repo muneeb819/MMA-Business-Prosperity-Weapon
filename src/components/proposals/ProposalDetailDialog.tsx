@@ -30,8 +30,11 @@ import {
   AlertCircle,
   Mail,
   Loader2,
+  Shield,
 } from "lucide-react";
 import { MockProposal, Toast, proposalStatusConfig, toneOptions } from "./types";
+import { ProposalQualityChecker } from "./ProposalQualityChecker";
+import type { QualityResult } from "./ProposalQualityChecker";
 
 interface ProposalDetailDialogProps {
   selectedProposal: MockProposal | null;
@@ -107,6 +110,31 @@ function ProposalDetailDialogInner({
   const [emailSubject, setEmailSubject] = useState("");
   const [emailMessage, setEmailMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [qualityResult, setQualityResult] = useState<QualityResult | null>(null);
+  const [qualityLoading, setQualityLoading] = useState(false);
+
+  const handleQualityCheck = useCallback(async () => {
+    if (!selectedProposal) return;
+    setQualityLoading(true);
+    setQualityResult(null);
+    try {
+      const p = selectedProposal as any;
+      const result = await api.ai.checkQuality({
+        title: p.title,
+        cover_letter: p.sections?.coverLetter || "",
+        introduction: p.sections?.introduction || "",
+        technical_plan: p.sections?.technicalPlan || "",
+        timeline: p.timeline || "",
+        cost_estimate: p.sections?.costEstimate || "",
+        call_to_action: p.sections?.callToAction || "",
+        portfolio_suggestions: p.portfolioSuggestions || [],
+      }) as QualityResult;
+      setQualityResult(result);
+    } catch {
+      showToast("Quality check unavailable", "info");
+    }
+    setQualityLoading(false);
+  }, [selectedProposal, showToast]);
 
   const handleSendEmail = useCallback(async () => {
     if (!emailRecipient.trim()) { showToast("Recipient email is required", "error"); return; }
@@ -262,6 +290,15 @@ function ProposalDetailDialogInner({
                   </Button>
                   <Button
                     variant="outline"
+                    onClick={handleQualityCheck}
+                    disabled={qualityLoading}
+                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-cyan-400 h-11"
+                  >
+                    {qualityLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
+                    Check Quality
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setEmailRecipient(selectedProposal.company ? `contact@${selectedProposal.company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com` : "");
                       setEmailSubject(`Proposal: ${selectedProposal.title}`);
@@ -274,6 +311,11 @@ function ProposalDetailDialogInner({
                     Send Email
                   </Button>
                 </div>
+                {qualityResult && (
+                  <div className="px-6 pb-4">
+                    <ProposalQualityChecker result={qualityResult} onRunCheck={handleQualityCheck} />
+                  </div>
+                )}
               </Tabs>
             </>
           )}

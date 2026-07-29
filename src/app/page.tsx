@@ -13,6 +13,8 @@ import { AgentFleet } from "@/components/dashboard/AgentFleet"
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed"
 import { LeadPipeline } from "@/components/dashboard/LeadPipeline"
 import { NotificationsPanel } from "@/components/dashboard/NotificationsPanel"
+import { ExecutiveBriefing } from "@/components/dashboard/ExecutiveBriefing"
+import type { BriefingData } from "@/components/dashboard/ExecutiveBriefing"
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   return (
@@ -49,6 +51,8 @@ export default function DashboardPage() {
   const [isRefreshingActivity, setIsRefreshingActivity] = useState(false)
   const [aiInsights, setAiInsights] = useState<{ summary: string; top_recommendations: string[]; market_trends: string[]; risk_alerts: string[] } | null>(null)
   const [loadingInsights, setLoadingInsights] = useState(false)
+  const [briefing, setBriefing] = useState<BriefingData | null>(null)
+  const [briefingLoading, setBriefingLoading] = useState(true)
 
   const [leads, setLeads] = useState<Lead[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -61,14 +65,17 @@ export default function DashboardPage() {
     let cancelled = false
     async function fetchAll() {
       try {
-        const [leadsData, notifsData, agentsData, analyticsData] = await Promise.all([
+        const [leadsData, notifsData, agentsData, analyticsData, briefingData] = await Promise.all([
           api.leads.list().catch(() => [] as any),
           api.notifications.list().catch(() => [] as any),
           api.agents.list().catch(() => [] as any),
           api.analytics.get().catch(() => null),
+          api.ai.briefing().catch(() => null),
         ])
         if (cancelled) return
         if (Array.isArray(leadsData) && leadsData.length > 0) setLeads(leadsData as Lead[])
+        if (briefingData) setBriefing(briefingData as BriefingData)
+        if (!cancelled) setBriefingLoading(false)
         if (Array.isArray(notifsData) && notifsData.length > 0) setNotifications(notifsData as Notification[])
         if (Array.isArray(agentsData) && agentsData.length > 0) setAgents(agentsData as Agent[])
         if (analyticsData) setAnalytics(analyticsData as AnalyticsData)
@@ -140,6 +147,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <>
+                <ExecutiveBriefing briefing={briefing} loading={briefingLoading} onViewAll={() => setShowInsightsModal(true)} />
                 <StatsGrid totalRevenue={activeAnalytics?.totalRevenue || 0} leadsCount={currentLeads.length} conversionRate={activeAnalytics?.conversionRate || 0} />
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

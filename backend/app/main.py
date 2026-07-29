@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.database import create_tables
-from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors
+from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge
 
 app = FastAPI(
     title="MMA Business Prosperity Weapon API",
@@ -11,7 +11,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,6 +32,7 @@ app.include_router(notifications.router, prefix="/api/notifications", tags=["Not
 app.include_router(crm.router, prefix="/api/crm", tags=["CRM"])
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Services"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
+app.include_router(knowledge.router, prefix="/api/knowledge", tags=["Knowledge Base"])
 
 
 @app.post("/api/seed")

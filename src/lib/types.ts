@@ -142,6 +142,18 @@ export interface SearchQuery {
   status: 'running' | 'completed' | 'error'
 }
 
+export interface KnowledgeEntry {
+  id: string
+  title: string
+  entryType: 'playbook' | 'industry_knowledge' | 'past_win' | 'past_loss' | 'client_history'
+  content: string
+  tags: string[]
+  source: string
+  sourceUrl: string
+  createdAt: string
+  updatedAt?: string
+}
+
 export interface Connector {
   id: string
   name: string

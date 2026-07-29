@@ -119,3 +119,17 @@ class AgentLog(Base):
     details = Column(Text)
     status = Column(String, default="success")
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class KnowledgeEntry(Base):
+    __tablename__ = "knowledge_base"
+
+    id = Column(String, primary_key=True)
+    title = Column(String, nullable=False)
+    entry_type = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    tags = Column(JSON, default=[])
+    source = Column(String, default="")
+    source_url = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)

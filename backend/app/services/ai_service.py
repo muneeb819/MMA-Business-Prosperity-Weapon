@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+from datetime import datetime
 from typing import Dict, Any, Optional, List
 
 logger = logging.getLogger(__name__)
@@ -368,6 +369,142 @@ Return ONLY valid JSON, no markdown."""
                 "market_trends": [],
                 "risk_alerts": [],
             }
+
+    async def generate_daily_briefing(self, leads: List[Dict]) -> Dict[str, Any]:
+        if self._is_available():
+            try:
+                system = "You are an executive AI assistant. Generate a concise daily briefing."
+                user = json.dumps({"today": datetime.utcnow().strftime("%Y-%m-%d"), "leads": leads})
+                result = await self._chat(system, user)
+                return json.loads(result)
+            except Exception:
+                pass
+        return self._briefing_fallback(leads)
+
+    def _briefing_fallback(self, leads: List[Dict]) -> Dict[str, Any]:
+        high_priority = [l for l in leads if l.get("urgency") == "high" or l.get("priority") == "high"]
+        expiring = [l for l in leads if l.get("deadline")]
+        return {
+            "date": datetime.utcnow().strftime("%Y-%m-%d"),
+            "total_opportunities": len(leads),
+            "high_priority_count": len(high_priority),
+            "expiring_count": len([d for d in expiring if d.get("deadline", "") > datetime.utcnow().strftime("%Y-%m-%d")]),
+            "top_recommendations": [
+                {
+                    "title": l.get("title", "Opportunity"),
+                    "reason": f"{l.get('client_name', 'Client')} - {l.get('company', 'Company')}",
+                    "expected_revenue": (l.get("budget_max", 0) or 0) * 0.8,
+                    "probability": l.get("successProbability", 50),
+                    "suggested_action": l.get("status") == "new" and "Contact client immediately" or "Send follow-up",
+                }
+                for l in high_priority[:5]
+            ],
+            "summary": f"You have {len(leads)} active opportunities. {len(high_priority)} are high priority. AI recommends focusing on top {min(5, len(high_priority))} opportunities.",
+        }
+
+    async def check_proposal_quality(self, proposal: Dict) -> Dict[str, Any]:
+        if self._is_available():
+            try:
+                system = "You are a proposal quality reviewer. Evaluate completeness, clarity, and professionalism."
+                user = json.dumps(proposal)
+                result = await self._chat(system, user)
+                return json.loads(result)
+            except Exception:
+                pass
+        return self._quality_check_fallback(proposal)
+
+    def _quality_check_fallback(self, proposal: Dict) -> Dict[str, Any]:
+        fields = ["cover_letter", "introduction", "technical_plan", "timeline", "cost_estimate", "call_to_action"]
+        filled = sum(1 for f in fields if proposal.get(f))
+        total = len(fields)
+        completeness = round((filled / total) * 100)
+
+        issues = []
+        if not proposal.get("cover_letter"):
+            issues.append({"severity": "high", "field": "cover_letter", "message": "Missing cover letter - reduces personalization"})
+        if not proposal.get("introduction"):
+            issues.append({"severity": "high", "field": "introduction", "message": "Missing introduction section"})
+        if not proposal.get("technical_plan"):
+            issues.append({"severity": "high", "field": "technical_plan", "message": "Missing technical approach - clients need to see methodology"})
+        if not proposal.get("cost_estimate"):
+            issues.append({"severity": "medium", "field": "cost_estimate", "message": "Missing cost breakdown - include detailed pricing"})
+        if not proposal.get("timeline"):
+            issues.append({"severity": "medium", "field": "timeline", "message": "Missing timeline - set clear delivery expectations"})
+        if not proposal.get("call_to_action"):
+            issues.append({"severity": "low", "field": "call_to_action", "message": "Missing call to action - guide the client on next steps"})
+        if len(proposal.get("portfolio_suggestions", [])) == 0:
+            issues.append({"severity": "low", "field": "portfolio", "message": "No portfolio references - add past work to build credibility"})
+
+        risk_areas = []
+        if completeness < 50:
+            risk_areas.append("Proposal is incomplete - may appear unprofessional")
+        if not proposal.get("title"):
+            risk_areas.append("Missing proposal title")
+
+        return {
+            "score": completeness,
+            "completeness": completeness,
+            "summary": f"Proposal is {completeness}% complete ({filled}/{total} sections filled).",
+            "issues": issues,
+            "risk_areas": risk_areas,
+            "strengths": [f for f in fields if proposal.get(f)],
+            "passed": completeness >= 70,
+        }
+
+    async def analyze_lead_decision(self, lead: Dict) -> Dict[str, Any]:
+        if self._is_available():
+            try:
+                system = "You are an AI decision engine. Analyze this opportunity and provide strategic guidance."
+                user = json.dumps(lead)
+                result = await self._chat(system, user)
+                return json.loads(result)
+            except Exception:
+                pass
+        return self._decision_fallback(lead)
+
+    def _decision_fallback(self, lead: Dict) -> Dict[str, Any]:
+        budget_max = lead.get("budget_max", 0) or 0
+        budget_min = lead.get("budget_min", 0) or 0
+        expected = (budget_max + budget_min) / 2
+        probability = lead.get("successProbability", 50) or 50
+        competition = lead.get("competition", 5) or 5
+
+        effort = "Low"
+        if competition > 15:
+            effort = "High"
+        elif competition > 8:
+            effort = "Medium"
+
+        return {
+            "title": lead.get("title", "Opportunity"),
+            "why_it_matters": f"{lead.get('company', 'This company')} is seeking {lead.get('title', 'a solution')}. "
+                              f"With {competition} competitors and a budget of ${budget_min:,.0f}-${budget_max:,.0f}, "
+                              f"this requires a {'aggressive' if competition > 10 else 'standard'} approach.",
+            "expected_revenue": expected,
+            "probability": probability,
+            "estimated_effort": effort,
+            "suggested_next_action": self._suggest_action(lead),
+            "key_factors": [
+                {"factor": "Budget", "value": f"${budget_min:,.0f} - ${budget_max:,.0f}", "assessment": "Good" if budget_max > 20000 else "Moderate"},
+                {"factor": "Competition", "value": f"{competition} competitors", "assessment": "High risk" if competition > 15 else "Manageable"},
+                {"factor": "Win Probability", "value": f"{probability}%", "assessment": "Strong" if probability > 70 else "Moderate"},
+                {"factor": "Client Location", "value": lead.get("country", "Unknown"), "assessment": "Neutral"},
+            ],
+        }
+
+    def _suggest_action(self, lead: Dict) -> str:
+        status = lead.get("status", "new")
+        if status == "new":
+            return "Qualify lead - schedule discovery call within 48 hours"
+        elif status == "qualified":
+            return "Prepare and send tailored proposal this week"
+        elif status == "proposal_sent":
+            return "Follow up in 3 days if no response"
+        elif status == "negotiation":
+            return "Review terms and prepare final agreement"
+        elif status == "won":
+            return "Begin onboarding and project kickoff"
+        return "Review lead status and determine next steps"
 
 
 ai_service = AIService()

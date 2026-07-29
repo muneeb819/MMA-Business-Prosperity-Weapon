@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models.schema import Lead, Proposal, Company, Contact, Notification, AgentLog, Connector
+from app.models.schema import Lead, Proposal, Company, Contact, Notification, AgentLog, Connector, KnowledgeEntry
 
 
 def seed_all(db: Session) -> dict:
@@ -552,8 +552,127 @@ Best regards""",
     db.add_all(companies)
     db.add_all(contacts)
     db.add_all(notifications)
+    knowledge_entries = [
+        KnowledgeEntry(
+            id="know-001", title="Government Contracts: Winning Strategy",
+            entry_type="playbook", content="## Government Contract Playbook\n\n### Phase 1: Discovery\n"
+            "- Monitor SAM.gov, FedBizOpps daily\n- Filter by NAICS codes matching our expertise\n"
+            "- Track historical award amounts for budget estimation\n\n### Phase 2: Qualification\n"
+            "- Verify security clearance requirements\n- Check past performance history needed\n"
+            "- Assess compliance burden (FedRAMP, Section 508, etc.)\n\n### Phase 3: Proposal\n"
+            "- Lead with past government experience\n- Include detailed compliance matrix\n"
+            "- Provide 3+ past performance references\n- Price within IGCE range\n\n### Phase 4: Submission\n"
+            "- Review SF330 form thoroughly\n- Include required certifications\n- Submit 48 hours before deadline\n"
+            "\n### Win Themes\n- Past performance is #1 differentiator\n- Price must be within 10% of IGCE\n"
+            "- Technical approach must reference RFP evaluation criteria directly",
+            source="Internal Knowledge Base", tags=["government", "playbook", "contracts", "win-strategy"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-002", title="Enterprise Sales Playbook",
+            entry_type="playbook", content="## Enterprise Sales Playbook\n\n### Discovery\n"
+            "- Identify the economic buyer (not just technical contact)\n"
+            "- Understand annual IT budget and fiscal year cycles\n"
+            "- Map decision-making process (technical eval → legal → procurement)\n\n"
+            "### Proposal Strategy\n- Enterprise cares about: reliability, support, compliance, ROI\n"
+            "- Include SLA guarantees\n- Offer phased deployment to reduce risk\n"
+            "- Provide reference calls from similar-sized deployments\n\n### Pricing Strategy\n"
+            "- Enterprise deals close at 2-3x SMB pricing\n- Annual contracts preferred\n"
+            "- Include training and onboarding in base price\n- Net-30 or Net-45 terms are standard",
+            source="Internal Knowledge Base", tags=["enterprise", "playbook", "sales"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-003", title="React & Next.js: Best Practices for Enterprise Projects",
+            entry_type="industry_knowledge", content="## Enterprise React & Next.js\n\n"
+            "### Architecture\n- Use Next.js App Router for new projects\n- Structure by feature, not by file type\n"
+            "- Use server components by default, client only when needed\n- Implement proper error boundaries\n\n"
+            "### Performance\n- Implement ISR for content-heavy pages\n- Use React.lazy for large component trees\n"
+            "- Optimize Core Web Vitals (LCP <2.5s, FID <100ms, CLS <0.1)\n- Use proper image optimization\n\n"
+            "### State Management\n- Server state: React Query / TanStack Query\n- Client state: Zustand for complex state\n"
+            "- Form state: React Hook Form + Zod validation\n\n### Testing\n- Vitest for unit tests\n- Playwright for E2E\n"
+            "- Storybook for visual regression\n\n### Security\n- Implement CSP headers\n- Sanitize all user input\n"
+            "- Use proper authentication middleware\n- Regular dependency audits",
+            source="Industry Research", tags=["react", "nextjs", "enterprise", "best-practices"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-004", title="Project Retrospective: AI Chatbot Proposal (Won)",
+            entry_type="past_win", content="## AI Customer Support Chatbot - GlobalServ GmbH\n\n"
+            "### What Worked\n- We focused on multilingual support as the key differentiator\n"
+            "- Demo with a working prototype clinched the deal\n- Pricing was competitive at $22,000\n"
+            "- Quick response time (proposal sent within 48 hours of discovery)\n\n"
+            "### What We Learned\n- Client preferred milestone payments over fixed price\n"
+            "- CRM integration was their hidden priority - addressing it early helped\n- German clients value detailed technical specs\n\n"
+            "### Metrics\n- Deal Size: $22,000\n- Timeline: 10 weeks\n- Win Probability at bid: 82%\n"
+            "- Actual outcome: Won\n- Key factor: Working demo + multilingual focus",
+            source="Past Projects", tags=["win", "chatbot", "ai", "germany", "retrospective"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-005", title="Project Retrospective: E-Commerce Redesign (Draft/In Progress)",
+            entry_type="past_loss", content="## E-Commerce Platform Redesign - TechRetail Inc.\n\n"
+            "### Status\n- Proposal sent, awaiting client decision\n\n"
+            "### What We Did Well\n- Comprehensive technical plan with 4 clear phases\n"
+            "- Budget transparency with detailed cost breakdown\n- Strong portfolio with relevant e-commerce projects\n\n"
+            "### Risks Identified\n- Client mentioned budget flexibility - need to confirm final budget\n"
+            "- Competitor count is 12 - competitive space\n- Decision timeline unclear\n\n"
+            "### Lessons Applied\n- Added milestone-based delivery to reduce client risk perception\n"
+            "- Included A/B testing and analytics as differentiators\n- Referenced specific e-commerce KPIs (conversion, LTV)",
+            source="Past Projects", tags=["loss", "ecommerce", "retail", "retrospective", "in-progress"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-006", title="Client History: TechRetail Inc.",
+            entry_type="client_history", content="## TechRetail Inc. - Client Profile\n\n"
+            "### Company Info\n- Industry: Retail / E-Commerce\n- Size: 200+ employees\n"
+            "- Location: United States\n- Contact: Sarah Mitchell (CTO)\n\n"
+            "### Previous Engagements\n- None (new client relationship)\n\n"
+            "### Communication History\n- Initial contact via LinkedIn\n"
+            "- Discovery call completed - responsive and professional\n"
+            "- Budget range: $25,000 - $45,000\n"
+            "- Deadline: Oct 2026\n\n"
+            "### Notes\n- High-priority client with clear requirements\n"
+            "- Budget flexibility mentioned for the right team\n- Decision expected within 3-4 weeks",
+            source="CRM", tags=["client", "techretail", "ecommerce", "history"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-007", title="AI/ML Project Pricing Guide",
+            entry_type="playbook", content="## AI/ML Project Pricing Guide\n\n"
+            "### Small Projects ($5k-$15k)\n- Chatbot with pre-built frameworks\n"
+            "- Basic ML model training\n- Simple data analysis pipeline\n\n"
+            "### Medium Projects ($15k-$50k)\n- Custom NLP solutions\n- Computer vision systems\n"
+            "- Recommendation engines\n- Multi-language chatbots\n\n"
+            "### Large Projects ($50k-$200k+)\n- Enterprise AI platform\n- Custom LLM fine-tuning\n"
+            "- Real-time ML inference systems\n- AI-powered automation suite\n\n"
+            "### Pricing Factors\n- Data requirements (collection, cleaning, labeling)\n"
+            "- Model complexity and training time\n- Infrastructure costs (GPU, cloud)\n"
+            "- Maintenance and retraining needs\n\n### Margin Targets\n- Small: 50-60%\n- Medium: 40-50%\n"
+            "- Large: 30-40% (volume discount)",
+            source="Internal Knowledge Base", tags=["ai", "ml", "pricing", "playbook"],
+            created_at=now, updated_at=now,
+        ),
+        KnowledgeEntry(
+            id="know-008", title="Cloud Migration Best Practices",
+            entry_type="industry_knowledge", content="## Cloud Migration Best Practices\n\n"
+            "### Assessment Phase\n- Complete dependency mapping before migration\n- Audit all data residency requirements\n"
+            "- Calculate total cost of ownership (TCO) comparison\n- Identify compliance and regulatory needs\n\n"
+            "### Migration Strategy (6 Rs)\n1. Rehost (lift and shift) - fastest, least risky\n"
+            "2. Replatform - optimize for cloud without full rewrite\n3. Refactor - rearchitect for cloud-native\n"
+            "4. Repurchase - move to SaaS alternative\n5. Retire - decommission unused systems\n"
+            "6. Retain - keep on-premise when appropriate\n\n### Common Pitfalls\n"
+            "- Underestimating data transfer costs\n- Not planning for downtime\n- Insufficient testing of cutover\n"
+            "- Ignoring security group configuration\n\n### Success Metrics\n- Migration completed within 10% of planned timeline\n"
+            "- 99.9%+ uptime post-migration\n- 20-40% cost reduction vs on-premise\n- Zero compliance incidents",
+            source="Industry Research", tags=["cloud", "migration", "aws", "best-practices"],
+            created_at=now, updated_at=now,
+        ),
+    ]
+
     db.add_all(agent_logs)
     db.add_all(connectors)
+    db.add_all(knowledge_entries)
     db.commit()
 
     return {
@@ -567,5 +686,6 @@ Best regards""",
             "notifications": len(notifications),
             "agent_logs": len(agent_logs),
             "connectors": len(connectors),
+            "knowledge_entries": len(knowledge_entries),
         },
     }
