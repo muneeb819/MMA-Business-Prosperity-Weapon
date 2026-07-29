@@ -10,6 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 import { api } from "@/lib/api";
 import type { Connector } from "@/lib/types";
 import {
@@ -128,6 +130,7 @@ export default function ConnectorsPage() {
         <TopBar />
         <ScrollArea className="flex-1">
           <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+<Breadcrumbs />
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
@@ -310,7 +313,8 @@ export default function ConnectorsPage() {
             </Dialog>
           </div>
         </ScrollArea>
-      </main>
+                <Footer />
+          </main>
       {toastMsg && <Toast message={toastMsg} onClose={() => setToastMsg(null)} />}
     </div>
   );

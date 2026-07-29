@@ -23,6 +23,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { useFavorites } from "@/lib/favorites-context"
+import { Star } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +59,7 @@ export function TopBar() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const { favorites } = useFavorites()
 
   const unreadCount = useMemo(() => mockNotifications.filter(n => !n.read).length, [])
   const recentNotifications = useMemo(() => mockNotifications.slice(0, 5), [])
@@ -64,6 +68,10 @@ export function TopBar() {
     if (e.key === "Enter" && searchQuery.trim()) {
       router.push(`/ai-search?q=${encodeURIComponent(searchQuery.trim())}`)
     }
+  }
+
+  const openCommandPalette = () => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { metaKey: true, key: "k" }))
   }
 
   const handleNotificationClick = (notif: Notification) => {
@@ -83,22 +91,35 @@ export function TopBar() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50">
+          <button type="button" onClick={openCommandPalette} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors" aria-label="Open command palette (⌘K)">
             <Command className="h-2.5 w-2.5 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground font-medium">K</span>
-          </div>
+          </button>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
         {/* System Status */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10 mr-1">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
           <div className="relative">
             <div className="h-2 w-2 rounded-full bg-emerald-500" />
             <div className="absolute inset-0 h-2 w-2 rounded-full bg-emerald-500 animate-ping opacity-75" />
           </div>
           <span className="text-xs font-medium text-emerald-500">All Systems Online</span>
         </div>
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
+        {/* Favorites */}
+        <Button variant="ghost" size="icon" onClick={() => router.push("/favorites")} className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all" aria-label="Favorites">
+          <Star className="h-4.5 w-4.5" />
+          {favorites.length > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[14px] rounded-full bg-amber-500 text-white text-[8px] flex items-center justify-center font-bold px-1 shadow-lg shadow-amber-500/30">
+              {favorites.length}
+            </span>
+          )}
+        </Button>
 
         {/* Notifications Dropdown */}
         <DropdownMenu open={notifDropdownOpen} onOpenChange={setNotifDropdownOpen}>

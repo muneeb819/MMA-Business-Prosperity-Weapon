@@ -13,7 +13,8 @@ import LeadStats from "@/components/leads/LeadStats";
 import LeadFilters from "@/components/leads/LeadFilters";
 import LeadGrid from "@/components/leads/LeadGrid";
 import LeadDetailDialog from "@/components/leads/LeadDetailDialog";
-
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 export default function LeadsPage() {
   useEffect(() => { document.title = "Leads | MBPW"; }, []);
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
@@ -278,11 +279,13 @@ export default function LeadsPage() {
                 <span className="ml-3 text-sm text-zinc-400">Loading leads...</span>
               </div>
             )}
+            <Breadcrumbs />
             <LeadStats activeLeadCount={activeLeadCount} totalBudget={totalBudget} avgProbability={avgProbability} statusCounts={statusCounts} statusFilter={statusFilter} setStatusFilter={setStatusFilter} />
             <LeadFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} statusFilter={statusFilter} setStatusFilter={setStatusFilter} urgencyFilter={urgencyFilter} setUrgencyFilter={setUrgencyFilter} sortBy={sortBy} setSortBy={setSortBy} viewMode={viewMode} setViewMode={setViewMode} filteredLeadsLength={filteredLeads.length} showCount={showCount} clearFilters={clearFilters} handleExport={handleExport} />
             <LeadGrid visibleLeads={visibleLeads} viewMode={viewMode} onSelectLead={setSelectedLead} hasMore={hasMore} filteredLeadsLength={filteredLeads.length} showCount={showCount} onShowMore={handleShowMore} clearFilters={clearFilters} />
           </div>
         </ScrollArea>
+        <Footer />
       </div>
 
       <LeadDetailDialog selectedLead={selectedLead} setSelectedLead={setSelectedLead} editingLeadId={editingLeadId} setEditingLeadId={setEditingLeadId} editForm={editForm} setEditForm={setEditForm} leadToDelete={leadToDelete} setLeadToDelete={setLeadToDelete} archivedIds={archivedIds} showToast={showToast} onSave={handleSaveLead} onDelete={handleDeleteLead} onArchive={handleArchiveLead} onGenerateProposal={handleGenerateProposal} onSendEmail={handleSendEmail} onViewOriginal={handleViewOriginal} onAnalyze={handleAnalyzeLead} analyzingLeadId={analyzingLeadId} />

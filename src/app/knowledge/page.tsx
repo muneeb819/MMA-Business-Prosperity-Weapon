@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Breadcrumbs } from "@/components/breadcrumbs"
+import { Footer } from "@/components/footer"
 import { BookOpen, FileText, TrendingUp, AlertCircle, Clock, Search, Plus, X, Check, Loader2 } from "lucide-react"
 import { cn, timeAgo } from "@/lib/utils"
 import { api } from "@/lib/api"
@@ -71,6 +73,7 @@ export default function KnowledgePage() {
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-6xl mx-auto space-y-6">
+                        <Breadcrumbs />
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-slate-700/50 flex items-center justify-center">
@@ -190,7 +193,8 @@ export default function KnowledgePage() {
               </Card>
             )}
           </div>
-        </main>
+                  <Footer />
+          </main>
       </div>
     </div>
   )

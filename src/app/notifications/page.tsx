@@ -19,6 +19,8 @@ import type { Notification } from "@/lib/types";
 import { NotificationStats } from "@/components/notifications/NotificationStats";
 import { NotificationList } from "@/components/notifications/NotificationList";
 import { NotificationPreferences, PreferenceKey } from "@/components/notifications/NotificationPreferences";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 
 type FilterType = "all" | "unread" | "high_value" | "urgent";
 
@@ -143,6 +145,7 @@ export default function NotificationsPage() {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
 
+            <Breadcrumbs />
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="relative shrink-0">
@@ -234,6 +237,7 @@ export default function NotificationsPage() {
 
           </div>
         </div>
+      <Footer />
       </div>
 
       {toast && (

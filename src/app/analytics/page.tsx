@@ -15,6 +15,8 @@ import { CountryBreakdown } from "@/components/analytics/CountryBreakdown";
 import { TechBreakdown } from "@/components/analytics/TechBreakdown";
 import { AgentPerformance } from "@/components/analytics/AgentPerformance";
 import { BarChart3, DollarSign, Target, Globe, Zap, Download, Layers, Brain, TrendingUp, Briefcase, FileText, RefreshCw, ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 
 type SortField = "count" | "revenue" | "name";
 type SortDir = "asc" | "desc";
@@ -148,6 +150,7 @@ export default function AnalyticsPage() {
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <Breadcrumbs />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 shrink-0"><BarChart3 className="w-6 h-6 text-violet-400" /></div>
@@ -251,7 +254,8 @@ export default function AnalyticsPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
+          </main>
+          <Footer />
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </div>
   );

@@ -20,6 +20,8 @@ import { CrmStats } from "@/components/crm/CrmStats";
 import { CompanyList } from "@/components/crm/CompanyList";
 import { ContactPanel } from "@/components/crm/ContactPanel";
 import { CompanyDetail } from "@/components/crm/CompanyDetail";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 import { AddContactDialog } from "@/components/crm/AddContactDialog";
 import { AddCompanyDialog } from "@/components/crm/AddCompanyDialog";
 import { Users, Building2, Target, DollarSign, Plus, UserPlus, X, Check, Calendar, Clock, Phone, Mail, MoreHorizontal, Trash2 } from "lucide-react";
@@ -258,6 +260,7 @@ export default function CRMPage() {
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <Breadcrumbs />
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20"><Users className="w-6 h-6 text-cyan-400" /></div>
@@ -384,7 +387,8 @@ export default function CRMPage() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
+          </main>
+          <Footer />
       <AddContactDialog open={showAddContact} onOpenChange={setShowAddContact} onAdd={handleAddContact} />
       <AddCompanyDialog open={showAddCompany} onOpenChange={setShowAddCompany} onAdd={handleAddCompany} />
       <CompanyDetail company={selectedCompany} open={!!selectedCompany} onOpenChange={(o) => { if (!o) setSelectedCompany(null); }} onShowToast={showToast} onSave={handleSaveCompany} />

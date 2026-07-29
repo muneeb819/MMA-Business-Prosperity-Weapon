@@ -12,7 +12,8 @@ import { ProposalFilters } from "@/components/proposals/ProposalFilters";
 import { ProposalGrid } from "@/components/proposals/ProposalGrid";
 import { ProposalDetailDialog } from "@/components/proposals/ProposalDetailDialog";
 import { MockProposal, SortOption, Toast } from "@/components/proposals/types";
-
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 function mapApiProposalToMock(p: any): MockProposal {
   const sections = p.sections || {};
   return {
@@ -315,6 +316,7 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
               <span className="ml-3 text-sm text-zinc-400">Loading proposals...</span>
             </div>
           )}
+          <Breadcrumbs />
           <ProposalStats stats={stats} totalBudget={totalBudget} />
 
           <div className="mt-6 space-y-4">
@@ -339,6 +341,7 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
             }}
           />
         </ScrollArea>
+        <Footer />
       </div>
 
       <ProposalDetailDialog

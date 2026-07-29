@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { Breadcrumbs } from "@/components/breadcrumbs"
+import { Footer } from "@/components/footer"
 import { Globe, Play, Pause, Settings, Sparkles, X, CheckCircle, Loader2 } from "lucide-react"
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
@@ -188,6 +190,7 @@ export default function OpportunityHunterPage() {
         <TopBar />
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-[1600px] mx-auto space-y-6">
+                        <Breadcrumbs />
             <div className="animate-fade-in-up" style={{ animationDelay: "0ms" }}>
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="min-w-0">
@@ -261,7 +264,8 @@ export default function OpportunityHunterPage() {
               </TabsContent>
             </Tabs>
           </div>
-        </main>
+                  <Footer />
+          </main>
       </div>
 
       <DetailDialogs

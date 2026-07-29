@@ -11,6 +11,8 @@ import { SavedSearches } from "@/components/ai-search/SavedSearches";
 import { mockLeads } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import { Lead } from "@/lib/types";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Footer } from "@/components/footer";
 
 interface SavedSearch { query: string; timestamp: number; resultCount: number }
 
@@ -245,6 +247,7 @@ export default function AISearchPage() {
         <TopBar />
         <div className="flex-1 overflow-auto">
           <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
+            <Breadcrumbs />
             <SearchHero query={query} onQueryChange={setQuery} onSearch={handleSearch} isSearching={isSearching} onSuggestedClick={handleSuggestedClick} />
             {aiInterpretation && (
               <div className="bg-cyan-500/[0.06] border border-cyan-500/20 rounded-xl px-5 py-3 text-sm text-cyan-300/80">
@@ -259,6 +262,7 @@ export default function AISearchPage() {
               <SavedSearches savedSearches={savedSearches} onDeleteSaved={deleteSavedSearch} onSuggestedClick={handleSuggestedClick} showToast={showToast} />
             </div>
           </div>
+          <Footer />
         </div>
       </div>
       {toast && (
