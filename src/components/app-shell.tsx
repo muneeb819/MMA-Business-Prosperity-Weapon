@@ -6,9 +6,6 @@ import { CommandPalette } from "@/components/command-palette"
 import { useFavorites } from "@/lib/favorites-context"
 import { useTheme } from "@/lib/theme-context"
 import { useAuth } from "@/lib/auth-context"
-import { Sidebar } from "@/components/sidebar"
-import { TopBar } from "@/components/topbar"
-import { Footer } from "@/components/footer"
 
 const pageLabels: Record<string, string> = {
   "/": "Dashboard",
@@ -84,51 +81,42 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handler)
   }, [router, isAuthPage])
 
-  if (isAuthPage) {
-    return <>{children}</>
-  }
-
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <TopBar onMenuToggle={() => document.dispatchEvent(new CustomEvent("mbpw:toggle-sidebar"))} />
-          <main className="flex-1 overflow-y-auto p-6">
-            {children}
-          </main>
-          <Footer />
-        </div>
-      </div>
-      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
+      {children}
+      {!isAuthPage && (
+        <>
+          <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
 
-      {showShortcuts && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center" onClick={() => setShowShortcuts(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md mx-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-bold mb-4">Keyboard Shortcuts</h2>
-            <div className="space-y-2">
-              {[
-                { keys: "⌘K", desc: "Command palette" },
-                { keys: "⌘1-9", desc: "Navigate to pages" },
-                { keys: "⌘0", desc: "Go to Analytics" },
-                { keys: "⌘A", desc: "Admin Panel" },
-                { keys: "⌘T", desc: "Team page" },
-                { keys: "⌘L", desc: "Calendar" },
-                { keys: "⌘B", desc: "Toggle sidebar" },
-                { keys: "⌘E", desc: "Export dashboard" },
-                { keys: "⌘/", desc: "Focus search bar" },
-                { keys: "?", desc: "Toggle this menu" },
-                { keys: "ESC", desc: "Close modals / menus" },
-              ].map((s, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-zinc-300">{s.desc}</span>
-                  <kbd className="px-2 py-0.5 text-[11px] font-mono text-zinc-400 bg-zinc-800 rounded border border-zinc-700">{s.keys}</kbd>
+          {showShortcuts && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center" onClick={() => setShowShortcuts(false)}>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <div className="relative w-full max-w-md mx-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6 animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
+                <h2 className="text-lg font-bold mb-4">Keyboard Shortcuts</h2>
+                <div className="space-y-2">
+                  {[
+                    { keys: "⌘K", desc: "Command palette" },
+                    { keys: "⌘1-9", desc: "Navigate to pages" },
+                    { keys: "⌘0", desc: "Go to Analytics" },
+                    { keys: "⌘A", desc: "Admin Panel" },
+                    { keys: "⌘T", desc: "Team page" },
+                    { keys: "⌘L", desc: "Calendar" },
+                    { keys: "⌘B", desc: "Toggle sidebar" },
+                    { keys: "⌘E", desc: "Export dashboard" },
+                    { keys: "⌘/", desc: "Focus search bar" },
+                    { keys: "?", desc: "Toggle this menu" },
+                    { keys: "ESC", desc: "Close modals / menus" },
+                  ].map((s, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5">
+                      <span className="text-sm text-zinc-300">{s.desc}</span>
+                      <kbd className="px-2 py-0.5 text-[11px] font-mono text-zinc-400 bg-zinc-800 rounded border border-zinc-700">{s.keys}</kbd>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </>
   )
