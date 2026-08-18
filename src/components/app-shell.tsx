@@ -6,6 +6,9 @@ import { CommandPalette } from "@/components/command-palette"
 import { useFavorites } from "@/lib/favorites-context"
 import { useTheme } from "@/lib/theme-context"
 import { useAuth } from "@/lib/auth-context"
+import { Sidebar } from "@/components/sidebar"
+import { TopBar } from "@/components/topbar"
+import { Footer } from "@/components/footer"
 
 const pageLabels: Record<string, string> = {
   "/": "Dashboard",
@@ -26,12 +29,16 @@ const pageLabels: Record<string, string> = {
   "/admin": "Admin",
 }
 
+const AUTH_ROUTES = ["/login", "/register"]
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [commandOpen, setCommandOpen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const { addRecentPage } = useFavorites()
+
+  const isAuthPage = AUTH_ROUTES.some((route) => pathname.startsWith(route))
 
   useEffect(() => {
     if (pathname && pageLabels[pathname]) {
@@ -40,6 +47,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [pathname, addRecentPage])
 
   useEffect(() => {
+    if (isAuthPage) return
+
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault()
@@ -73,11 +82,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [router])
+  }, [router, isAuthPage])
+
+  if (isAuthPage) {
+    return <>{children}</>
+  }
 
   return (
     <>
-      {children}
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <TopBar onMenuToggle={() => document.dispatchEvent(new CustomEvent("mbpw:toggle-sidebar"))} />
+          <main className="flex-1 overflow-y-auto p-6">
+            {children}
+          </main>
+          <Footer />
+        </div>
+      </div>
       <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
 
       {showShortcuts && (
