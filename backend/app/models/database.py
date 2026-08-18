@@ -1,24 +1,26 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import StaticPool
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 if not DATABASE_URL:
-    # Vercel serverless: use in-memory SQLite
+    # Vercel serverless: use in-memory SQLite with shared connection
     DATABASE_URL = "sqlite://"
-    connect_args = {}
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 elif DATABASE_URL.startswith("sqlite"):
-    DATABASE_URL = "sqlite:///./mbpw.db"
-    connect_args = {"check_same_thread": False}
+    engine = create_engine(
+        "sqlite:///./mbpw.db",
+        connect_args={"check_same_thread": False},
+    )
 else:
-    connect_args = {}
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -37,11 +39,11 @@ def seed_if_needed():
     db = SessionLocal()
     try:
         result = seed_all(db)
-        if not result.get("skipped"):
-            _seeded = True
+        _seeded = True
+    except Exception:
+        _seeded = True
     finally:
         db.close()
-        _seeded = True
 
 
 def get_db():
