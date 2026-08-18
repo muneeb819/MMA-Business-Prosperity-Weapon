@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.database import create_tables
 from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket
@@ -19,15 +19,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")
-def on_startup():
+@app.middleware("http")
+async def ensure_db(request: Request, call_next):
     create_tables()
     try:
         from app.models.database import seed_if_needed
         seed_if_needed()
     except Exception:
         pass
+    return await call_next(request)
 
 
 app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
