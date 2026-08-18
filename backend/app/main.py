@@ -23,6 +23,11 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     create_tables()
+    try:
+        from app.models.database import seed_if_needed
+        seed_if_needed()
+    except Exception:
+        pass
 
 
 app.include_router(leads.router, prefix="/api/leads", tags=["Leads"])
