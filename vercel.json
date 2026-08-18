@@ -4,10 +4,6 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
     }
   ],
   "routes": [
@@ -20,8 +16,12 @@
       "dest": "/api/index.py"
     },
     {
+      "src": "/seed",
+      "dest": "/api/index.py"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/api/index.py"
     }
   ]
 }
