@@ -126,7 +126,7 @@ export default function ConnectorsPage() {
   return (
     <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
         <ScrollArea className="flex-1">
           <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">

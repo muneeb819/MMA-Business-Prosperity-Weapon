@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,6 @@ import {
   Target,
   Bot,
   Activity,
-  Sparkles,
   Menu,
   X,
   Cable,
@@ -50,6 +49,34 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  useEffect(() => {
+    const saved = localStorage.getItem("mbpw_sidebar_collapsed")
+    if (saved === "true") setCollapsed(true)
+  }, [])
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem("mbpw_sidebar_collapsed", String(next))
+      return next
+    })
+  }
+
+  useEffect(() => {
+    const handler = () => setMobileOpen((prev) => !prev)
+    window.addEventListener("mbpw:toggle-sidebar", handler)
+    return () => window.removeEventListener("mbpw:toggle-sidebar", handler)
+  }, [])
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    return pathname === href || pathname.startsWith(href + "/")
+  }
+
   return (
     <>
       <button
@@ -76,7 +103,7 @@ export function Sidebar() {
           collapsed ? "md:w-[72px]" : "md:w-64"
         )}
       >
-        <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50">
+        <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50 shrink-0">
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white font-bold text-lg shrink-0 shadow-lg shadow-blue-500/20">
             M
             <div className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
@@ -97,27 +124,25 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto scrollbar-thin">
-          {navigation.map((item, index) => {
-            const isActive = pathname === item.href
+          {navigation.map((item) => {
+            const active = isActive(item.href)
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative animate-fade-in-up",
-                  isActive
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative",
+                  active
                     ? "bg-primary/10 text-primary shadow-sm"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
-                style={{ animationDelay: `${index * 30}ms` }}
               >
-                {isActive && (
+                {active && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-blue-500 to-purple-500" />
                 )}
                 <div className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-all duration-200",
-                  isActive
+                  active
                     ? `bg-gradient-to-br ${item.color} text-white shadow-md`
                     : "bg-muted/50 text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
                 )}>
@@ -131,7 +156,7 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="p-2.5 border-t border-border/50">
+        <div className="p-2.5 border-t border-border/50 shrink-0">
           <div className={cn(
             "rounded-xl overflow-hidden",
             collapsed ? "p-2" : "p-3"
@@ -169,8 +194,9 @@ export function Sidebar() {
         </div>
 
         <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-20 h-6 w-6 rounded-full border border-border/50 bg-card hidden md:flex items-center justify-center shadow-md hover:bg-muted transition-all duration-200 hover:scale-110"
+          onClick={toggleCollapse}
+          className="hidden md:flex absolute -right-3 top-20 h-6 w-6 rounded-full border border-border/50 bg-card items-center justify-center shadow-md hover:bg-muted transition-all duration-200 hover:scale-110 z-10"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? (
             <ChevronRight className="h-3 w-3 text-muted-foreground" />

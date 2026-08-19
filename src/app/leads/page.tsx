@@ -267,7 +267,7 @@ export default function LeadsPage() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#07080F]">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />

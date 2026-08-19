@@ -138,7 +138,7 @@ export default function NotificationsPage() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#0a0a0f] text-white">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <TopBar />

@@ -305,7 +305,7 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
   ];
 
   return (
-    <div className="flex h-screen bg-[#07080F]">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />

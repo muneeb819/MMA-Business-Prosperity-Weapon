@@ -241,7 +241,7 @@ export default function AISearchPage() {
     (countryFilter !== "All Countries" ? 1 : 0) + (budgetMin ? 1 : 0) + (budgetMax ? 1 : 0) + selectedTechs.length;
 
   return (
-    <div className="flex h-screen bg-[#0a0a0f] text-white">
+    <div className="flex h-screen bg-background text-foreground">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <TopBar />
