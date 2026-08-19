@@ -7,6 +7,7 @@ import {
   Search,
   Settings,
   User,
+  LogOut,
   ChevronDown,
   Zap,
   Command,
@@ -25,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useFavorites } from "@/lib/favorites-context"
+import { useAuth } from "@/lib/auth-context"
 import { Star } from "lucide-react"
 import {
   DropdownMenu,
@@ -55,14 +57,28 @@ function getNotificationRoute(notif: Notification): string {
   return "/notifications"
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((s) => s[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 export function TopBar() {
   const router = useRouter()
+  const { user, logout } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { favorites } = useFavorites()
 
   const unreadCount = useMemo(() => mockNotifications.filter(n => !n.read).length, [])
   const recentNotifications = useMemo(() => mockNotifications.slice(0, 5), [])
+
+  const displayName = user?.name || "Admin"
+  const initials = getInitials(displayName)
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
@@ -77,6 +93,12 @@ export function TopBar() {
   const handleNotificationClick = (notif: Notification) => {
     setNotifDropdownOpen(false)
     router.push(getNotificationRoute(notif))
+  }
+
+  const handleLogout = () => {
+    setUserMenuOpen(false)
+    logout()
+    router.push("/login")
   }
 
   return (
@@ -206,32 +228,51 @@ export function TopBar() {
         </DropdownMenu>
 
         {/* User Menu */}
-        <DropdownMenu>
+        <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2.5 px-2 h-10 rounded-xl hover:bg-muted/50 transition-all">
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                 <AvatarFallback className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white text-xs font-bold shadow-lg">
-                  MB
+                  {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="text-left hidden md:block">
-                <p className="text-sm font-semibold leading-none">Admin</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">CEO</p>
+                <p className="text-sm font-semibold leading-none">{displayName}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 capitalize">{user?.role || "Admin"}</p>
               </div>
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56 rounded-xl border-border/50 shadow-xl">
-            <DropdownMenuLabel className="font-semibold">My Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-semibold text-xs">
+              <div>{displayName}</div>
+              <div className="text-muted-foreground font-normal mt-0.5">{user?.email || "admin@mbpw.com"}</div>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Profile clicked")}>
+            <DropdownMenuItem
+              className="rounded-lg cursor-pointer"
+              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
+            >
               <User className="mr-2 h-4 w-4" /> Profile
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Settings clicked")}>
+            <DropdownMenuItem
+              className="rounded-lg cursor-pointer"
+              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
+            >
               <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => console.log("Billing clicked")}>
+            <DropdownMenuItem
+              className="rounded-lg cursor-pointer"
+              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
+            >
               <Zap className="mr-2 h-4 w-4" /> Billing
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="rounded-lg cursor-pointer text-red-400 focus:text-red-300 focus:bg-red-500/10"
+              onClick={handleLogout}
+            >
+              <LogOut className="mr-2 h-4 w-4" /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
