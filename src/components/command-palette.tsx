@@ -23,7 +23,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [query, setQuery] = useState("")
   const [selectedIndex, setSelectedIndex] = useState(0)
   const { user, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
+  const { theme, isDark, toggleTheme } = useTheme()
 
   const commands: Command[] = [
     { id: "dashboard", label: "Dashboard", description: "Go to executive dashboard", icon: LayoutDashboard, action: () => router.push("/"), shortcut: "⌘1", category: "Navigation" },
@@ -39,7 +39,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     { id: "export", label: "Export Dashboard", description: "Export current dashboard as CSV/PDF", icon: ExternalLink, action: () => { document.dispatchEvent(new CustomEvent("mbpw:export")) }, category: "Actions" },
     { id: "settings", label: "Settings", description: "Configure your preferences", icon: Settings, action: () => router.push("/settings"), category: "Actions" },
     { id: "favorites", label: "Favorites", description: "View your saved favorites", icon: Star, action: () => router.push("/favorites"), category: "Actions" },
-    { id: "toggle-theme", label: theme === "dark" ? "Light Mode" : "Dark Mode", description: `Switch to ${theme === "dark" ? "light" : "dark"} theme`, icon: theme === "dark" ? Sun : Moon, action: () => toggleTheme(), category: "Preferences" },
+    { id: "toggle-theme", label: isDark ? "Light Mode" : "Dark Mode", description: `Switch to ${isDark ? "light" : "dark"} theme`, icon: isDark ? Sun : Moon, action: () => toggleTheme(), category: "Preferences" },
     { id: "logout", label: "Log Out", description: `Sign out as ${user?.email || "user"}`, icon: LogOut, action: () => logout().then(() => router.push("/login")), category: "Account" },
     { id: "ai-insights", label: "AI Insights", description: "Generate AI-powered business insights", icon: Sparkles, action: () => { document.dispatchEvent(new CustomEvent("mbpw:ai-insights")) }, category: "Actions" },
   ]
