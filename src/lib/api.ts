@@ -3,8 +3,11 @@ import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData, Connector
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  let token: string | null = null;
+  try { token = JSON.parse(localStorage.getItem("mbpw_auth") || "null")?.token; } catch {}
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
+    headers: { "Content-Type": "application/json", ...authHeaders, ...options?.headers },
     ...options,
   });
   if (!res.ok) {
@@ -138,6 +141,11 @@ export const api = {
       fetchAPI(`/api/knowledge/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     delete: (id: string) => fetchAPI(`/api/knowledge/${id}`, { method: "DELETE" }),
     types: () => fetchAPI<string[]>("/api/knowledge/types/list"),
+  },
+  reports: {
+    pipeline: (days?: number) => fetchAPI(`/api/reports/pipeline?days=${days || 30}`),
+    performance: (days?: number) => fetchAPI(`/api/reports/performance?days=${days || 30}`),
+    summary: () => fetchAPI("/api/reports/summary"),
   },
   seed: () => fetchAPI("/api/seed", { method: "POST" }),
 };

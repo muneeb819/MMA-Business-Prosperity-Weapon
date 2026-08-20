@@ -90,7 +90,11 @@ export default function DashboardPage() {
     if (showLoad) setLoading(false)
   }, [])
 
-  useEffect(() => { fetchAll(); return () => {} }, [fetchAll])
+  useEffect(() => {
+    fetchAll()
+    const interval = setInterval(() => fetchAll(false), 30000)
+    return () => clearInterval(interval)
+  }, [fetchAll])
 
   useEffect(() => {
     if (showInsightsModal && !aiInsights) {

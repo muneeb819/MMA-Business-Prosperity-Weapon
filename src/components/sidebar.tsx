@@ -1,30 +1,21 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   Globe,
-  Search,
   FileText,
-  Bell,
   Users,
   BarChart3,
-  ChevronLeft,
-  ChevronRight,
   Target,
   Bot,
   Activity,
   Menu,
-  X,
   Cable,
-  BookOpen,
-  Shield,
-  CalendarDays,
   LineChart,
-  UserCog,
 } from "lucide-react"
 
 const navigation = [
@@ -32,35 +23,33 @@ const navigation = [
   { name: "Opportunity Hunter", href: "/opportunity-hunter", icon: Globe, color: "from-cyan-500 to-blue-500" },
   { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-teal-400" },
   { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
-  { name: "AI Search", href: "/ai-search", icon: Search, color: "from-amber-500 to-orange-400" },
   { name: "Connectors", href: "/connectors", icon: Cable, color: "from-teal-500 to-cyan-400" },
-  { name: "Knowledge Base", href: "/knowledge", icon: BookOpen, color: "from-emerald-500 to-teal-400" },
   { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
   { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },
   { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-teal-400" },
-  { name: "Calendar", href: "/calendar", icon: CalendarDays, color: "from-orange-500 to-pink-400" },
-  { name: "Team", href: "/team", icon: UserCog, color: "from-pink-500 to-purple-400" },
-  { name: "Notifications", href: "/notifications", icon: Bell, color: "from-rose-500 to-pink-400" },
-  { name: "Admin", href: "/admin", icon: Shield, color: "from-red-500 to-orange-400" },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const sidebarRef = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    const saved = localStorage.getItem("mbpw_sidebar_collapsed")
-    if (saved === "true") setCollapsed(true)
+  const handleMouseEnter = useCallback(() => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    setExpanded(true)
   }, [])
 
-  const toggleCollapse = () => {
-    setCollapsed((prev) => {
-      const next = !prev
-      localStorage.setItem("mbpw_sidebar_collapsed", String(next))
-      return next
-    })
-  }
+  const handleMouseLeave = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => setExpanded(false), 200)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     const handler = () => setMobileOpen((prev) => !prev)
@@ -95,12 +84,15 @@ export function Sidebar() {
       )}
 
       <aside
+        ref={sidebarRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={cn(
           "h-screen border-r border-border/50 bg-card/80 backdrop-blur-xl transition-all duration-300 flex flex-col",
           "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:w-64 max-md:z-50",
           mobileOpen ? "max-md:translate-x-0" : "max-md:-translate-x-full",
           "md:relative md:shrink-0",
-          collapsed ? "md:w-[72px]" : "md:w-64"
+          expanded ? "md:w-64" : "md:w-[72px]"
         )}
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50 shrink-0">
@@ -108,22 +100,24 @@ export function Sidebar() {
             M
             <div className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
           </div>
-          {!collapsed && (
+          {expanded && (
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-bold text-sm leading-tight text-gradient">MMA Business</span>
               <span className="text-[10px] text-muted-foreground leading-tight">Prosperity Weapon</span>
             </div>
           )}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="md:hidden h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-all shrink-0"
-            aria-label="Close menu"
-          >
-            <X className="h-4 w-4 text-muted-foreground" />
-          </button>
+          {mobileOpen && (
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="md:hidden h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-all shrink-0"
+              aria-label="Close menu"
+            >
+              <span className="text-muted-foreground text-lg">&times;</span>
+            </button>
+          )}
         </div>
 
-        <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto scrollbar-thin">
+        <nav className="flex-1 p-2.5 space-y-0.5 overflow-hidden">
           {navigation.map((item) => {
             const active = isActive(item.href)
             return (
@@ -148,7 +142,7 @@ export function Sidebar() {
                 )}>
                   <item.icon className="h-4 w-4" />
                 </div>
-                {!collapsed && (
+                {expanded && (
                   <span className="truncate">{item.name}</span>
                 )}
               </Link>
@@ -159,9 +153,9 @@ export function Sidebar() {
         <div className="p-2.5 border-t border-border/50 shrink-0">
           <div className={cn(
             "rounded-xl overflow-hidden",
-            collapsed ? "p-2" : "p-3"
+            expanded ? "p-3" : "p-2"
           )}>
-            {!collapsed ? (
+            {expanded ? (
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
@@ -192,18 +186,6 @@ export function Sidebar() {
             )}
           </div>
         </div>
-
-        <button
-          onClick={toggleCollapse}
-          className="hidden md:flex absolute -right-3 top-20 h-6 w-6 rounded-full border border-border/50 bg-card items-center justify-center shadow-md hover:bg-muted transition-all duration-200 hover:scale-110 z-10"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-          ) : (
-            <ChevronLeft className="h-3 w-3 text-muted-foreground" />
-          )}
-        </button>
       </aside>
     </>
   )

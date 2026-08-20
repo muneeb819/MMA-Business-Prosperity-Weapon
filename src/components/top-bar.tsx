@@ -1,6 +1,6 @@
-"use client"
+﻿"use client"
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
   Bell,
@@ -19,6 +19,13 @@ import {
   Bot,
   Clock,
   ExternalLink,
+  X,
+  History,
+  ArrowRight,
+  FileText,
+  BarChart3,
+  LineChart,
+  Cable,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -52,9 +59,21 @@ const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: stri
   agent: { icon: Bell, color: "text-slate-400", bg: "bg-slate-500/10" },
 }
 
+const RECENT_SEARCHES_KEY = "mbpw_recent_searches"
+const MAX_RECENT = 6
+
+const searchHints = [
+  { label: "New leads this week", icon: Target, href: "/leads" },
+  { label: "Pending proposals", icon: FileText, href: "/proposals" },
+  { label: "CRM companies", icon: Building2, href: "/crm" },
+  { label: "Analytics overview", icon: BarChart3, href: "/analytics" },
+  { label: "Revenue reports", icon: LineChart, href: "/reports" },
+  { label: "Active connectors", icon: Cable, href: "/connectors" },
+]
+
 function getNotificationRoute(notif: Notification): string {
   if (notif.leadId) return `/leads/${notif.leadId}`
-  return "/notifications"
+  return "/"
 }
 
 function getInitials(name: string): string {
@@ -66,24 +85,91 @@ function getInitials(name: string): string {
     .slice(0, 2)
 }
 
+function getRecentSearches(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || "[]")
+  } catch {
+    return []
+  }
+}
+
+function saveRecentSearch(query: string) {
+  const trimmed = query.trim()
+  if (!trimmed) return
+  const searches = getRecentSearches().filter((s) => s !== trimmed)
+  searches.unshift(trimmed)
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches.slice(0, MAX_RECENT)))
+}
+
+function clearRecentSearches() {
+  localStorage.removeItem(RECENT_SEARCHES_KEY)
+}
+
 export function TopBar() {
   const router = useRouter()
   const { user, logout } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchFocused, setSearchFocused] = useState(false)
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { favorites } = useFavorites()
+  const searchRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const unreadCount = useMemo(() => mockNotifications.filter(n => !n.read).length, [])
   const recentNotifications = useMemo(() => mockNotifications.slice(0, 5), [])
+  const [recentSearches, setRecentSearches] = useState<string[]>([])
+
+  useEffect(() => {
+    setRecentSearches(getRecentSearches())
+  }, [searchFocused])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchFocused(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const displayName = user?.name || "Admin"
   const initials = getInitials(displayName)
 
+  const performSearch = useCallback((query: string) => {
+    const trimmed = query.trim()
+    if (!trimmed) return
+    saveRecentSearch(trimmed)
+    setRecentSearches(getRecentSearches())
+    setSearchFocused(false)
+    router.push(`/leads?q=${encodeURIComponent(trimmed)}`)
+  }, [router])
+
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
-      router.push(`/ai-search?q=${encodeURIComponent(searchQuery.trim())}`)
+    if (e.key === "Enter") {
+      performSearch(searchQuery)
+    } else if (e.key === "Escape") {
+      setSearchFocused(false)
+      inputRef.current?.blur()
     }
+  }
+
+  const handleHintClick = (href: string) => {
+    setSearchFocused(false)
+    router.push(href)
+  }
+
+  const handleRemoveRecent = (query: string) => {
+    const updated = recentSearches.filter((s) => s !== query)
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated))
+    setRecentSearches(updated)
+  }
+
+  const handleClearAllRecent = () => {
+    clearRecentSearches()
+    setRecentSearches([])
   }
 
   const openCommandPalette = () => {
@@ -101,27 +187,89 @@ export function TopBar() {
     router.push("/login")
   }
 
+  const showDropdown = searchFocused
+
+  const filteredHints = searchQuery.trim()
+    ? searchHints.filter((h) => h.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    : searchHints
+
   return (
     <header className="h-16 border-b border-border/50 bg-card/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30">
-      <div className="flex items-center gap-4 flex-1">
+      <div className="flex items-center gap-4 flex-1" ref={searchRef}>
         <div className="relative max-w-lg w-full group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
           <Input
+            ref={inputRef}
             placeholder="Search anything... (⌘K)"
-            className="pl-10 pr-12 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/50 transition-all h-10 rounded-xl"
+            className="pl-10 pr-12 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/50 transition-all h-10 rounded-xl relative z-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
+            onFocus={() => setSearchFocused(true)}
           />
-          <button type="button" onClick={openCommandPalette} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors" aria-label="Open command palette (⌘K)">
+          <button type="button" onClick={openCommandPalette} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors z-10" aria-label="Open command palette (⌘K)">
             <Command className="h-2.5 w-2.5 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground font-medium">K</span>
           </button>
+
+          {showDropdown && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl shadow-black/30 z-50 overflow-hidden max-h-[400px] overflow-y-auto">
+              {recentSearches.length > 0 && !searchQuery.trim() && (
+                <div className="p-2">
+                  <div className="flex items-center justify-between px-3 py-1.5">
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Recent Searches</span>
+                    <button onClick={handleClearAllRecent} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Clear all</button>
+                  </div>
+                  {recentSearches.map((query) => (
+                    <button
+                      key={query}
+                      onClick={() => { setSearchQuery(query); performSearch(query) }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group/item text-left"
+                    >
+                      <History className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground group-hover/item:text-foreground truncate flex-1">{query}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleRemoveRecent(query) }}
+                        className="opacity-0 group-hover/item:opacity-100 transition-opacity"
+                        aria-label={`Remove ${query} from recent searches`}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {recentSearches.length > 0 && !searchQuery.trim() && <div className="h-px bg-border/50 mx-3" />}
+
+              <div className="p-2">
+                <span className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  {searchQuery.trim() ? "Suggestions" : "Quick Links"}
+                </span>
+                {filteredHints.length > 0 ? (
+                  filteredHints.map((hint) => (
+                    <button
+                      key={hint.label}
+                      onClick={() => handleHintClick(hint.href)}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors group/item text-left"
+                    >
+                      <div className="h-7 w-7 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 group-hover/item:bg-muted transition-colors">
+                        <hint.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm text-muted-foreground group-hover/item:text-foreground flex-1">{hint.label}</span>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground/30 group-hover/item:text-muted-foreground transition-colors" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-4 text-center text-sm text-muted-foreground">No matching results</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        {/* System Status */}
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
           <div className="relative">
             <div className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -130,10 +278,8 @@ export function TopBar() {
           <span className="text-xs font-medium text-emerald-500">All Systems Online</span>
         </div>
 
-        {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Favorites */}
         <Button variant="ghost" size="icon" onClick={() => router.push("/favorites")} className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all" aria-label="Favorites">
           <Star className="h-4.5 w-4.5" />
           {favorites.length > 0 && (
@@ -143,14 +289,9 @@ export function TopBar() {
           )}
         </Button>
 
-        {/* Notifications Dropdown */}
         <DropdownMenu open={notifDropdownOpen} onOpenChange={setNotifDropdownOpen}>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all"
-            >
+            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl hover:bg-muted/50 transition-all">
               <Bell className="h-4.5 w-4.5" />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] rounded-full bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] flex items-center justify-center font-bold px-1 shadow-lg shadow-red-500/30 animate-scale-in">
@@ -168,7 +309,6 @@ export function TopBar() {
                 </Badge>
               )}
             </div>
-
             <ScrollArea className="max-h-[340px]">
               {recentNotifications.length > 0 ? (
                 <div className="py-1">
@@ -198,9 +338,7 @@ export function TopBar() {
                               <Clock className="w-2.5 h-2.5" />
                               {timeAgo(new Date(notif.createdAt))}
                             </span>
-                            {!notif.read && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                            )}
+                            {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
                           </div>
                         </div>
                         <ExternalLink className="w-3 h-3 text-muted-foreground/30 shrink-0 mt-1.5" />
@@ -212,22 +350,9 @@ export function TopBar() {
                 <div className="p-8 text-center text-muted-foreground text-sm">No notifications yet</div>
               )}
             </ScrollArea>
-
-            <div className="border-t border-border/50 p-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setNotifDropdownOpen(false); router.push("/notifications") }}
-                className="w-full text-xs text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-lg h-9 font-medium"
-              >
-                <Bell className="w-3.5 h-3.5 mr-1.5" />
-                View All Notifications
-              </Button>
-            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User Menu */}
         <DropdownMenu open={userMenuOpen} onOpenChange={setUserMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2.5 px-2 h-10 rounded-xl hover:bg-muted/50 transition-all">
@@ -249,29 +374,17 @@ export function TopBar() {
               <div className="text-muted-foreground font-normal mt-0.5">{user?.email || "admin@mbpw.com"}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="rounded-lg cursor-pointer"
-              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
-            >
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => { setUserMenuOpen(false); router.push("/settings") }}>
               <User className="mr-2 h-4 w-4" /> Profile
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="rounded-lg cursor-pointer"
-              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
-            >
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => { setUserMenuOpen(false); router.push("/settings") }}>
               <Settings className="mr-2 h-4 w-4" /> Settings
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="rounded-lg cursor-pointer"
-              onClick={() => { setUserMenuOpen(false); router.push("/settings") }}
-            >
+            <DropdownMenuItem className="rounded-lg cursor-pointer" onClick={() => { setUserMenuOpen(false); router.push("/settings") }}>
               <Zap className="mr-2 h-4 w-4" /> Billing
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="rounded-lg cursor-pointer text-red-400 focus:text-red-300 focus:bg-red-500/10"
-              onClick={handleLogout}
-            >
+            <DropdownMenuItem className="rounded-lg cursor-pointer text-red-400 focus:text-red-300 focus:bg-red-500/10" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" /> Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
