@@ -6,6 +6,7 @@ import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check } from "lucide-react";
 import { mockLeads } from "@/lib/mock-data";
+import { getStoredLeads, type LiveLead } from "@/lib/live-sources";
 import { api } from "@/lib/api";
 import type { Lead } from "@/lib/types";
 import { PAGE_SIZE, type SortKey } from "@/components/leads/leads-config";
@@ -60,10 +61,105 @@ export default function LeadsPage() {
             analyzedAt: l.analyzedAt || l.analyzed_at || undefined,
             proposalId: l.proposalId || l.proposal_id || "",
           }));
-          setLeads(mapped as Lead[]);
+          const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
+            id: ll.id,
+            title: ll.title,
+            description: ll.description,
+            clientName: ll.company,
+            company: ll.company,
+            email: "",
+            phone: "",
+            country: ll.country || "",
+            budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+            deadline: "",
+            technologies: ll.technologies,
+            skills: [],
+            platform: ll.platform,
+            jobType: "full_time",
+            status: "new" as const,
+            urgency: "medium" as const,
+            difficulty: 50,
+            successProbability: 60,
+            riskLevel: "medium",
+            expectedRevenue: (ll.salaryMax || 20000) * 0.3,
+            competition: 0,
+            projectSize: "medium",
+            paymentMethod: "Escrow",
+            clientHistory: `Sourced from ${ll.source}`,
+            url: ll.url,
+            notes: `Live lead from ${ll.source}`,
+            tags: ll.tags,
+            foundAt: ll.publishedAt || new Date().toISOString(),
+            analyzedAt: undefined,
+          }));
+          setLeads([...mapped, ...liveLeads] as Lead[]);
+        } else {
+          const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
+            id: ll.id,
+            title: ll.title,
+            description: ll.description,
+            clientName: ll.company,
+            company: ll.company,
+            email: "",
+            phone: "",
+            country: ll.country || "",
+            budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+            deadline: "",
+            technologies: ll.technologies,
+            skills: [],
+            platform: ll.platform,
+            jobType: "full_time",
+            status: "new" as const,
+            urgency: "medium" as const,
+            difficulty: 50,
+            successProbability: 60,
+            riskLevel: "medium",
+            expectedRevenue: (ll.salaryMax || 20000) * 0.3,
+            competition: 0,
+            projectSize: "medium",
+            paymentMethod: "Escrow",
+            clientHistory: `Sourced from ${ll.source}`,
+            url: ll.url,
+            notes: `Live lead from ${ll.source}`,
+            tags: ll.tags,
+            foundAt: ll.publishedAt || new Date().toISOString(),
+            analyzedAt: undefined,
+          }));
+          if (liveLeads.length > 0) setLeads(liveLeads as Lead[]);
         }
       } catch {
-        // API unavailable — keep mockLeads
+        const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
+          id: ll.id,
+          title: ll.title,
+          description: ll.description,
+          clientName: ll.company,
+          company: ll.company,
+          email: "",
+          phone: "",
+          country: ll.country || "",
+          budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+          deadline: "",
+          technologies: ll.technologies,
+          skills: [],
+          platform: ll.platform,
+          jobType: "full_time",
+          status: "new" as const,
+          urgency: "medium" as const,
+          difficulty: 50,
+          successProbability: 60,
+          riskLevel: "medium",
+          expectedRevenue: (ll.salaryMax || 20000) * 0.3,
+          competition: 0,
+          projectSize: "medium",
+          paymentMethod: "Escrow",
+          clientHistory: `Sourced from ${ll.source}`,
+          url: ll.url,
+          notes: `Live lead from ${ll.source}`,
+          tags: ll.tags,
+          foundAt: ll.publishedAt || new Date().toISOString(),
+          analyzedAt: undefined,
+        }));
+        if (liveLeads.length > 0) setLeads(liveLeads as Lead[]);
       } finally {
         if (!cancelled) setLoading(false);
       }

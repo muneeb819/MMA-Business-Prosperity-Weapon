@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
 import { api } from "@/lib/api";
+import { fetchAllSources, SOURCE_LIST, getLastSyncTime, getStoredLeads } from "@/lib/live-sources";
 import type { Connector } from "@/lib/types";
 import {
   Cable,
@@ -32,14 +33,6 @@ import {
   Check,
   X,
 } from "lucide-react";
-
-interface LiveSource {
-  name: string;
-  display_name: string;
-  source_type: string;
-  url: string;
-  requires_key: boolean;
-}
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
@@ -66,16 +59,9 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   error: { label: "Error", color: "text-red-400", bg: "bg-red-500/10 border-red-500/30" },
 };
 
-const liveSourceIcons: Record<string, string> = {
-  himalayas: "🏔️", remoteok: "🌍", remotive: "🏠", greenhouse: "🌿",
-  lever: "⚙️", ashby: "📋", hn_hiring: "🟠", arbeitnow: "💼",
-  findwork: "🔍", weworkremotely: "🌐", adzuna: "📊", jooble: "🔗",
-};
-
 export default function ConnectorsPage() {
   useEffect(() => { document.title = "Connectors | MBPW"; }, []);
   const [connectors, setConnectors] = useState<Connector[]>([]);
-  const [liveSources, setLiveSources] = useState<LiveSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
@@ -83,41 +69,31 @@ export default function ConnectorsPage() {
   const [newPlatform, setNewPlatform] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
-  const [syncResult, setSyncResult] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<Record<string, { fetched: number; error?: string }> | null>(null);
+  const [liveLeadCount, setLiveLeadCount] = useState(0);
+  const [lastSync, setLastSync] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); }, []);
 
-  const fetchLiveSources = useCallback(async () => {
-    try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-      const res = await fetch(`${API_BASE}/api/lead-sources`);
-      if (res.ok) {
-        const data = await res.json();
-        setLiveSources(data);
-      }
-    } catch {}
+  useEffect(() => {
+    setLiveLeadCount(getStoredLeads().length);
+    setLastSync(getLastSyncTime());
   }, []);
 
   const handleSyncAll = useCallback(async () => {
     setSyncingAll(true);
     setSyncResult(null);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
-      let token: string | null = null;
-      try { token = JSON.parse(localStorage.getItem("mbpw_auth") || "null")?.token; } catch {}
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch(`${API_BASE}/api/lead-sources/sync-all?limit=30`, { method: "POST", headers });
-      if (res.ok) {
-        const data = await res.json();
-        setSyncResult(data);
-        showToast(`Synced ${data.summary?.total_fetched || 0} leads from ${data.summary?.sources_synced || 0} sources`);
-      } else {
-        showToast("Sync failed");
-      }
-    } catch {
-      showToast("Sync failed — is the backend running?");
+      const { leads, results } = await fetchAllSources(15);
+      setSyncResult(results);
+      setLiveLeadCount(leads.length);
+      setLastSync(new Date().toISOString());
+      const totalFetched = Object.values(results).reduce((sum, r) => sum + r.fetched, 0);
+      const totalErrors = Object.values(results).filter((r) => r.error).length;
+      showToast(`Fetched ${totalFetched} real leads from ${Object.keys(results).length} sources${totalErrors > 0 ? ` (${totalErrors} errors)` : ""}`);
+    } catch (e: any) {
+      showToast("Sync failed: " + (e.message || "Unknown error"));
     } finally {
       setSyncingAll(false);
     }
@@ -134,7 +110,7 @@ export default function ConnectorsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchConnectors(); fetchLiveSources(); }, [fetchConnectors, fetchLiveSources]);
+  useEffect(() => { fetchConnectors(); }, [fetchConnectors]);
 
   const handleSync = useCallback(async (id: string) => {
     setSyncingId(id);
@@ -231,8 +207,7 @@ export default function ConnectorsPage() {
               </Card>
             </div>
 
-            {liveSources.length > 0 && (
-              <Card className="bg-zinc-900/60 border-white/[0.06]">
+            <Card className="bg-zinc-900/60 border-white/[0.06]">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -240,10 +215,18 @@ export default function ConnectorsPage() {
                         <Zap className="w-5 h-5 text-amber-400" />
                         Real Lead Sources
                         <Badge variant="outline" className="text-[10px] text-emerald-400 bg-emerald-500/10 border-emerald-500/30 ml-2">
-                          {liveSources.length} active
+                          {SOURCE_LIST.length} active
                         </Badge>
+                        {liveLeadCount > 0 && (
+                          <Badge variant="outline" className="text-[10px] text-blue-400 bg-blue-500/10 border-blue-500/30">
+                            {liveLeadCount} leads cached
+                          </Badge>
+                        )}
                       </CardTitle>
-                      <p className="text-xs text-zinc-500 mt-1">Live APIs pulling genuine job listings from the web</p>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Live APIs pulling genuine job listings from the web
+                        {lastSync && <span className="ml-2 text-zinc-600">Last sync: {new Date(lastSync).toLocaleString()}</span>}
+                      </p>
                     </div>
                     <Button
                       onClick={handleSyncAll}
@@ -256,25 +239,27 @@ export default function ConnectorsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {liveSources.map((src) => (
-                      <div key={src.name} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-lg">{liveSourceIcons[src.name] || "📡"}</span>
-                          <span className="text-sm font-medium text-white truncate">{src.display_name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
-                            {src.source_type}
-                          </Badge>
-                          {src.requires_key && (
-                            <Badge variant="outline" className="text-[10px] text-amber-400 bg-amber-500/10 border-amber-500/30 px-1.5 py-0">
-                              API Key
-                            </Badge>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {SOURCE_LIST.map((src) => {
+                      const result = syncResult?.[src.name];
+                      return (
+                        <div key={src.name} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-lg">{src.icon}</span>
+                            <span className="text-sm font-medium text-white truncate">{src.display_name}</span>
+                          </div>
+                          {result && (
+                            <div className="text-[10px] text-zinc-500">
+                              {result.error ? (
+                                <span className="text-red-400">{result.error}</span>
+                              ) : (
+                                <span className="text-emerald-400">{result.fetched} leads</span>
+                              )}
+                            </div>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {syncResult && (
                     <div className="mt-4 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
@@ -283,13 +268,12 @@ export default function ConnectorsPage() {
                         <span className="text-sm font-medium text-emerald-400">Sync Complete</span>
                       </div>
                       <p className="text-xs text-zinc-400">
-                        Fetched {syncResult.summary?.total_fetched || 0} jobs, added {syncResult.summary?.total_new || 0} new leads
+                        {Object.values(syncResult).filter(r => !r.error).length} sources successful, {Object.values(syncResult).reduce((s, r) => s + r.fetched, 0)} total leads fetched
                       </p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-            )}
 
             {loading ? (
               <div className="text-center py-20 text-zinc-500">Loading connectors...</div>
