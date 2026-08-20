@@ -8,13 +8,29 @@ import { SearchHero } from "@/components/ai-search/SearchHero";
 import { SearchFilters } from "@/components/ai-search/SearchFilters";
 import { SearchResults } from "@/components/ai-search/SearchResults";
 import { SavedSearches } from "@/components/ai-search/SavedSearches";
-import { mockLeads } from "@/lib/mock-data";
+import { getStoredLeads, type LiveLead } from "@/lib/live-sources";
 import { api } from "@/lib/api";
 import { Lead } from "@/lib/types";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
 
 interface SavedSearch { query: string; timestamp: number; resultCount: number }
+
+function liveLeadsToLeads(lls: LiveLead[]): Lead[] {
+  return lls.map((ll) => ({
+    id: ll.id, title: ll.title, description: ll.description,
+    clientName: ll.company, company: ll.company, email: "", phone: "",
+    country: ll.country || "", budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+    deadline: "", technologies: ll.technologies, skills: [], platform: ll.platform,
+    jobType: "full_time", status: "new" as const, urgency: "medium" as const,
+    difficulty: 50, successProbability: 60, riskLevel: "medium",
+    expectedRevenue: (ll.salaryMax || 20000) * 0.3, competition: 0,
+    projectSize: "medium", paymentMethod: "Escrow",
+    clientHistory: `Sourced from ${ll.source}`, url: ll.url,
+    notes: `Live lead from ${ll.source}`, tags: ll.tags,
+    foundAt: ll.publishedAt || new Date().toISOString(), analyzedAt: undefined,
+  }));
+}
 
 function sortLeads(leads: Lead[], sortBy: string): Lead[] {
   const sorted = [...leads];
@@ -136,12 +152,12 @@ export default function AISearchPage() {
           setAiInterpretation(data.ai_interpretation.understanding);
         }
       } else {
-        const filtered = applyFilters(mockLeads);
-        setResults(filtered.length > 0 ? filtered : mockLeads.slice(0, 3));
+        const filtered = applyFilters(liveLeadsToLeads(getStoredLeads()));
+        setResults(filtered);
       }
     } catch {
-      const filtered = applyFilters(mockLeads);
-      setResults(filtered.length > 0 ? filtered : mockLeads.slice(0, 3));
+      const filtered = applyFilters(liveLeadsToLeads(getStoredLeads()));
+      setResults(filtered);
     }
     setIsSearching(false);
   }, [query, countryFilter, budgetMin, budgetMax, selectedTechs, sortBy, applyFilters]);
@@ -172,21 +188,17 @@ export default function AISearchPage() {
           }
         } else {
           const q = suggestion.toLowerCase();
-          const filtered = mockLeads.filter((l) =>
-            l.title.toLowerCase().includes(q) || l.company.toLowerCase().includes(q) ||
-            l.description.toLowerCase().includes(q) || l.tags.some((t) => t.toLowerCase().includes(q)) ||
-            l.technologies.some((t) => t.toLowerCase().includes(q)) || l.country.toLowerCase().includes(q)
+          const filtered = liveLeadsToLeads(getStoredLeads()).filter((l) =>
+            l.title.toLowerCase().includes(q) || l.company.toLowerCase().includes(q)
           );
-          setResults(filtered.length > 0 ? filtered : mockLeads.slice(0, 3));
+          setResults(filtered);
         }
       } catch {
         const q = suggestion.toLowerCase();
-        const filtered = mockLeads.filter((l) =>
-          l.title.toLowerCase().includes(q) || l.company.toLowerCase().includes(q) ||
-          l.description.toLowerCase().includes(q) || l.tags.some((t) => t.toLowerCase().includes(q)) ||
-          l.technologies.some((t) => t.toLowerCase().includes(q)) || l.country.toLowerCase().includes(q)
+        const filtered = liveLeadsToLeads(getStoredLeads()).filter((l) =>
+          l.title.toLowerCase().includes(q) || l.company.toLowerCase().includes(q)
         );
-        setResults(filtered.length > 0 ? filtered : mockLeads.slice(0, 3));
+        setResults(filtered);
       }
       setIsSearching(false);
     })();
@@ -254,7 +266,7 @@ export default function AISearchPage() {
                 <span className="font-semibold text-cyan-300">AI Understanding:</span> {aiInterpretation}
               </div>
             )}
-            <SearchFilters countryFilter={countryFilter} onCountryChange={setCountryFilter} budgetMin={budgetMin} onBudgetMinChange={setBudgetMin} budgetMax={budgetMax} onBudgetMaxChange={setBudgetMax} selectedTechs={selectedTechs} onToggleTech={toggleTech} onApplyFilters={handleApplyFilters} onClearFilters={handleClearFilters} totalActiveFilters={totalActiveFilters} />
+            <SearchFilters countryFilter={countryFilter} onCountryChange={setCountryFilter} budgetMin={budgetMin} onBudgetMinChange={setBudgetMin} budgetMax={budgetMax} onBudgetMaxChange={setBudgetMax} selectedTechs={selectedTechs} onToggleTech={toggleTech} onApplyFilters={handleApplyFilters} onClearFilters={handleClearFilters} totalActiveFilters={totalActiveFilters} availableTechs={Array.from(new Set(results.flatMap((l) => l.technologies))).sort()} />
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1 min-w-0 space-y-4">
                 <SearchResults results={results} isSearching={isSearching} hasSearched={hasSearched} sortBy={sortBy} onSortChange={setSortBy} onSaveSearch={handleSaveSearch} onExport={handleExport} onSuggestedClick={handleSuggestedClick} showToast={showToast} />

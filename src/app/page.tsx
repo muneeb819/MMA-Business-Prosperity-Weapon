@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle, Loader2, RefreshCw, Clock, RotateCcw } from "lucide-react"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { api } from "@/lib/api"
+import { getStoredLeads } from "@/lib/live-sources"
 import type { Lead, Notification, Agent, ActivityLog, AnalyticsData } from "@/lib/types"
 import { StatsGrid } from "@/components/dashboard/StatsGrid"
 import { RevenueOverview } from "@/components/dashboard/RevenueOverview"
@@ -38,9 +39,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 }
 
 const insightItems = [
-  { icon: TrendingUp, iconClass: "text-emerald-400", title: "Revenue Opportunity", body: "3 government contracts worth $1.2M total show 89% success probability. Recommend immediate outreach." },
-  { icon: AlertTriangle, iconClass: "text-amber-400", title: "Risk Alert", body: 'Enterprise lead "TechCorp" has decreased engagement score by 15%. Follow-up recommended within 24 hours.' },
-  { icon: Brain, iconClass: "text-violet-400", title: "Agent Optimization", body: "Lead Scanning Agent efficiency improved 12% this week. Task queue processing at optimal levels." },
+  { icon: TrendingUp, iconClass: "text-emerald-400", title: "Getting Started", body: "Connect your lead sources on the Connectors page to start pulling real opportunities. Use the Sync All Sources button to fetch live data." },
 ]
 
 export default function DashboardPage() {
@@ -80,6 +79,22 @@ export default function DashboardPage() {
         api.ai.briefing().catch(() => null),
       ])
       if (Array.isArray(leadsData) && leadsData.length > 0) setLeads(leadsData as Lead[])
+      else {
+        const liveLeads = getStoredLeads().map((ll) => ({
+          id: ll.id, title: ll.title, description: ll.description,
+          clientName: ll.company, company: ll.company, email: "", phone: "",
+          country: ll.country || "", budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+          deadline: "", technologies: ll.technologies, skills: [], platform: ll.platform,
+          jobType: "full_time", status: "new" as const, urgency: "medium" as const,
+          difficulty: 50, successProbability: 60, riskLevel: "medium",
+          expectedRevenue: (ll.salaryMax || 20000) * 0.3, competition: 0,
+          projectSize: "medium", paymentMethod: "Escrow",
+          clientHistory: `Sourced from ${ll.source}`, url: ll.url,
+          notes: `Live lead from ${ll.source}`, tags: ll.tags,
+          foundAt: ll.publishedAt || new Date().toISOString(), analyzedAt: undefined,
+        }));
+        if (liveLeads.length > 0) setLeads(liveLeads as Lead[]);
+      }
       if (briefingData) setBriefing(briefingData as BriefingData)
       setBriefingLoading(false)
       if (Array.isArray(notifsData) && notifsData.length > 0) setNotifications(notifsData as Notification[])

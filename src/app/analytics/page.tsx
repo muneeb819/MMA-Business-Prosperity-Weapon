@@ -6,7 +6,6 @@ import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatCurrency, formatNumber, cn } from "@/lib/utils";
-import { mockAnalytics } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import { AnalyticsData } from "@/lib/types";
 import { KpiCards } from "@/components/analytics/KpiCards";
@@ -36,7 +35,10 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 
 export default function AnalyticsPage() {
   useEffect(() => { document.title = "Analytics | MBPW"; }, []);
-  const [data, setData] = useState<AnalyticsData>(mockAnalytics);
+  const [data, setData] = useState<AnalyticsData>({
+    totalLeads: 0, totalProposals: 0, winRate: 0, totalRevenue: 0, avgDealSize: 0, conversionRate: 0,
+    topCountries: [], topTechnologies: [], monthlyRevenue: [], platformBreakdown: [], agentPerformance: [], industryTrends: [],
+  });
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("1y");
   const [activeTab, setActiveTab] = useState("revenue");
@@ -60,7 +62,7 @@ export default function AnalyticsPage() {
           setData(result);
         }
       } catch {
-        // API unavailable — keep mockAnalytics
+        // API unavailable
       } finally {
         if (!cancelled) setLoading(false);
       }

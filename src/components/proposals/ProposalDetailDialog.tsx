@@ -10,7 +10,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatCurrency, cn } from "@/lib/utils";
-import { mockLeads } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import {
   FileText,
@@ -345,7 +344,7 @@ function ProposalDetailDialogInner({
                   <SelectValue placeholder="Choose a lead to generate proposal for" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#12131C] border-white/10">
-                  {(availableLeads.length > 0 ? availableLeads : mockLeads).map((lead) => (
+                  {(availableLeads.length > 0 ? availableLeads : []).map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
                       {lead.title} — {lead.company}
                     </SelectItem>

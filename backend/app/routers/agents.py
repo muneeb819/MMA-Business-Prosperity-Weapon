@@ -1,104 +1,86 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
-from pydantic import BaseModel
-from datetime import datetime
-import uuid
 from app.models.database import get_db
 from app.models.schema import AgentLog
 
 router = APIRouter()
 
-MOCK_AGENTS = [
+AGENT_DEFINITIONS = [
     {
         "id": "agent-1",
         "name": "Global Opportunity Hunter",
         "type": "opportunity_hunter",
-        "status": "scanning",
-        "last_active": datetime.utcnow().isoformat(),
-        "tasks_completed": 1247,
-        "current_task": "Scanning LinkedIn & Indeed for React developer positions...",
-        "uptime": 99.7,
-        "efficiency": 94.2,
         "description": "Continuously searches worldwide job boards, platforms, and websites for new opportunities across all IT and business categories.",
-        "icon": "\U0001F310",
+        "icon": "🌐",
     },
     {
         "id": "agent-2",
         "name": "Lead Analyzer",
         "type": "lead_analyzer",
-        "status": "analyzing",
-        "last_active": datetime.utcnow().isoformat(),
-        "tasks_completed": 892,
-        "current_task": "Analyzing budget & success probability for lead #3847...",
-        "uptime": 99.9,
-        "efficiency": 97.1,
         "description": "Deep analyzes each discovered lead to extract client details, assess viability, calculate success probability, and determine expected revenue.",
-        "icon": "\U0001F50D",
+        "icon": "🔍",
     },
     {
         "id": "agent-3",
         "name": "Proposal Generator",
         "type": "proposal_generator",
-        "status": "generating",
-        "last_active": datetime.utcnow().isoformat(),
-        "tasks_completed": 634,
-        "current_task": "Generating proposal for E-Commerce Platform Redesign...",
-        "uptime": 99.5,
-        "efficiency": 92.8,
         "description": "Creates customized, professional proposals with technical plans, timelines, cost estimates, and compelling cover letters for each qualified lead.",
-        "icon": "\U0001F4DD",
+        "icon": "📝",
     },
 ]
 
-_agent_status_store = {
-    "agent-1": "scanning",
-    "agent-2": "analyzing",
-    "agent-3": "generating",
-}
+_agent_status_store: dict[str, str] = {}
 
 
 @router.get("/", response_model=List[dict])
-def get_agents():
+def get_agents(db: Session = Depends(get_db)):
     agents = []
-    for a in MOCK_AGENTS:
+    for a in AGENT_DEFINITIONS:
+        logs = db.query(AgentLog).filter(AgentLog.agent_id == a["id"]).count()
+        status = _agent_status_store.get(a["id"], "idle")
         agents.append({
             **a,
-            "status": _agent_status_store.get(a["id"], a["status"]),
+            "status": status,
+            "last_active": None,
+            "tasks_completed": logs,
+            "current_task": "",
+            "uptime": 0.0,
+            "efficiency": 0.0,
         })
     return agents
 
 
 @router.get("/{agent_id}")
-def get_agent(agent_id: str):
-    for a in MOCK_AGENTS:
+def get_agent(agent_id: str, db: Session = Depends(get_db)):
+    for a in AGENT_DEFINITIONS:
         if a["id"] == agent_id:
+            logs = db.query(AgentLog).filter(AgentLog.agent_id == a["id"]).count()
+            status = _agent_status_store.get(agent_id, "idle")
             return {
                 **a,
-                "status": _agent_status_store.get(agent_id, a["status"]),
+                "status": status,
+                "last_active": None,
+                "tasks_completed": logs,
+                "current_task": "",
+                "uptime": 0.0,
+                "efficiency": 0.0,
             }
     raise HTTPException(status_code=404, detail="Agent not found")
 
 
 @router.post("/{agent_id}/start")
 def start_agent(agent_id: str):
-    if agent_id not in [a["id"] for a in MOCK_AGENTS]:
+    if agent_id not in [a["id"] for a in AGENT_DEFINITIONS]:
         raise HTTPException(status_code=404, detail="Agent not found")
-
-    status_map = {
-        "agent-1": "scanning",
-        "agent-2": "analyzing",
-        "agent-3": "generating",
-    }
-    _agent_status_store[agent_id] = status_map.get(agent_id, "active")
-    return {"message": "Agent started", "agent_id": agent_id, "status": _agent_status_store[agent_id]}
+    _agent_status_store[agent_id] = "active"
+    return {"message": "Agent started", "agent_id": agent_id, "status": "active"}
 
 
 @router.post("/{agent_id}/pause")
 def pause_agent(agent_id: str):
-    if agent_id not in [a["id"] for a in MOCK_AGENTS]:
+    if agent_id not in [a["id"] for a in AGENT_DEFINITIONS]:
         raise HTTPException(status_code=404, detail="Agent not found")
-
     _agent_status_store[agent_id] = "paused"
     return {"message": "Agent paused", "agent_id": agent_id, "status": "paused"}
 

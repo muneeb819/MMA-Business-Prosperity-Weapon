@@ -102,8 +102,8 @@ export default function OpportunityHunterPage() {
   const hunterAgent = allAgents.find((a) => a.type === "opportunity_hunter") || {
     id: "agent-1", name: "Opportunity Hunter AI", type: "opportunity_hunter" as const,
     status: (isRunning ? "scanning" : "idle") as "scanning" | "idle",
-    lastActive: new Date().toISOString(), currentTask: "Scanning LinkedIn for high-intent prospects...",
-    tasksCompleted: 1247, uptime: 99.9, efficiency: 94.7, description: "AI-powered opportunity hunter", icon: "search",
+    lastActive: new Date().toISOString(), currentTask: "",
+    tasksCompleted: 0, uptime: 0, efficiency: 0, description: "AI-powered opportunity hunter", icon: "search",
   }
 
   const filteredDiscoveries = useMemo(() => {

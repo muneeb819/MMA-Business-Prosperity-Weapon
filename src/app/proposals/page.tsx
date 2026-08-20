@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { mockLeads } from "@/lib/mock-data";
 import { initialMockProposals } from "@/lib/mock-proposals";
 import { api } from "@/lib/api";
 import { ProposalStats } from "@/components/proposals/ProposalStats";
@@ -39,7 +38,7 @@ function mapApiProposalToMock(p: any): MockProposal {
 
 export default function ProposalsPage() {
   useEffect(() => { document.title = "Proposals | MBPW"; }, []);
-  const [proposals, setProposals] = useState<MockProposal[]>(initialMockProposals);
+  const [proposals, setProposals] = useState<MockProposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProposal, setSelectedProposal] = useState<MockProposal | null>(null);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
@@ -66,7 +65,7 @@ export default function ProposalsPage() {
           setProposals(data.map(mapApiProposalToMock));
         }
       } catch {
-        // API unavailable — keep mockProposals
+        // API unavailable
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -83,7 +82,7 @@ export default function ProposalsPage() {
           })));
         }
       } catch {
-        // API unavailable — keep mockLeads
+        // API unavailable
       }
     }
     fetchProposals();
@@ -262,17 +261,14 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
         setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
       }
     } catch {
-      // API unavailable — do local generation
-      await new Promise((r) => setTimeout(r, 2500));
-      const lead = mockLeads.find((l) => l.id === genLeadId);
       const newProposal: MockProposal = {
         id: `prop-${Date.now()}`,
-        title: `${lead?.title || "New"} Proposal`,
-        clientName: lead?.clientName || "Unknown",
-        company: lead?.company || "Unknown",
+        title: `New Proposal`,
+        clientName: "Client",
+        company: "Company",
         status: "draft",
         winProbability: Math.floor(Math.random() * 40) + 50,
-        budget: lead ? Math.floor((lead.budget.min + lead.budget.max) / 2) : 50000,
+        budget: 50000,
         createdAt: new Date().toISOString(),
         sections: {
           coverLetter: "AI-generated cover letter will appear here.",

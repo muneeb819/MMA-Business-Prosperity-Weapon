@@ -45,16 +45,14 @@ const features = [
 ]
 
 const stats = [
-  { value: "10+", label: "Leads Tracked" },
-  { value: "94%", label: "AI Efficiency" },
-  { value: "$500K+", label: "Revenue Pipeline" },
+  { value: "0", label: "Leads Tracked" },
+  { value: "0%", label: "AI Efficiency" },
+  { value: "$0", label: "Revenue Pipeline" },
   { value: "24/7", label: "Agent Uptime" },
 ]
 
 const testimonials = [
-  { text: "MBPW transformed our business development. We're closing 3x more deals.", author: "Sarah Chen", role: "CTO, TechRetail Inc." },
-  { text: "The AI proposal generator alone saves us 20 hours per week.", author: "Marcus Weber", role: "CEO, GlobalServ GmbH" },
-  { text: "Finally, a platform that understands the IT services sales pipeline.", author: "Priya Sharma", role: "VP Sales, InnovateTech" },
+  { text: "MBPW is an AI-powered business development platform.", author: "MMA Team", role: "MBPW" },
 ]
 
 export default function LoginPage() {

@@ -56,14 +56,7 @@ interface LeadPipelineProps {
   onSourceClick: (sourceName: string) => void
 }
 
-const searchSources = [
-  { name: "LinkedIn", icon: ExternalLink, count: 45 },
-  { name: "Twitter", icon: ExternalLink, count: 23 },
-  { name: "Email", icon: Mail, count: 12 },
-  { name: "Web", icon: Globe, count: 67 },
-  { name: "Crunchbase", icon: Building2, count: 31 },
-  { name: "GitHub", icon: CodeIcon, count: 18 },
-]
+const searchSources: { name: string; icon: any; count: number }[] = []
 
 const LeadPipeline = React.memo(function LeadPipeline({
   leads,

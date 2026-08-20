@@ -131,13 +131,7 @@ async def natural_language_search(request: SearchRequest, db: Session = Depends(
 @router.get("/sources")
 def get_search_sources():
     return {
-        "sources": [
-            {"name": "LinkedIn Jobs", "status": "active", "found": 89},
-            {"name": "Indeed", "status": "active", "found": 67},
-            {"name": "Upwork", "status": "active", "found": 56},
-            {"name": "Freelancer", "status": "active", "found": 38},
-            {"name": "Google Search", "status": "active", "found": 156},
-        ]
+        "sources": []
     }
 
 

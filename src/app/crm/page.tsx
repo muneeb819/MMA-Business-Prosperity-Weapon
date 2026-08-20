@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatCurrency } from "@/lib/utils";
-import { mockCompanies } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import type { CRMCompany } from "@/lib/types";
 import { CrmStats } from "@/components/crm/CrmStats";
@@ -65,7 +64,7 @@ export default function CRMPage() {
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [activeTab, setActiveTab] = useState("companies");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<CRMCompany[]>(mockCompanies);
+  const [companies, setCompanies] = useState<CRMCompany[]>([]);
   const [companyToDelete, setCompanyToDelete] = useState<CRMCompany | null>(null);
   const [loading, setLoading] = useState(true);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -85,7 +84,7 @@ export default function CRMPage() {
           setCompanies(data);
         }
       } catch {
-        // API unavailable — keep mockCompanies
+        // API unavailable
       } finally {
         if (!cancelled) setLoading(false);
       }

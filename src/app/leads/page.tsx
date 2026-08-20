@@ -5,8 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check } from "lucide-react";
-import { mockLeads } from "@/lib/mock-data";
-import { getStoredLeads, type LiveLead } from "@/lib/live-sources";
+import { getStoredLeads, fetchAllSources, type LiveLead } from "@/lib/live-sources";
 import { api } from "@/lib/api";
 import type { Lead } from "@/lib/types";
 import { PAGE_SIZE, type SortKey } from "@/components/leads/leads-config";
@@ -18,7 +17,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
 export default function LeadsPage() {
   useEffect(() => { document.title = "Leads | MBPW"; }, []);
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -36,13 +35,57 @@ export default function LeadsPage() {
   const [analyzingLeadId, setAnalyzingLeadId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.seed().catch(() => {});
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
+
+    function liveLeadsToLead(ll: LiveLead): Lead {
+      return {
+        id: ll.id,
+        title: ll.title,
+        description: ll.description,
+        clientName: ll.company,
+        company: ll.company,
+        email: "",
+        phone: "",
+        country: ll.country || "",
+        budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
+        deadline: "",
+        technologies: ll.technologies,
+        skills: [],
+        platform: ll.platform,
+        jobType: "full_time",
+        status: "new" as const,
+        urgency: "medium" as const,
+        difficulty: 50,
+        successProbability: 60,
+        riskLevel: "medium",
+        expectedRevenue: (ll.salaryMax || 20000) * 0.3,
+        competition: 0,
+        projectSize: "medium",
+        paymentMethod: "Escrow",
+        clientHistory: `Sourced from ${ll.source}`,
+        url: ll.url,
+        notes: `Live lead from ${ll.source}`,
+        tags: ll.tags,
+        foundAt: ll.publishedAt || new Date().toISOString(),
+        analyzedAt: undefined,
+      };
+    }
+
     async function fetchLeads() {
       setLoading(true);
+
+      // Always fetch live sources client-side
+      let liveLeads: Lead[] = [];
+      try {
+        const { leads: fetched } = await fetchAllSources(15);
+        liveLeads = fetched.map(liveLeadsToLead);
+      } catch {
+        liveLeads = getStoredLeads().map(liveLeadsToLead);
+      }
+
+      if (cancelled) return;
+
+      // Try backend leads too
       try {
         const data = await api.leads.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
@@ -61,105 +104,12 @@ export default function LeadsPage() {
             analyzedAt: l.analyzedAt || l.analyzed_at || undefined,
             proposalId: l.proposalId || l.proposal_id || "",
           }));
-          const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
-            id: ll.id,
-            title: ll.title,
-            description: ll.description,
-            clientName: ll.company,
-            company: ll.company,
-            email: "",
-            phone: "",
-            country: ll.country || "",
-            budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
-            deadline: "",
-            technologies: ll.technologies,
-            skills: [],
-            platform: ll.platform,
-            jobType: "full_time",
-            status: "new" as const,
-            urgency: "medium" as const,
-            difficulty: 50,
-            successProbability: 60,
-            riskLevel: "medium",
-            expectedRevenue: (ll.salaryMax || 20000) * 0.3,
-            competition: 0,
-            projectSize: "medium",
-            paymentMethod: "Escrow",
-            clientHistory: `Sourced from ${ll.source}`,
-            url: ll.url,
-            notes: `Live lead from ${ll.source}`,
-            tags: ll.tags,
-            foundAt: ll.publishedAt || new Date().toISOString(),
-            analyzedAt: undefined,
-          }));
           setLeads([...mapped, ...liveLeads] as Lead[]);
         } else {
-          const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
-            id: ll.id,
-            title: ll.title,
-            description: ll.description,
-            clientName: ll.company,
-            company: ll.company,
-            email: "",
-            phone: "",
-            country: ll.country || "",
-            budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
-            deadline: "",
-            technologies: ll.technologies,
-            skills: [],
-            platform: ll.platform,
-            jobType: "full_time",
-            status: "new" as const,
-            urgency: "medium" as const,
-            difficulty: 50,
-            successProbability: 60,
-            riskLevel: "medium",
-            expectedRevenue: (ll.salaryMax || 20000) * 0.3,
-            competition: 0,
-            projectSize: "medium",
-            paymentMethod: "Escrow",
-            clientHistory: `Sourced from ${ll.source}`,
-            url: ll.url,
-            notes: `Live lead from ${ll.source}`,
-            tags: ll.tags,
-            foundAt: ll.publishedAt || new Date().toISOString(),
-            analyzedAt: undefined,
-          }));
-          if (liveLeads.length > 0) setLeads(liveLeads as Lead[]);
+          setLeads(liveLeads);
         }
       } catch {
-        const liveLeads = getStoredLeads().map((ll: LiveLead) => ({
-          id: ll.id,
-          title: ll.title,
-          description: ll.description,
-          clientName: ll.company,
-          company: ll.company,
-          email: "",
-          phone: "",
-          country: ll.country || "",
-          budget: { min: ll.salaryMin || 0, max: ll.salaryMax || 0 },
-          deadline: "",
-          technologies: ll.technologies,
-          skills: [],
-          platform: ll.platform,
-          jobType: "full_time",
-          status: "new" as const,
-          urgency: "medium" as const,
-          difficulty: 50,
-          successProbability: 60,
-          riskLevel: "medium",
-          expectedRevenue: (ll.salaryMax || 20000) * 0.3,
-          competition: 0,
-          projectSize: "medium",
-          paymentMethod: "Escrow",
-          clientHistory: `Sourced from ${ll.source}`,
-          url: ll.url,
-          notes: `Live lead from ${ll.source}`,
-          tags: ll.tags,
-          foundAt: ll.publishedAt || new Date().toISOString(),
-          analyzedAt: undefined,
-        }));
-        if (liveLeads.length > 0) setLeads(liveLeads as Lead[]);
+        setLeads(liveLeads);
       } finally {
         if (!cancelled) setLoading(false);
       }

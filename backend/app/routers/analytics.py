@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
-from pydantic import BaseModel
 from app.models.database import get_db
 from app.models.schema import Lead, Proposal, AgentLog
+from pydantic import BaseModel
+from typing import List
 
 router = APIRouter()
 
@@ -171,11 +171,6 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
         "agent-2": "Lead Analyzer",
         "agent-3": "Proposal Generator",
     }
-    agent_efficiencies = {
-        "agent-1": 94.2,
-        "agent-2": 97.1,
-        "agent-3": 92.8,
-    }
     agent_task_counts = (
         db.query(
             AgentLog.agent_id,
@@ -187,18 +182,10 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
     agent_performance = [
         AgentPerf(
             agent=agent_names.get(aid, aid),
-            efficiency=agent_efficiencies.get(aid, 0.0),
+            efficiency=0.0,
             tasks=cnt,
         )
         for aid, cnt in agent_task_counts
-    ]
-
-    industry_trends = [
-        IndustryTrend(industry="AI/ML", growth=34.5, opportunities=89),
-        IndustryTrend(industry="Cloud Services", growth=28.2, opportunities=72),
-        IndustryTrend(industry="E-Commerce", growth=22.1, opportunities=56),
-        IndustryTrend(industry="Healthcare Tech", growth=19.8, opportunities=41),
-        IndustryTrend(industry="FinTech", growth=17.5, opportunities=38),
     ]
 
     return DashboardAnalytics(
@@ -213,7 +200,7 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
         monthlyRevenue=monthly_revenue,
         platformBreakdown=platform_breakdown,
         agentPerformance=agent_performance,
-        industryTrends=industry_trends,
+        industryTrends=[],
     )
 
 
@@ -325,11 +312,6 @@ def get_agent_analytics(db: Session = Depends(get_db)):
         "agent-2": "Lead Analyzer",
         "agent-3": "Proposal Generator",
     }
-    agent_efficiencies = {
-        "agent-1": 94.2,
-        "agent-2": 97.1,
-        "agent-3": 92.8,
-    }
     raw = (
         db.query(AgentLog.agent_id, func.count(AgentLog.id).label("tasks"))
         .group_by(AgentLog.agent_id)
@@ -339,7 +321,7 @@ def get_agent_analytics(db: Session = Depends(get_db)):
         "performance": [
             {
                 "agent": agent_names.get(aid, aid),
-                "efficiency": agent_efficiencies.get(aid, 0.0),
+                "efficiency": 0.0,
                 "tasks": cnt,
             }
             for aid, cnt in raw

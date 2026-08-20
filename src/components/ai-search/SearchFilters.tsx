@@ -22,11 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { mockLeads } from "@/lib/mock-data";
-
-const allTechnologies = Array.from(
-  new Set(mockLeads.flatMap((l) => l.technologies))
-).sort();
 
 const countries = [
   "All Countries",
@@ -61,6 +56,7 @@ interface SearchFiltersProps {
   onApplyFilters: () => void;
   onClearFilters: () => void;
   totalActiveFilters: number;
+  availableTechs?: string[];
 }
 
 const SearchFilters = React.memo(function SearchFilters({
@@ -75,6 +71,7 @@ const SearchFilters = React.memo(function SearchFilters({
   onApplyFilters,
   onClearFilters,
   totalActiveFilters,
+  availableTechs = [],
 }: SearchFiltersProps) {
   return (
     <>
@@ -154,7 +151,7 @@ const SearchFilters = React.memo(function SearchFilters({
           <div className="flex items-center gap-3 mb-3">
             <span className="text-sm text-slate-500 shrink-0">Technologies:</span>
             <div className="flex flex-wrap gap-2 min-w-0">
-              {allTechnologies.map((tech, ti) => (
+              {availableTechs.map((tech, ti) => (
                 <button
                   key={tech}
                   onClick={() => onToggleTech(tech)}
@@ -180,4 +177,4 @@ const SearchFilters = React.memo(function SearchFilters({
   );
 });
 
-export { SearchFilters, allTechnologies, countries, technologyColors };
+export { SearchFilters, countries, technologyColors };

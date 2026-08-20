@@ -44,10 +44,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { mockNotifications } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { timeAgo } from "@/lib/utils"
 import type { Notification } from "@/lib/types"
+import { api } from "@/lib/api"
 
 const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: string; bg: string }> = {
   high_value: { icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
@@ -116,9 +116,22 @@ export function TopBar() {
   const { favorites } = useFavorites()
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
 
-  const unreadCount = useMemo(() => mockNotifications.filter(n => !n.read).length, [])
-  const recentNotifications = useMemo(() => mockNotifications.slice(0, 5), [])
+  useEffect(() => {
+    api.notifications.list().then((data) => {
+      if (Array.isArray(data)) {
+        setNotifications(data.map((n: any) => ({
+          ...n,
+          leadId: n.leadId || n.lead_id || undefined,
+          createdAt: n.createdAt || n.created_at || new Date().toISOString(),
+        })));
+      }
+    }).catch(() => {});
+  }, []);
+
+  const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications])
+  const recentNotifications = useMemo(() => notifications.slice(0, 5), [notifications])
   const [recentSearches, setRecentSearches] = useState<string[]>([])
 
   useEffect(() => {

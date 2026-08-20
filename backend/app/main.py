@@ -23,8 +23,13 @@ app.add_middleware(
 async def ensure_db(request: Request, call_next):
     create_tables()
     try:
-        from app.models.database import seed_if_needed
-        seed_if_needed()
+        from app.models.seed import _ensure_admin_user
+        from app.models.database import SessionLocal
+        db = SessionLocal()
+        try:
+            _ensure_admin_user(db)
+        finally:
+            db.close()
     except Exception:
         pass
     return await call_next(request)
@@ -47,29 +52,12 @@ app.include_router(websocket.router)
 app.include_router(lead_sources.router)
 
 
-@app.post("/api/seed")
-def seed_database():
-    from app.models.seed import seed_all
-    from app.models.database import SessionLocal
-    db = SessionLocal()
-    try:
-        result = seed_all(db)
-        return result
-    finally:
-        db.close()
-
-
 @app.get("/")
 async def root():
     return {
         "name": "MMA Business Prosperity Weapon",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "operational",
-        "agents": {
-            "opportunity_hunter": "active",
-            "lead_analyzer": "active",
-            "proposal_generator": "active",
-        },
     }
 
 

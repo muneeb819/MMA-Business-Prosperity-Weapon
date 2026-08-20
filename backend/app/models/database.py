@@ -6,7 +6,6 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
 if not DATABASE_URL:
-    # Vercel serverless: use in-memory SQLite with shared connection
     DATABASE_URL = "sqlite://"
     engine = create_engine(
         DATABASE_URL,
@@ -24,26 +23,9 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-_seeded = False
-
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
-
-
-def seed_if_needed():
-    global _seeded
-    if _seeded:
-        return
-    from app.models.seed import seed_all
-    db = SessionLocal()
-    try:
-        result = seed_all(db)
-        _seeded = True
-    except Exception:
-        _seeded = True
-    finally:
-        db.close()
 
 
 def get_db():

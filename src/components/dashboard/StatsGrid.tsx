@@ -62,7 +62,7 @@ const StatsGrid = React.memo(function StatsGrid({
     totalRevenue,
     leadsCount,
     conversionRate,
-    aiEfficiency: 94.7,
+    aiEfficiency: 0,
   }
 
   return (

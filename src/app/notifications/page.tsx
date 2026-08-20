@@ -13,7 +13,6 @@ import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { mockNotifications } from "@/lib/mock-data";
 import { api } from "@/lib/api";
 import type { Notification } from "@/lib/types";
 import { NotificationStats } from "@/components/notifications/NotificationStats";
@@ -26,7 +25,7 @@ type FilterType = "all" | "unread" | "high_value" | "urgent";
 
 export default function NotificationsPage() {
   useEffect(() => { document.title = "Notifications | MBPW"; }, []);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<FilterType>("all");
   const [showPreferences, setShowPreferences] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -54,7 +53,7 @@ export default function NotificationsPage() {
           })));
         }
       } catch {
-        // API unavailable — keep mockNotifications
+        // API unavailable
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -134,7 +133,7 @@ export default function NotificationsPage() {
   }, [showToast]);
 
   const restoreAll = useCallback(() => {
-    setNotifications(mockNotifications);
+    setNotifications([]);
   }, []);
 
   return (
