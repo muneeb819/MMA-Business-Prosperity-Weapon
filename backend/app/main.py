@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.database import create_tables
-from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket
+from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket, lead_sources
 from app.middleware.error_handler import ErrorHandlerMiddleware
 
 app = FastAPI(
@@ -44,6 +44,7 @@ app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(reports.router)
 app.include_router(websocket.router)
+app.include_router(lead_sources.router)
 
 
 @app.post("/api/seed")

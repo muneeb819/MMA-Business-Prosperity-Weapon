@@ -147,5 +147,12 @@ export const api = {
     performance: (days?: number) => fetchAPI(`/api/reports/performance?days=${days || 30}`),
     summary: () => fetchAPI("/api/reports/summary"),
   },
+  leadSources: {
+    list: () => fetchAPI("/api/lead-sources"),
+    sync: (name: string, limit?: number) =>
+      fetchAPI(`/api/lead-sources/sync/${name}?limit=${limit || 50}`, { method: "POST" }),
+    syncAll: (limit?: number) =>
+      fetchAPI(`/api/lead-sources/sync-all?limit=${limit || 30}`, { method: "POST" }),
+  },
   seed: () => fetchAPI("/api/seed", { method: "POST" }),
 };

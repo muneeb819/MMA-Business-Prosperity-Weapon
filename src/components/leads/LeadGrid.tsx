@@ -29,6 +29,21 @@ interface LeadGridProps {
   clearFilters: () => void;
 }
 
+const sourceColors: Record<string, string> = {
+  himalayas: "text-sky-400 bg-sky-500/10 border-sky-500/30",
+  remoteok: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+  remotive: "text-orange-400 bg-orange-500/10 border-orange-500/30",
+  greenhouse: "text-green-400 bg-green-500/10 border-green-500/30",
+  lever: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+  ashby: "text-violet-400 bg-violet-500/10 border-violet-500/30",
+  hn_hiring: "text-amber-400 bg-amber-500/10 border-amber-500/30",
+  arbeitnow: "text-teal-400 bg-teal-500/10 border-teal-500/30",
+  findwork: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
+  weworkremotely: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  adzuna: "text-rose-400 bg-rose-500/10 border-rose-500/30",
+  jooble: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
+};
+
 const LeadGrid = memo(function LeadGrid({
   visibleLeads,
   viewMode,
@@ -65,6 +80,11 @@ const LeadGrid = memo(function LeadGrid({
                       <Badge variant="outline" className={cn("text-[10px] font-semibold border px-2 py-0.5 shrink-0", uCfg.color)}>
                         {uCfg.label}
                       </Badge>
+                      {lead.platform && sourceColors[lead.platform] && (
+                        <Badge variant="outline" className={cn("text-[10px] font-semibold border px-2 py-0.5 shrink-0 capitalize", sourceColors[lead.platform])}>
+                          {lead.platform}
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-zinc-600 text-[10px] shrink-0">
                       <Clock className="w-3 h-3" />
@@ -145,6 +165,11 @@ const LeadGrid = memo(function LeadGrid({
                     <Badge variant="outline" className={cn("text-[10px] font-semibold border px-2 py-0.5 hidden sm:inline-flex", uCfg.color)}>
                       {uCfg.label}
                     </Badge>
+                    {lead.platform && sourceColors[lead.platform] && (
+                      <Badge variant="outline" className={cn("text-[10px] font-semibold border px-2 py-0.5 hidden sm:inline-flex capitalize", sourceColors[lead.platform])}>
+                        {lead.platform}
+                      </Badge>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-white font-semibold text-sm leading-tight group-hover:text-blue-300 transition-colors truncate">
