@@ -147,14 +147,20 @@ function ProposalDetailDialogInner({
       }) as any;
       if (result?.success) {
         showToast(`Proposal sent to ${emailRecipient.trim()}`, "success");
+        setShowEmailDialog(false);
       } else {
-        showToast("Email delivery failed. SMTP not configured — set SMTP_HOST, SMTP_USER, SMTP_PASSWORD env vars", "error");
+        const body = `${emailMessage.trim() || "Dear " + selectedProposal.clientName + ",\n\nPlease find our proposal for " + selectedProposal.title + ".\n\n" + (selectedProposal.sections?.coverLetter || "")}\n\nBest regards,\nMMA Business Prosperity Weapon`;
+        window.open(`mailto:${emailRecipient.trim()}?subject=${encodeURIComponent(emailSubject.trim() || `Proposal: ${selectedProposal.title}`)}&body=${encodeURIComponent(body)}`, "_blank");
+        showToast("Opening email client (SMTP not configured)", "info");
+        setShowEmailDialog(false);
       }
     } catch {
-      showToast("Email service unavailable — configure SMTP environment variables", "error");
+      const body = `Dear ${selectedProposal.clientName},\n\nPlease find our proposal for ${selectedProposal.title}.\n\n${selectedProposal.sections?.coverLetter || ""}\n\nBest regards,\nMMA Business Prosperity Weapon`;
+      window.open(`mailto:${emailRecipient.trim()}?subject=${encodeURIComponent(`Proposal: ${selectedProposal.title}`)}&body=${encodeURIComponent(body)}`, "_blank");
+      showToast("Opening email client (SMTP not configured)", "info");
+      setShowEmailDialog(false);
     }
     setIsSending(false);
-    setShowEmailDialog(false);
     setEmailRecipient("");
     setEmailSubject("");
     setEmailMessage("");

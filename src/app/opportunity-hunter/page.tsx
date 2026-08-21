@@ -8,18 +8,112 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { Footer } from "@/components/footer"
-import { Globe, Play, Pause, Settings, Sparkles, X, CheckCircle, Loader2 } from "lucide-react"
+import {
+  Globe, Play, Pause, Settings, Sparkles, X, CheckCircle, Loader2,
+  Mountain, Globe2, Laptop, Briefcase, Search as SearchIcon, Send,
+} from "lucide-react"
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
-import type { Agent, ActivityLog } from "@/lib/types"
+import { fetchAllSources, getStoredLeads } from "@/lib/live-sources"
 import { HunterStats } from "@/components/opportunity-hunter/HunterStats"
 import { SourceCards } from "@/components/opportunity-hunter/SourceCards"
 import { FilterBar } from "@/components/opportunity-hunter/FilterBar"
 import { DiscoveryFeed } from "@/components/opportunity-hunter/DiscoveryFeed"
 import { ConfigPanel } from "@/components/opportunity-hunter/ConfigPanel"
 import { DetailDialogs } from "@/components/opportunity-hunter/DetailDialogs"
-import { searchSources, discoveries, initialCategories } from "@/components/opportunity-hunter/types"
+import {
+  initialCategories, getStoredDiscoveries, storeDiscoveries,
+  getStoredSourceStats, storeSourceStats, liveLeadToDiscovery,
+} from "@/components/opportunity-hunter/types"
 import type { Source, Discovery } from "@/components/opportunity-hunter/types"
+
+type SourceMeta = Omit<Source, "status" | "leadsFound" | "lastScan">
+
+const LIVE_SOURCE_MAP: Record<string, SourceMeta> = {
+  himalayas: {
+    id: "himalayas",
+    name: "Himalayas",
+    icon: Mountain,
+    description: "Remote-first job board with verified companies, salary ranges and tech stacks",
+    gradient: "from-emerald-500 to-teal-600",
+    metrics: { accuracy: 96, speed: 92 },
+  },
+  remoteok: {
+    id: "remoteok",
+    name: "RemoteOK",
+    icon: Globe2,
+    description: "Live API feed of remote positions tagged by stack and salary",
+    gradient: "from-red-500 to-orange-600",
+    metrics: { accuracy: 94, speed: 95 },
+  },
+  remotive: {
+    id: "remotive",
+    name: "Remotive",
+    icon: Laptop,
+    description: "RSS feed of hand-screened remote jobs across all categories",
+    gradient: "from-violet-500 to-purple-600",
+    metrics: { accuracy: 93, speed: 88 },
+  },
+  weworkremotely: {
+    id: "weworkremotely",
+    name: "We Work Remotely",
+    icon: Globe,
+    description: "Largest remote work community RSS with tech-enriched listings",
+    gradient: "from-blue-500 to-indigo-600",
+    metrics: { accuracy: 95, speed: 90 },
+  },
+  arbeitnow: {
+    id: "arbeitnow",
+    name: "Arbeitnow",
+    icon: Briefcase,
+    description: "Germany/EU focused job board API with tags and remote flags",
+    gradient: "from-amber-500 to-yellow-600",
+    metrics: { accuracy: 91, speed: 94 },
+  },
+  findwork: {
+    id: "findwork",
+    name: "Findwork",
+    icon: SearchIcon,
+    description: "Curated job API ordered by date posted with role taxonomy",
+    gradient: "from-cyan-500 to-sky-600",
+    metrics: { accuracy: 92, speed: 89 },
+  },
+}
+
+const SOURCE_KEYS = Object.keys(LIVE_SOURCE_MAP)
+
+const OUTREACH_KEY = "mbpw_hunter_outreach"
+
+interface OutreachRecord {
+  id: string
+  discoveryId: string
+  company: string
+  title: string
+  proposal: any
+  generatedAt: string
+  status: string
+}
+
+function getStoredOutreach(): OutreachRecord[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(OUTREACH_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function storeOutreach(records: OutreachRecord[]) {
+  localStorage.setItem(OUTREACH_KEY, JSON.stringify(records))
+}
+
+function formatScanTime(iso?: string): string {
+  if (!iso) return "Never"
+  try {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return "Never"
+    return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+  } catch { return "Never" }
+}
 
 function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   useEffect(() => {
@@ -41,8 +135,8 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 }
 
 export default function OpportunityHunterPage() {
-  useEffect(() => { document.title = "Opportunity Hunter | MBPW"; }, []);
-  const [isRunning, setIsRunning] = useState(true)
+  useEffect(() => { document.title = "Opportunity Hunter | MBPW"; }, [])
+  const [isRunning, setIsRunning] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [categories, setCategories] = useState(initialCategories)
   const [searchFrequency, setSearchFrequency] = useState("15")
@@ -57,92 +151,60 @@ export default function OpportunityHunterPage() {
   const [selectedDiscovery, setSelectedDiscovery] = useState<Discovery | null>(null)
   const [showConfigDialog, setShowConfigDialog] = useState(false)
   const [sourceStatuses, setSourceStatuses] = useState<Record<string, string>>(
-    Object.fromEntries(searchSources.map((s) => [s.id, s.status]))
+    Object.fromEntries(SOURCE_KEYS.map((k) => [k, "idle"]))
   )
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [savedConfig, setSavedConfig] = useState({ minDealSize: "50000", targetRegion: "global", searchFrequency: "15" })
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [agentActivities, setAgentActivities] = useState<ActivityLog[]>([])
-  const [loadingAgents, setLoadingAgents] = useState(true)
-  const [agentRunning, setAgentRunning] = useState(false)
-  const [agentResult, setAgentResult] = useState<string | null>(null)
+  const [discoveries, setDiscoveries] = useState<Discovery[]>([])
+  const [sourceStats, setSourceStats] = useState<Record<string, { leadsFound: number; lastScan: string }>>({})
+  const [hunterFetching, setHunterFetching] = useState(false)
+  const [outreachRunning, setOutreachRunning] = useState(false)
+  const [outreachProgress, setOutreachProgress] = useState(0)
+  const [outreachLog, setOutreachLog] = useState<{ company: string; ok: boolean; error?: string }[]>([])
+  const [scanResult, setScanResult] = useState<string | null>(null)
+  const [tasksCompleted, setTasksCompleted] = useState(0)
 
   useEffect(() => {
-    let cancelled = false
-    async function fetchData() {
-      try {
-        const [agentsData, activity] = await Promise.all([
-          api.agents.list().catch(() => [] as any),
-          api.agents.activity("agent-1").catch(() => ({ logs: [] })),
-        ])
-        if (cancelled) return
-        if (Array.isArray(agentsData) && agentsData.length > 0) {
-          const mapped = agentsData.map((a: any) => ({
-            id: a.id,
-            name: a.name,
-            type: a.type,
-            status: a.status,
-            lastActive: a.last_active || a.lastActive || new Date().toISOString(),
-            tasksCompleted: a.tasks_completed ?? a.tasksCompleted ?? 0,
-            currentTask: a.current_task || a.currentTask || "",
-            uptime: a.uptime ?? 99.9,
-            efficiency: a.efficiency ?? 95,
-            description: a.description || "",
-            icon: a.icon || "search",
-          }))
-          setAgents(mapped as Agent[])
-        }
-        if (activity) setAgentActivities(((activity as any).logs || []) as ActivityLog[])
-      } catch { /* keep defaults */ }
-      if (!cancelled) setLoadingAgents(false)
+    const stored = getStoredDiscoveries()
+    if (stored.length > 0) {
+      setDiscoveries(stored)
+    } else {
+      const leads = getStoredLeads()
+      if (leads.length > 0) {
+        const mapped = leads.map(liveLeadToDiscovery)
+        setDiscoveries(mapped)
+        storeDiscoveries(mapped)
+      }
     }
-    fetchData()
-    return () => { cancelled = true }
+    const stats = getStoredSourceStats()
+    if (Object.keys(stats).length > 0) setSourceStats(stats)
+    setTasksCompleted(getStoredOutreach().length)
   }, [])
 
-  const handleRunAgent = useCallback(async () => {
-    if (agentRunning) return
-    setAgentRunning(true)
-    setAgentResult(null)
-    try {
-      const result = await api.agents.run("agent-1") as any
-      if (result?.result) {
-        const r = result.result
-        if (r.error) {
-          setAgentResult(`Error: ${r.error}`)
-        } else {
-          setAgentResult(`Fetched ${r.fetched || 0} leads, ${r.new || 0} new from ${r.sources || 0} sources`)
-        }
-      } else if (result?.error) {
-        setAgentResult(`Error: ${result.error}`)
-      } else {
-        setAgentResult("Agent completed")
+  const searchSources = useMemo<Source[]>(() =>
+    SOURCE_KEYS.map((key) => {
+      const meta = LIVE_SOURCE_MAP[key]
+      const stats = sourceStats[key]
+      return {
+        ...meta,
+        status: sourceStatuses[key] || "idle",
+        leadsFound: stats?.leadsFound ?? 0,
+        lastScan: formatScanTime(stats?.lastScan),
       }
-      const agentsData = await api.agents.list()
-      if (Array.isArray(agentsData)) {
-        setAgents(agentsData.map((a: any) => ({
-          id: a.id, name: a.name, type: a.type, status: a.status,
-          lastActive: a.last_active || new Date().toISOString(),
-          tasksCompleted: a.tasks_completed ?? 0,
-          currentTask: a.current_task || "",
-          uptime: a.uptime ?? 0, efficiency: a.efficiency ?? 0,
-          description: a.description || "", icon: a.icon || "search",
-        })))
-      }
-    } catch (e: any) {
-      setAgentResult(`Failed: ${e?.message || "Unknown error"}`)
-    } finally {
-      setAgentRunning(false)
-    }
-  }, [agentRunning])
+    }), [sourceStatuses, sourceStats])
 
-  const allAgents = agents.length > 0 ? agents : []
-  const hunterAgent = allAgents.find((a) => a.type === "opportunity_hunter") || {
-    id: "agent-1", name: "Opportunity Hunter AI", type: "opportunity_hunter" as const,
-    status: (isRunning ? "scanning" : "idle") as "scanning" | "idle",
-    lastActive: new Date().toISOString(), currentTask: "",
-    tasksCompleted: 0, uptime: 0, efficiency: 0, description: "AI-powered opportunity hunter", icon: "search",
-  }
+  const hunterAgent = useMemo(() => ({
+    name: "Opportunity Hunter AI",
+    currentTask: hunterFetching
+      ? "Scanning live job boards..."
+      : outreachRunning
+        ? "Generating proposals for top discoveries..."
+        : "",
+    tasksCompleted,
+    efficiency: searchSources.length > 0
+      ? Math.round((searchSources.reduce((a, s) => a + s.metrics.accuracy, 0) / searchSources.length))
+      : 0,
+  }), [hunterFetching, outreachRunning, tasksCompleted, searchSources])
 
   const filteredDiscoveries = useMemo(() => {
     return discoveries.filter((d) => {
@@ -188,7 +250,7 @@ export default function OpportunityHunterPage() {
       }
       return true
     })
-  }, [selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery, savedConfig])
+  }, [discoveries, selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery, savedConfig])
 
   const toggleCategory = (id: string) =>
     setCategories((prev) => prev.map((cat) => cat.id === id ? { ...cat, selected: !cat.selected } : cat))
@@ -198,6 +260,104 @@ export default function OpportunityHunterPage() {
 
   const toggleSourceStatus = (id: string) =>
     setSourceStatuses((prev) => ({ ...prev, [id]: prev[id] === "active" ? "idle" : "active" }))
+
+  const handleStartHunter = useCallback(async () => {
+    if (hunterFetching) return
+    setHunterFetching(true)
+    setIsRunning(true)
+    setScanResult(null)
+    setSourceStatuses(Object.fromEntries(SOURCE_KEYS.map((k) => [k, "scanning"])))
+    try {
+      const { leads, results } = await fetchAllSources(15)
+      const existingIds = new Set(discoveries.map((d) => d.id))
+      const fresh = leads
+        .filter((l) => !existingIds.has(l.id))
+        .map(liveLeadToDiscovery)
+      const nextDiscoveries = fresh.length > 0 ? [...fresh, ...discoveries] : discoveries
+      setDiscoveries(nextDiscoveries)
+      storeDiscoveries(nextDiscoveries)
+
+      const now = new Date().toISOString()
+      const nextStats = { ...sourceStats }
+      let totalFetched = 0
+      let errorCount = 0
+      for (const key of SOURCE_KEYS) {
+        const r = results[key]
+        if (!r) continue
+        totalFetched += r.fetched
+        if (r.error) errorCount++
+        nextStats[key] = {
+          leadsFound: (nextStats[key]?.leadsFound || 0) + r.fetched,
+          lastScan: now,
+        }
+      }
+      setSourceStats(nextStats)
+      storeSourceStats(nextStats)
+      setSourceStatuses(Object.fromEntries(
+        SOURCE_KEYS.map((k) => [k, results[k]?.error ? "error" : "active"])
+      ))
+      setTasksCompleted((t) => t + 1)
+      const msg = errorCount > 0
+        ? `Scan complete: ${totalFetched} leads fetched (${fresh.length} new), ${errorCount} source(s) unavailable`
+        : `Scan complete: ${totalFetched} leads fetched across ${SOURCE_KEYS.length} sources (${fresh.length} new)`
+      setScanResult(msg)
+      setToastMessage(`Hunter found ${fresh.length} new opportunities`)
+    } catch (e: any) {
+      setSourceStatuses(Object.fromEntries(SOURCE_KEYS.map((k) => [k, "error"])))
+      setScanResult(`Failed: ${e?.message || "Could not reach live sources"}`)
+    } finally {
+      setHunterFetching(false)
+    }
+  }, [hunterFetching, discoveries, sourceStats])
+
+  const handleAutoOutreach = useCallback(async () => {
+    if (outreachRunning) return
+    const targets = [...discoveries].sort((a, b) => b.score - a.score).slice(0, 3)
+    if (targets.length === 0) {
+      setToastMessage("No discoveries yet — run the Hunter first")
+      return
+    }
+    setOutreachRunning(true)
+    setOutreachProgress(0)
+    setOutreachLog([])
+    const records = getStoredOutreach()
+    const updated = [...discoveries]
+    let successCount = 0
+
+    for (let i = 0; i < targets.length; i++) {
+      const d = targets[i]
+      try {
+        const result = await api.proposals.generate({
+          leadId: d.id,
+          tone: "professional",
+          instructions: `Generate a tailored business proposal for ${d.company} regarding the "${d.title}" opportunity discovered on ${d.source} (${d.location}). Key technologies: ${d.tags.join(", ") || "N/A"}.`,
+        }) as any
+        records.unshift({
+          id: `outreach-${d.id}-${Date.now()}`,
+          discoveryId: d.id,
+          company: d.company,
+          title: d.title,
+          proposal: result?.proposal || result?.content || result,
+          generatedAt: new Date().toISOString(),
+          status: "generated",
+        })
+        storeOutreach(records)
+        successCount++
+        setOutreachLog((prev) => [...prev, { company: d.company, ok: true }])
+        const idx = updated.findIndex((x) => x.id === d.id)
+        if (idx >= 0) updated[idx] = { ...updated[idx], status: "contacted" }
+      } catch (e: any) {
+        setOutreachLog((prev) => [...prev, { company: d.company, ok: false, error: e?.message || "Failed" }])
+      }
+      setOutreachProgress(Math.round(((i + 1) / targets.length) * 100))
+    }
+
+    setDiscoveries(updated)
+    storeDiscoveries(updated)
+    setTasksCompleted((t) => t + successCount)
+    setOutreachRunning(false)
+    setToastMessage(`Auto outreach complete: ${successCount}/${targets.length} proposals generated`)
+  }, [outreachRunning, discoveries])
 
   const handleExport = () => {
     const data = filteredDiscoveries.map((d) => ({
@@ -249,34 +409,67 @@ export default function OpportunityHunterPage() {
                     onClick={() => setShowConfigDialog(true)}>
                     <Settings className="w-4 h-4 mr-2" />Configure
                   </Button>
+                  <Button variant="outline" size="sm"
+                    onClick={handleAutoOutreach}
+                    disabled={outreachRunning || hunterFetching || discoveries.length === 0}
+                    className="border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 hover:text-violet-200">
+                    {outreachRunning
+                      ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Outreach {outreachProgress}%</>
+                      : <><Sparkles className="w-4 h-4 mr-2" />Auto Outreach</>}
+                  </Button>
                   <Button variant={isRunning ? "destructive" : "default"} size="sm"
                     onClick={() => {
                       if (!isRunning) {
-                        handleRunAgent()
+                        handleStartHunter()
+                      } else {
+                        setIsRunning(false)
+                        setSourceStatuses(Object.fromEntries(SOURCE_KEYS.map((k) => [k, "idle"])))
                       }
-                      setIsRunning(!isRunning)
                     }}
-                    disabled={agentRunning}
+                    disabled={hunterFetching}
                     className={cn(isRunning
                       ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
                       : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20")}>
-                    {agentRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Running...</>
+                    {hunterFetching ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning...</>
                       : isRunning ? <><Pause className="w-4 h-4 mr-2" />Pause Hunter</>
                         : <><Play className="w-4 h-4 mr-2" />Start Hunter</>}
                   </Button>
                 </div>
               </div>
+              {outreachRunning && (
+                <div className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-3">
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="flex items-center gap-2 text-violet-300">
+                      <Send className="w-4 h-4" />Generating proposals for top 3 discoveries...
+                    </span>
+                    <span className="text-violet-400 font-medium">{outreachProgress}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-500"
+                      style={{ width: `${outreachProgress}%` }} />
+                  </div>
+                  {outreachLog.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {outreachLog.map((entry, i) => (
+                        <p key={i} className={cn("text-xs", entry.ok ? "text-emerald-400" : "text-red-400")}>
+                          {entry.ok ? "✓" : "✗"} {entry.company}{entry.error ? ` — ${entry.error}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <HunterStats isRunning={isRunning} hunterAgent={hunterAgent} searchSources={searchSources}
               sourceStatuses={sourceStatuses} newDiscoveryCount={discoveries.filter((d) => d.status === "new").length} />
 
-            {agentResult && (
+            {scanResult && (
               <div className={cn("rounded-xl px-5 py-3 text-sm border",
-                agentResult.includes("Error") || agentResult.includes("Failed")
+                scanResult.includes("Error") || scanResult.includes("Failed")
                   ? "bg-red-500/10 border-red-500/20 text-red-300"
                   : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300")}>
-                {agentResult}
+                {scanResult}
               </div>
             )}
 

@@ -119,13 +119,22 @@ export function TopBar() {
   const [notifications, setNotifications] = useState<Notification[]>([])
 
   useEffect(() => {
+    const stored = localStorage.getItem("mbpw_notifications");
+    if (stored) {
+      try { setNotifications(JSON.parse(stored)); } catch {}
+    }
     api.notifications.list().then((data) => {
-      if (Array.isArray(data)) {
-        setNotifications(data.map((n: any) => ({
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((n: any) => ({
           ...n,
           leadId: n.leadId || n.lead_id || undefined,
           createdAt: n.createdAt || n.created_at || new Date().toISOString(),
-        })));
+        }));
+        setNotifications(prev => {
+          const merged = [...mapped, ...prev.filter(p => !mapped.find((m: any) => m.id === p.id))];
+          localStorage.setItem("mbpw_notifications", JSON.stringify(merged));
+          return merged;
+        });
       }
     }).catch(() => {});
   }, []);

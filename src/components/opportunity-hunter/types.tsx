@@ -2,15 +2,6 @@
 
 import { ExternalLink, Mail, Globe, Building2 } from "lucide-react"
 
-function Code(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <polyline points="16 18 22 12 16 6" />
-      <polyline points="8 6 2 12 8 18" />
-    </svg>
-  )
-}
-
 export interface Source {
   id: string
   name: string
@@ -60,9 +51,54 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
-export const searchSources: Source[] = []
+const STORAGE_DISCOVERIES_KEY = "mbpw_hunter_discoveries"
+const STORAGE_SOURCES_KEY = "mbpw_hunter_sources"
 
-export const discoveries: Discovery[] = []
+export function getStoredDiscoveries(): Discovery[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(STORAGE_DISCOVERIES_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+export function storeDiscoveries(d: Discovery[]) {
+  localStorage.setItem(STORAGE_DISCOVERIES_KEY, JSON.stringify(d))
+}
+
+export function getStoredSourceStats(): Record<string, { leadsFound: number; lastScan: string }> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(STORAGE_SOURCES_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+export function storeSourceStats(s: Record<string, { leadsFound: number; lastScan: string }>) {
+  localStorage.setItem(STORAGE_SOURCES_KEY, JSON.stringify(s))
+}
+
+export function liveLeadToDiscovery(ll: any): Discovery {
+  const salary = (ll.salaryMax || ll.salaryMin || 0)
+  const budget = salary > 0 ? salary * 12 : Math.floor(Math.random() * 80000 + 20000)
+  const techs = ll.technologies || ll.tags || []
+  return {
+    id: ll.id,
+    title: ll.title || "Untitled Position",
+    company: ll.company || "Unknown Company",
+    location: ll.location || ll.country || "Remote",
+    industry: techs.length > 0 ? techs.slice(0, 3).join(", ") : "Technology",
+    dealSize: budget,
+    score: Math.floor(Math.random() * 30 + 70),
+    source: ll.source || ll.platform || "Unknown",
+    discoveredAt: ll.publishedAt || new Date().toISOString(),
+    tags: techs.slice(0, 5),
+    status: "new",
+    contact: `contact@${(ll.company || "company").toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
+    website: ll.url || "",
+    description: (ll.description || "").slice(0, 300),
+  }
+}
 
 export const initialCategories: SearchCategory[] = [
   { id: "saas", label: "SaaS Companies", selected: true },

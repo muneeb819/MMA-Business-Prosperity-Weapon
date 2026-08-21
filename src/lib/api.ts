@@ -46,7 +46,7 @@ export const api = {
       fetchAPI(`/api/proposals/${id}/submit`, { method: "POST" }),
     duplicate: (id: string) =>
       fetchAPI(`/api/proposals/${id}/duplicate`, { method: "POST" }),
-    generate: (data: { leadId: string; tone: string; instructions?: string }) =>
+    generate: (data: { leadId?: string; tone: string; instructions?: string; leadData?: any }) =>
       fetchAPI("/api/proposals/generate", { method: "POST", body: JSON.stringify(data) }),
     sendEmail: (id: string, data: { recipient_email: string; subject?: string; message?: string }) =>
       fetchAPI(`/api/proposals/${id}/send-email`, { method: "POST", body: JSON.stringify(data) }),

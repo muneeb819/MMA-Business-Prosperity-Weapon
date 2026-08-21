@@ -4,8 +4,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { initialMockProposals } from "@/lib/mock-proposals";
 import { api } from "@/lib/api";
+import { getStoredLeads } from "@/lib/live-sources";
 import { ProposalStats } from "@/components/proposals/ProposalStats";
 import { ProposalFilters } from "@/components/proposals/ProposalFilters";
 import { ProposalGrid } from "@/components/proposals/ProposalGrid";
@@ -13,6 +13,21 @@ import { ProposalDetailDialog } from "@/components/proposals/ProposalDetailDialo
 import { MockProposal, SortOption, Toast } from "@/components/proposals/types";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
+
+const PROPOSALS_KEY = "mbpw_proposals";
+
+function getStoredProposals(): MockProposal[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PROPOSALS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveStoredProposals(proposals: MockProposal[]) {
+  localStorage.setItem(PROPOSALS_KEY, JSON.stringify(proposals));
+}
+
 function mapApiProposalToMock(p: any): MockProposal {
   const sections = p.sections || {};
   return {
@@ -57,52 +72,51 @@ export default function ProposalsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    async function fetchProposals() {
+    async function init() {
       setLoading(true);
+
+      const stored = getStoredProposals();
+
+      let apiProposals: MockProposal[] = [];
       try {
         const data = await api.proposals.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setProposals(data.map(mapApiProposalToMock));
+          apiProposals = data.map(mapApiProposalToMock);
         }
-      } catch {
-        // API unavailable
-      } finally {
-        if (!cancelled) setLoading(false);
+      } catch {}
+
+      if (!cancelled) {
+        const storedIds = new Set(stored.map(p => p.id));
+        const merged = [...stored, ...apiProposals.filter(p => !storedIds.has(p.id))];
+        setProposals(merged);
+        saveStoredProposals(merged);
       }
-    }
-    async function fetchLeads() {
-      try {
-        const data = await api.leads.list();
-        if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setAvailableLeads(data.map((l: any) => ({
-            id: l.id,
-            title: l.title,
-            company: l.company || "Unknown",
-            clientName: l.clientName || l.client_name || "Client",
-          })));
-        } else if (!cancelled) {
-          try {
-            await api.leadSources.syncAll(15);
-            const retry = await api.leads.list();
-            if (!cancelled && Array.isArray(retry) && retry.length > 0) {
-              setAvailableLeads(retry.map((l: any) => ({
-                id: l.id,
-                title: l.title,
-                company: l.company || "Unknown",
-                clientName: l.clientName || l.client_name || "Client",
-              })));
-            }
-          } catch {
-            // sync failed
+
+      const liveLeads = getStoredLeads();
+      if (liveLeads.length > 0) {
+        setAvailableLeads(liveLeads.map(l => ({
+          id: l.id,
+          title: l.title,
+          company: l.company || "Unknown",
+          clientName: l.company || "Client",
+        })));
+      } else {
+        try {
+          const data = await api.leads.list();
+          if (!cancelled && Array.isArray(data) && data.length > 0) {
+            setAvailableLeads(data.map((l: any) => ({
+              id: l.id,
+              title: l.title,
+              company: l.company || "Unknown",
+              clientName: l.clientName || l.client_name || "Client",
+            })));
           }
-        }
-      } catch {
-        // API unavailable
+        } catch {}
       }
+
+      if (!cancelled) setLoading(false);
     }
-    fetchProposals();
-    fetchLeads();
-    return () => { cancelled = true; };
+    init();
   }, []);
 
   const showToast = useCallback((message: string, type: Toast["type"] = "info") => {
@@ -150,18 +164,20 @@ export default function ProposalsPage() {
     return result;
   }, [proposals, statusFilter, searchQuery, sortBy]);
 
+  const persistProposals = useCallback((updated: MockProposal[]) => {
+    setProposals(updated);
+    saveStoredProposals(updated);
+  }, []);
+
   const handleSubmitProposal = useCallback(
     async (proposalId: string) => {
       try {
         await api.proposals.submit(proposalId);
-      } catch {
-        // API unavailable — continue with local state
-      }
-      setProposals((prev) =>
-        prev.map((p) =>
-          p.id === proposalId ? { ...p, status: "submitted", submittedAt: new Date().toISOString() } : p
-        )
+      } catch {}
+      const updated = proposals.map((p) =>
+        p.id === proposalId ? { ...p, status: "submitted", submittedAt: new Date().toISOString() } : p
       );
+      persistProposals(updated);
       setSelectedProposal((prev) =>
         prev && prev.id === proposalId
           ? { ...prev, status: "submitted", submittedAt: new Date().toISOString() }
@@ -169,32 +185,25 @@ export default function ProposalsPage() {
       );
       showToast("Proposal submitted successfully!", "success");
     },
-    [showToast]
+    [proposals, persistProposals, showToast]
   );
 
   const handleDuplicateProposal = useCallback(
     async (proposal: MockProposal) => {
-      try {
-        const result = await api.proposals.duplicate(proposal.id);
-        if (result && typeof result === "object") {
-          setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
-        }
-      } catch {
-        // API unavailable — do local duplicate
-        const duplicate: MockProposal = {
-          ...proposal,
-          id: `prop-${Date.now()}`,
-          title: `${proposal.title} (Copy)`,
-          status: "draft",
-          submittedAt: undefined,
-          createdAt: new Date().toISOString(),
-        };
-        setProposals((prev) => [duplicate, ...prev]);
-      }
+      const duplicate: MockProposal = {
+        ...proposal,
+        id: `prop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: `${proposal.title} (Copy)`,
+        status: "draft",
+        submittedAt: undefined,
+        createdAt: new Date().toISOString(),
+      };
+      const updated = [duplicate, ...proposals];
+      persistProposals(updated);
       setSelectedProposal(null);
       showToast("Proposal duplicated as draft", "success");
     },
-    [showToast]
+    [proposals, persistProposals, showToast]
   );
 
   const handleStartEdit = useCallback((proposal: MockProposal) => {
@@ -206,16 +215,13 @@ export default function ProposalsPage() {
     if (!selectedProposal) return;
     try {
       await api.proposals.update(selectedProposal.id, { title: editTitle } as any);
-    } catch {
-      // API unavailable — continue with local state
-    }
-    setProposals((prev) =>
-      prev.map((p) => (p.id === selectedProposal.id ? { ...p, title: editTitle } : p))
-    );
+    } catch {}
+    const updated = proposals.map((p) => (p.id === selectedProposal.id ? { ...p, title: editTitle } : p));
+    persistProposals(updated);
     setSelectedProposal((prev) => (prev ? { ...prev, title: editTitle } : prev));
     setIsEditing(false);
     showToast("Proposal updated", "success");
-  }, [selectedProposal, editTitle, showToast]);
+  }, [selectedProposal, editTitle, proposals, persistProposals, showToast]);
 
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
@@ -266,19 +272,35 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
 
   const handleGenerate = async () => {
     if (!genLeadId) {
-      showToast("Please select a lead first. Go to the Leads page or Connectors page to import leads.", "error");
+      showToast("Please select a lead first.", "error");
       return;
     }
     setIsGenerating(true);
     try {
-      const result = await api.proposals.generate({
-        leadId: genLeadId,
-        tone: genTone,
-        instructions: genInstructions || undefined,
-      });
+      const liveLeads = getStoredLeads();
+      const selectedLead = liveLeads.find(l => l.id === genLeadId);
+
+      const payload: any = { leadId: genLeadId, tone: genTone, instructions: genInstructions || undefined };
+      if (selectedLead) {
+        payload.leadData = {
+          title: selectedLead.title,
+          description: selectedLead.description,
+          budget: { min: selectedLead.salaryMin || 0, max: selectedLead.salaryMax || 0 },
+          clientName: selectedLead.company,
+          company: selectedLead.company,
+          technologies: selectedLead.technologies,
+          country: selectedLead.country || selectedLead.location,
+          competition: 0,
+        };
+      }
+
+      const result = await api.proposals.generate(payload);
       if (result && typeof result === "object") {
-        setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
+        const proposal = mapApiProposalToMock(result);
+        const updated = [proposal, ...proposals];
+        persistProposals(updated);
         showToast("Proposal generated successfully!", "success");
+        setShowGenerateDialog(false);
       }
     } catch (e: any) {
       showToast(`Generation failed: ${e?.message || "API unavailable"}`, "error");
