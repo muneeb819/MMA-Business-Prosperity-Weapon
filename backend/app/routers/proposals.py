@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from datetime import datetime
 import uuid
 from app.models.database import get_db
-from app.models.schema import Proposal, Lead
+from app.models.schema import Proposal, Lead, Notification
 
 router = APIRouter()
 
@@ -57,6 +57,21 @@ class SendEmailRequest(BaseModel):
     recipient_email: str
     subject: str = ""
     message: str = ""
+
+
+def _create_notification(db: Session, notif_type: str, title: str, message: str, priority: str = "medium", lead_id: str = None):
+    notif = Notification(
+        id=f"notif-{uuid.uuid4().hex[:12]}",
+        type=notif_type,
+        title=title,
+        message=message,
+        lead_id=lead_id,
+        read=False,
+        priority=priority,
+        created_at=datetime.utcnow(),
+    )
+    db.add(notif)
+    db.commit()
 
 
 def _proposal_to_dict(prop: Proposal) -> dict:
@@ -256,6 +271,13 @@ async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_
     db.add(new_prop)
     db.commit()
     db.refresh(new_prop)
+
+    _create_notification(
+        db, "high_value", "Proposal Generated",
+        f"New proposal created: {new_prop.title}",
+        priority="high", lead_id=request.leadId,
+    )
+
     return _proposal_to_dict(new_prop)
 
 
@@ -313,6 +335,19 @@ async def send_proposal_email(proposal_id: str, request: SendEmailRequest, db: S
         body_html=body_html,
         body_text=body_text,
     )
+
+    if sent:
+        _create_notification(
+            db, "system", "Proposal Email Sent",
+            f"Proposal '{db_prop.title}' emailed to {request.recipient_email}",
+            priority="high", lead_id=db_prop.lead_id,
+        )
+    else:
+        _create_notification(
+            db, "system", "Email Delivery Failed",
+            f"Could not send proposal email to {request.recipient_email}. SMTP not configured.",
+            priority="medium", lead_id=db_prop.lead_id,
+        )
 
     return {
         "success": sent,
@@ -393,6 +428,10 @@ def _send_smtp_email(recipient: str, subject: str, body_html: str, body_text: st
     smtp_from_name = os.getenv("SMTP_FROM_NAME", "MMA Business Prosperity Weapon")
 
     if not smtp_host or not smtp_user or not smtp_password:
+        import logging
+        logging.getLogger(__name__).warning(
+            "SMTP not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASSWORD env vars."
+        )
         return False
 
     msg = MIMEMultipart("alternative")
@@ -410,4 +449,6 @@ def _send_smtp_email(recipient: str, subject: str, body_html: str, body_text: st
             server.sendmail(smtp_from, [recipient], msg.as_string())
         return True
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"SMTP send failed: {e}")
         return False

@@ -21,7 +21,7 @@ def get_system_stats(db: Session = Depends(get_db), current_user: UserModel = De
     total_knowledge = db.query(KnowledgeEntry).count()
     active_sessions = db.query(SessionModel).filter(SessionModel.is_active == True).count()
     today = datetime.utcnow().date()
-    today_leads = db.query(Lead).filter(Lead.created_at >= today).count()
+    today_leads = db.query(Lead).filter(Lead.found_at >= today).count()
     today_proposals = db.query(Proposal).filter(Proposal.created_at >= today).count()
     return {
         "total_leads": total_leads,
@@ -56,8 +56,8 @@ def list_users(
 
 @router.put("/users/{user_id}/role")
 def update_user_role(
-    user_id: int,
-    role: str,
+    user_id: str,
+    role: str = Query(...),
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(require_role("superadmin"))
 ):
@@ -68,7 +68,13 @@ def update_user_role(
         raise HTTPException(status_code=404, detail="User not found")
     user.role = role
     db.commit()
-    log = AuditLogModel(user_id=current_user.id, action=f"update_role:{user_id}:{role}", timestamp=datetime.utcnow())
+    log = AuditLogModel(
+        id=f"audit-{datetime.utcnow().timestamp()}", 
+        user_id=current_user.id, 
+        action=f"update_role:{user_id}:{role}",
+        resource="user",
+        resource_id=user_id,
+    )
     db.add(log)
     db.commit()
     return {"message": f"User {user_id} role updated to {role}"}
@@ -81,9 +87,9 @@ def get_audit_logs(
     current_user: UserModel = Depends(require_role("admin"))
 ):
     total = db.query(AuditLogModel).count()
-    logs = db.query(AuditLogModel).order_by(AuditLogModel.timestamp.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    logs = db.query(AuditLogModel).order_by(AuditLogModel.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
     return {
-        "logs": [{"id": l.id, "user_id": l.user_id, "action": l.action, "timestamp": l.timestamp.isoformat()} for l in logs],
+        "logs": [{"id": l.id, "user_id": l.user_id, "action": l.action, "timestamp": l.created_at.isoformat() if l.created_at else None} for l in logs],
         "total": total, "page": page, "per_page": per_page
     }
 
@@ -94,7 +100,7 @@ def get_sessions(
 ):
     sessions = db.query(SessionModel).filter(SessionModel.is_active == True).all()
     return {
-        "sessions": [{"id": s.id, "user_id": s.user_id, "token": s.token[:20] + "...", "created_at": s.created_at.isoformat(), "expires_at": s.expires_at.isoformat()} for s in sessions],
+        "sessions": [{"id": s.id, "user_id": s.user_id, "token": s.token[:20] + "...", "created_at": s.created_at.isoformat() if s.created_at else None, "expires_at": s.expires_at.isoformat() if s.expires_at else None} for s in sessions],
         "total": len(sessions)
     }
 
@@ -115,5 +121,17 @@ def admin_get_leads(
     current_user: UserModel = Depends(require_role("admin"))
 ):
     total = db.query(Lead).count()
-    leads = db.query(Lead).order_by(Lead.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    return {"leads": [{"id": l.id, "company": l.company_name, "status": l.status, "value": l.estimated_value, "created_at": l.created_at.isoformat()} for l in leads], "total": total}
+    leads = db.query(Lead).order_by(Lead.found_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    return {
+        "leads": [
+            {
+                "id": l.id,
+                "company": l.company,
+                "status": l.status,
+                "value": l.expected_revenue,
+                "created_at": l.found_at.isoformat() if l.found_at else None,
+            }
+            for l in leads
+        ],
+        "total": total,
+    }

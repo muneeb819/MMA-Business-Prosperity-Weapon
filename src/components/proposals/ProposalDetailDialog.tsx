@@ -148,10 +148,10 @@ function ProposalDetailDialogInner({
       if (result?.success) {
         showToast(`Proposal sent to ${emailRecipient.trim()}`, "success");
       } else {
-        showToast("Email configured but sending failed — check SMTP settings in .env", "info");
+        showToast("Email delivery failed. SMTP not configured — set SMTP_HOST, SMTP_USER, SMTP_PASSWORD env vars", "error");
       }
     } catch {
-      showToast("Email service unavailable — configure SMTP in .env to send", "info");
+      showToast("Email service unavailable — configure SMTP environment variables", "error");
     }
     setIsSending(false);
     setShowEmailDialog(false);

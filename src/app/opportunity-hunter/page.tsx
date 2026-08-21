@@ -64,6 +64,8 @@ export default function OpportunityHunterPage() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [agentActivities, setAgentActivities] = useState<ActivityLog[]>([])
   const [loadingAgents, setLoadingAgents] = useState(true)
+  const [agentRunning, setAgentRunning] = useState(false)
+  const [agentResult, setAgentResult] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -97,6 +99,42 @@ export default function OpportunityHunterPage() {
     fetchData()
     return () => { cancelled = true }
   }, [])
+
+  const handleRunAgent = useCallback(async () => {
+    if (agentRunning) return
+    setAgentRunning(true)
+    setAgentResult(null)
+    try {
+      const result = await api.agents.run("agent-1") as any
+      if (result?.result) {
+        const r = result.result
+        if (r.error) {
+          setAgentResult(`Error: ${r.error}`)
+        } else {
+          setAgentResult(`Fetched ${r.fetched || 0} leads, ${r.new || 0} new from ${r.sources || 0} sources`)
+        }
+      } else if (result?.error) {
+        setAgentResult(`Error: ${result.error}`)
+      } else {
+        setAgentResult("Agent completed")
+      }
+      const agentsData = await api.agents.list()
+      if (Array.isArray(agentsData)) {
+        setAgents(agentsData.map((a: any) => ({
+          id: a.id, name: a.name, type: a.type, status: a.status,
+          lastActive: a.last_active || new Date().toISOString(),
+          tasksCompleted: a.tasks_completed ?? 0,
+          currentTask: a.current_task || "",
+          uptime: a.uptime ?? 0, efficiency: a.efficiency ?? 0,
+          description: a.description || "", icon: a.icon || "search",
+        })))
+      }
+    } catch (e: any) {
+      setAgentResult(`Failed: ${e?.message || "Unknown error"}`)
+    } finally {
+      setAgentRunning(false)
+    }
+  }, [agentRunning])
 
   const allAgents = agents.length > 0 ? agents : []
   const hunterAgent = allAgents.find((a) => a.type === "opportunity_hunter") || {
@@ -212,12 +250,19 @@ export default function OpportunityHunterPage() {
                     <Settings className="w-4 h-4 mr-2" />Configure
                   </Button>
                   <Button variant={isRunning ? "destructive" : "default"} size="sm"
-                    onClick={() => setIsRunning(!isRunning)}
+                    onClick={() => {
+                      if (!isRunning) {
+                        handleRunAgent()
+                      }
+                      setIsRunning(!isRunning)
+                    }}
+                    disabled={agentRunning}
                     className={cn(isRunning
                       ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
                       : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20")}>
-                    {isRunning ? <><Pause className="w-4 h-4 mr-2" />Pause Hunter</>
-                      : <><Play className="w-4 h-4 mr-2" />Start Hunter</>}
+                    {agentRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Running...</>
+                      : isRunning ? <><Pause className="w-4 h-4 mr-2" />Pause Hunter</>
+                        : <><Play className="w-4 h-4 mr-2" />Start Hunter</>}
                   </Button>
                 </div>
               </div>
@@ -225,6 +270,15 @@ export default function OpportunityHunterPage() {
 
             <HunterStats isRunning={isRunning} hunterAgent={hunterAgent} searchSources={searchSources}
               sourceStatuses={sourceStatuses} newDiscoveryCount={discoveries.filter((d) => d.status === "new").length} />
+
+            {agentResult && (
+              <div className={cn("rounded-xl px-5 py-3 text-sm border",
+                agentResult.includes("Error") || agentResult.includes("Failed")
+                  ? "bg-red-500/10 border-red-500/20 text-red-300"
+                  : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300")}>
+                {agentResult}
+              </div>
+            )}
 
             <Tabs defaultValue="sources" className="animate-fade-in-up" style={{ animationDelay: "200ms" }}>
               <TabsList className="bg-zinc-900/50 border border-zinc-800/50 p-1 h-12">

@@ -80,6 +80,21 @@ export default function ProposalsPage() {
             company: l.company || "Unknown",
             clientName: l.clientName || l.client_name || "Client",
           })));
+        } else if (!cancelled) {
+          try {
+            await api.leadSources.syncAll(15);
+            const retry = await api.leads.list();
+            if (!cancelled && Array.isArray(retry) && retry.length > 0) {
+              setAvailableLeads(retry.map((l: any) => ({
+                id: l.id,
+                title: l.title,
+                company: l.company || "Unknown",
+                clientName: l.clientName || l.client_name || "Client",
+              })));
+            }
+          } catch {
+            // sync failed
+          }
         }
       } catch {
         // API unavailable
@@ -250,6 +265,10 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
   }, [selectedProposal, showToast]);
 
   const handleGenerate = async () => {
+    if (!genLeadId) {
+      showToast("Please select a lead first. Go to the Leads page or Connectors page to import leads.", "error");
+      return;
+    }
     setIsGenerating(true);
     try {
       const result = await api.proposals.generate({
@@ -259,34 +278,13 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
       });
       if (result && typeof result === "object") {
         setProposals((prev) => [mapApiProposalToMock(result), ...prev]);
+        showToast("Proposal generated successfully!", "success");
       }
-    } catch {
-      const newProposal: MockProposal = {
-        id: `prop-${Date.now()}`,
-        title: `New Proposal`,
-        clientName: "Client",
-        company: "Company",
-        status: "draft",
-        winProbability: Math.floor(Math.random() * 40) + 50,
-        budget: 50000,
-        createdAt: new Date().toISOString(),
-        sections: {
-          coverLetter: "AI-generated cover letter will appear here.",
-          introduction: "AI-generated introduction will appear here.",
-          technicalPlan: "AI-generated technical plan will appear here.",
-          costEstimate: "AI-generated cost estimate will appear here.",
-          callToAction: "AI-generated call to action will appear here.",
-        },
-        portfolioSuggestions: [],
-      };
-      setProposals((prev) => [newProposal, ...prev]);
+    } catch (e: any) {
+      showToast(`Generation failed: ${e?.message || "API unavailable"}`, "error");
+    } finally {
+      setIsGenerating(false);
     }
-    setIsGenerating(false);
-    setShowGenerateDialog(false);
-    setGenLeadId("");
-    setGenTone("professional");
-    setGenInstructions("");
-    showToast("Proposal generated successfully!", "success");
   };
 
   const totalBudget = proposals.reduce((s, p) => s + p.budget, 0);

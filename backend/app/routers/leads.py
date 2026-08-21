@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
+import uuid
 from app.models.database import get_db
-from app.models.schema import Lead
+from app.models.schema import Lead, Notification
 
 router = APIRouter()
 
@@ -337,6 +339,19 @@ async def analyze_lead(lead_id: str, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(db_lead)
+
+    notif = Notification(
+        id=f"notif-{uuid.uuid4().hex[:12]}",
+        type="system",
+        title="Lead Analyzed",
+        message=f"Lead '{db_lead.title}' analyzed. Success probability: {analysis.get('success_probability', 0)}%",
+        lead_id=lead_id,
+        read=False,
+        priority="medium",
+        created_at=datetime.utcnow(),
+    )
+    db.add(notif)
+    db.commit()
 
     return {
         "message": "Analysis completed",

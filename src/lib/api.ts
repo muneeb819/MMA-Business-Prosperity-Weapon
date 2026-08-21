@@ -115,6 +115,8 @@ export const api = {
     list: () => fetchAPI("/api/agents"),
     start: (id: string) =>
       fetchAPI(`/api/agents/${id}/start`, { method: "POST" }),
+    run: (id: string) =>
+      fetchAPI(`/api/agents/${id}/run`, { method: "POST" }),
     pause: (id: string) =>
       fetchAPI(`/api/agents/${id}/pause`, { method: "POST" }),
     activity: (id: string) =>
@@ -154,5 +156,4 @@ export const api = {
     syncAll: (limit?: number) =>
       fetchAPI(`/api/lead-sources/sync-all?limit=${limit || 30}`, { method: "POST" }),
   },
-  seed: () => fetchAPI("/api/seed", { method: "POST" }),
 };
