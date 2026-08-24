@@ -63,7 +63,7 @@ interface ProposalDetailDialogProps {
   handleGenerate: () => void;
   toasts: Toast[];
   dismissToast: (id: number) => void;
-  availableLeads?: Array<{id: string; title: string; company: string; clientName: string}>;
+  availableLeads?: Array<{id: string; title: string; company: string; clientName: string; source: string; location: string; tags: string[]}>;
 }
 
 const detailTabs = [
@@ -344,19 +344,69 @@ function ProposalDetailDialogInner({
           <div className="space-y-5 py-2">
             <div>
               <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Select Lead</label>
-              <Select value={genLeadId} onValueChange={setGenLeadId}>
-                <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white h-11">
-                  <Briefcase className="w-4 h-4 mr-2 text-zinc-500" />
-                  <SelectValue placeholder="Choose a lead to generate proposal for" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#12131C] border-white/10">
-                  {(availableLeads.length > 0 ? availableLeads : []).map((lead) => (
-                    <SelectItem key={lead.id} value={lead.id}>
-                      {lead.title} — {lead.company}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {availableLeads.length === 0 ? (
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+                  <Briefcase className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                  <p className="text-zinc-500 text-sm">No leads found. Run the Opportunity Hunter first to fetch leads.</p>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[240px] rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                  <div className="p-1">
+                    {(() => {
+                      const grouped: Record<string, typeof availableLeads> = {};
+                      availableLeads.forEach((lead) => {
+                        const src = lead.source || "Other";
+                        if (!grouped[src]) grouped[src] = [];
+                        grouped[src].push(lead);
+                      });
+                      const sourceEmojis: Record<string, string> = {
+                        Himalayas: "🏔️", RemoteOK: "🌍", Remotive: "🏠",
+                        "We Work Remotely": "🌐", Arbeitnow: "💼", Findwork: "🔍",
+                      };
+                      return Object.entries(grouped).sort((a, b) => b[1].length - a[1].length).map(([source, leads]) => (
+                        <div key={source} className="mb-2">
+                          <div className="flex items-center gap-2 px-3 py-1.5 sticky top-0 bg-[#0D0E18] z-10">
+                            <span className="text-sm">{sourceEmojis[source] || "📋"}</span>
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">{source}</span>
+                            <span className="text-[10px] text-zinc-600 ml-auto">{leads.length}</span>
+                          </div>
+                          {leads.map((lead) => (
+                            <button
+                              key={lead.id}
+                              onClick={() => setGenLeadId(lead.id)}
+                              className={cn(
+                                "w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-start gap-3 group/item",
+                                genLeadId === lead.id
+                                  ? "bg-blue-500/10 border border-blue-500/30"
+                                  : "hover:bg-white/[0.04] border border-transparent"
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <p className={cn("text-sm font-medium truncate", genLeadId === lead.id ? "text-blue-300" : "text-white")}>{lead.title}</p>
+                                <p className="text-xs text-zinc-500 truncate mt-0.5">{lead.company} · {lead.location}</p>
+                                {lead.tags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {lead.tags.slice(0, 3).map((tag) => (
+                                      <span key={tag} className="px-1.5 py-0.5 text-[9px] rounded bg-white/[0.05] text-zinc-500 border border-white/[0.06]">{tag}</span>
+                                    ))}
+                                    {lead.tags.length > 3 && <span className="text-[9px] text-zinc-600">+{lead.tags.length - 3}</span>}
+                                  </div>
+                                )}
+                              </div>
+                              {genLeadId === lead.id && (
+                                <div className="shrink-0 mt-1"><Check className="w-4 h-4 text-blue-400" /></div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </ScrollArea>
+              )}
+              {genLeadId && (
+                <p className="text-[10px] text-zinc-600 mt-1.5 px-1">Selected: {availableLeads.find(l => l.id === genLeadId)?.title}</p>
+              )}
             </div>
 
             <div>

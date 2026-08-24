@@ -68,7 +68,7 @@ export default function ProposalsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [detailTab, setDetailTab] = useState("cover");
-  const [availableLeads, setAvailableLeads] = useState<Array<{id: string; title: string; company: string; clientName: string}>>([]);
+  const [availableLeads, setAvailableLeads] = useState<Array<{id: string; title: string; company: string; clientName: string; source: string; location: string; tags: string[]}>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,6 +99,9 @@ export default function ProposalsPage() {
           title: l.title,
           company: l.company || "Unknown",
           clientName: l.company || "Client",
+          source: l.source || l.platform || "Unknown",
+          location: l.location || "Remote",
+          tags: l.tags || l.technologies || [],
         })));
       } else {
         try {
@@ -109,6 +112,9 @@ export default function ProposalsPage() {
               title: l.title,
               company: l.company || "Unknown",
               clientName: l.clientName || l.client_name || "Client",
+              source: l.platform || "Unknown",
+              location: l.country || "Remote",
+              tags: l.technologies || [],
             })));
           }
         } catch {}
