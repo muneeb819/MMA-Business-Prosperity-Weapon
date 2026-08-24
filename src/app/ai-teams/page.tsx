@@ -5,6 +5,9 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sidebar } from "@/components/sidebar";
+import { TopBar } from "@/components/top-bar";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   Bot, Users, Target, Send, Mail, MessageSquare, BarChart3, Activity,
   Play, Pause, Loader2, CheckCircle, AlertTriangle, Clock, TrendingUp,
@@ -234,7 +237,14 @@ export default function AITeamsPage() {
   const outreachTeam = teams.find(t => t.id === "outreach");
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <TopBar />
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-[1600px] mx-auto space-y-6">
+            <Breadcrumbs />
+            <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -850,6 +860,10 @@ export default function AITeamsPage() {
           )}
         </ScrollArea>
       </div>
+    </div>
+    </div>
+    </main>
+    </div>
     </div>
   );
 }
