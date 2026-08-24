@@ -60,6 +60,28 @@ class SendEmailRequest(BaseModel):
     message: str = ""
 
 
+class DirectEmailRequest(BaseModel):
+    recipient_email: str
+    subject: str
+    body_text: str = ""
+    body_html: str = ""
+
+
+@router.post("/send-direct")
+async def send_direct_email(request: DirectEmailRequest):
+    sent = _send_smtp_email(
+        recipient=request.recipient_email,
+        subject=request.subject,
+        body_html=request.body_html or f"<pre>{request.body_text}</pre>",
+        body_text=request.body_text,
+    )
+    if sent:
+        return {"success": True, "recipient": request.recipient_email, "method": "smtp"}
+    else:
+        mailto_url = f"mailto:{request.recipient_email}?subject={request.subject}&body={request.body_text}"
+        return {"success": False, "method": "mailto", "mailto_url": mailto_url, "reason": "SMTP not configured"}
+
+
 def _create_notification(db: Session, notif_type: str, title: str, message: str, priority: str = "medium", lead_id: str = None):
     notif = Notification(
         id=f"notif-{uuid.uuid4().hex[:12]}",

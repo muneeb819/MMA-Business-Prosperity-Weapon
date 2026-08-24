@@ -50,6 +50,8 @@ export const api = {
       fetchAPI("/api/proposals/generate", { method: "POST", body: JSON.stringify(data) }),
     sendEmail: (id: string, data: { recipient_email: string; subject?: string; message?: string }) =>
       fetchAPI(`/api/proposals/${id}/send-email`, { method: "POST", body: JSON.stringify(data) }),
+    sendDirect: (data: { recipient_email: string; subject: string; body_text: string; body_html?: string }) =>
+      fetchAPI("/api/proposals/send-direct", { method: "POST", body: JSON.stringify(data) }),
   },
   crm: {
     companies: {

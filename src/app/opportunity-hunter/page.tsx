@@ -92,6 +92,8 @@ interface OutreachRecord {
   proposal: any
   generatedAt: string
   status: string
+  emailMethod?: string
+  recipientEmail?: string
 }
 
 function getStoredOutreach(): OutreachRecord[] {
@@ -198,7 +200,7 @@ export default function OpportunityHunterPage() {
     currentTask: hunterFetching
       ? "Scanning live job boards..."
       : outreachRunning
-        ? "Generating proposals for top discoveries..."
+        ? "Generating proposals & sending emails..."
         : "",
     tasksCompleted,
     efficiency: searchSources.length > 0
@@ -323,29 +325,96 @@ export default function OpportunityHunterPage() {
     const records = getStoredOutreach()
     const updated = [...discoveries]
     let successCount = 0
+    let emailsSent = 0
 
     for (let i = 0; i < targets.length; i++) {
       const d = targets[i]
       try {
         const result = await api.proposals.generate({
           leadId: d.id,
+          leadData: {
+            title: d.title,
+            description: d.description,
+            budget: { min: d.dealSize * 0.3, max: d.dealSize },
+            clientName: d.company,
+            company: d.company,
+            technologies: d.tags,
+            country: d.location,
+            competition: 0,
+          },
           tone: "professional",
           instructions: `Generate a tailored business proposal for ${d.company} regarding the "${d.title}" opportunity discovered on ${d.source} (${d.location}). Key technologies: ${d.tags.join(", ") || "N/A"}.`,
         }) as any
+
+        const coverLetter = result?.coverLetter || result?.sections?.coverLetter || result?.cover_letter || ""
+        const introduction = result?.introduction || result?.sections?.introduction || ""
+        const technicalPlan = result?.technicalPlan || result?.sections?.technicalPlan || result?.technical_plan || ""
+        const costEstimate = result?.costEstimate || result?.sections?.costEstimate || result?.cost_estimate || ""
+        const callToAction = result?.callToAction || result?.sections?.callToAction || result?.call_to_action || ""
+        const proposalTitle = result?.title || `Proposal: ${d.title} at ${d.company}`
+
+        const proposalRecord = {
+          id: result?.id || `prop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title: proposalTitle,
+          clientName: d.company,
+          company: d.company,
+          status: "draft",
+          winProbability: result?.winProbability || 72,
+          budget: d.dealSize,
+          createdAt: new Date().toISOString(),
+          sections: { coverLetter, introduction, technicalPlan, costEstimate, callToAction },
+          portfolioSuggestions: result?.portfolioSuggestions || [],
+        }
+
+        const stored = JSON.parse(localStorage.getItem("mbpw_proposals") || "[]")
+        stored.unshift(proposalRecord)
+        localStorage.setItem("mbpw_proposals", JSON.stringify(stored))
+
+        const recipientEmail = d.contact || `contact@${d.company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`
+        const emailSubject = `Business Proposal: ${d.title}`
+        const emailBody = `${introduction || coverLetter || `Dear ${d.company} team,\n\nWe are pleased to present our proposal for the ${d.title} opportunity.\n\n${technicalPlan}\n\n${costEstimate ? `Investment: ${costEstimate}\n\n` : ""}${callToAction || "We look forward to discussing this opportunity with you."}`}\n\nBest regards,\nMMA Business Prosperity Weapon\nMuhammad Muneeb Akram\nMuhammadmuneebakram819@gmail.com`
+
+        let emailMethod = "none"
+        try {
+          const emailResult = await api.proposals.sendDirect({
+            recipient_email: recipientEmail,
+            subject: emailSubject,
+            body_text: emailBody,
+          }) as any
+          if (emailResult?.success) {
+            emailMethod = "smtp"
+            emailsSent++
+          } else {
+            emailMethod = "mailto"
+            window.open(
+              `mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`,
+              "_blank"
+            )
+          }
+        } catch {
+          emailMethod = "mailto"
+          window.open(
+            `mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`,
+            "_blank"
+          )
+        }
+
         records.unshift({
           id: `outreach-${d.id}-${Date.now()}`,
           discoveryId: d.id,
           company: d.company,
           title: d.title,
-          proposal: result?.proposal || result?.content || result,
+          proposal: proposalRecord,
           generatedAt: new Date().toISOString(),
-          status: "generated",
+          status: emailMethod === "smtp" ? "sent" : "emailed",
+          emailMethod,
+          recipientEmail,
         })
         storeOutreach(records)
         successCount++
-        setOutreachLog((prev) => [...prev, { company: d.company, ok: true }])
+        setOutreachLog((prev) => [...prev, { company: d.company, ok: true, error: emailMethod === "smtp" ? "Email sent via SMTP" : "Email opened in mail client" }])
         const idx = updated.findIndex((x) => x.id === d.id)
-        if (idx >= 0) updated[idx] = { ...updated[idx], status: "contacted" }
+        if (idx >= 0) updated[idx] = { ...updated[idx], status: "proposal-sent" }
       } catch (e: any) {
         setOutreachLog((prev) => [...prev, { company: d.company, ok: false, error: e?.message || "Failed" }])
       }
@@ -356,7 +425,7 @@ export default function OpportunityHunterPage() {
     storeDiscoveries(updated)
     setTasksCompleted((t) => t + successCount)
     setOutreachRunning(false)
-    setToastMessage(`Auto outreach complete: ${successCount}/${targets.length} proposals generated`)
+    setToastMessage(`Outreach complete: ${successCount} proposals generated, ${emailsSent} emails sent via SMTP`)
   }, [outreachRunning, discoveries])
 
   const handleExport = () => {
@@ -440,7 +509,7 @@ export default function OpportunityHunterPage() {
                 <div className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-3">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="flex items-center gap-2 text-violet-300">
-                      <Send className="w-4 h-4" />Generating proposals for top 3 discoveries...
+                      <Send className="w-4 h-4" />Generating proposals & sending emails...
                     </span>
                     <span className="text-violet-400 font-medium">{outreachProgress}%</span>
                   </div>
