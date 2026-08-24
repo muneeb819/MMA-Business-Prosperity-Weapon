@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, X, Download, RefreshCw, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { platformFilters, countryFilters, technologyFilters } from "./types"
+import { platformFilters, countryFilters, technologyFilters, industryFilters } from "./types"
 
 interface FilterBarProps {
   searchQuery: string
@@ -19,6 +19,8 @@ interface FilterBarProps {
   onCountryChange: (value: string) => void
   activeTechnology: string
   onTechnologyChange: (value: string) => void
+  activeIndustry: string
+  onIndustryChange: (value: string) => void
   onExport: () => void
   onResetFilters: () => void
 }
@@ -34,6 +36,8 @@ function FilterBarInner({
   onCountryChange,
   activeTechnology,
   onTechnologyChange,
+  activeIndustry,
+  onIndustryChange,
   onExport,
   onResetFilters,
 }: FilterBarProps) {
@@ -106,6 +110,21 @@ function FilterBarInner({
               {countryFilters.map((cf) => (
                 <SelectItem key={cf.id} value={cf.id} className="text-xs">
                   {cf.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-zinc-500 font-medium">Industry:</span>
+          <Select value={activeIndustry} onValueChange={onIndustryChange}>
+            <SelectTrigger className="h-8 w-[180px] bg-zinc-900/50 border-zinc-800/50 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800">
+              {industryFilters.map((inf) => (
+                <SelectItem key={inf.id} value={inf.id} className="text-xs">
+                  {inf.label}
                 </SelectItem>
               ))}
             </SelectContent>

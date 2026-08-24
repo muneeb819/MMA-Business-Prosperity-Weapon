@@ -148,6 +148,7 @@ export default function OpportunityHunterPage() {
   const [activePlatform, setActivePlatform] = useState("all")
   const [activeCountry, setActiveCountry] = useState("all")
   const [activeTechnology, setActiveTechnology] = useState("all")
+  const [activeIndustry, setActiveIndustry] = useState("all")
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [selectedSource, setSelectedSource] = useState<Source | null>(null)
   const [selectedDiscovery, setSelectedDiscovery] = useState<Discovery | null>(null)
@@ -235,6 +236,7 @@ export default function OpportunityHunterPage() {
         const matches = techTags[activeTechnology] || []
         if (!d.tags.some((t) => matches.some((m) => t.includes(m))) && !d.industry.toLowerCase().includes(activeTechnology)) return false
       }
+      if (activeIndustry !== "all" && d.industry !== activeIndustry) return false
       if (parseInt(savedConfig.minDealSize) > 0 && d.dealSize < parseInt(savedConfig.minDealSize)) return false
       if (savedConfig.targetRegion !== "global") {
         const regionMap: Record<string, string[]> = {
@@ -252,7 +254,7 @@ export default function OpportunityHunterPage() {
       }
       return true
     })
-  }, [discoveries, selectedFilter, activePlatform, activeCountry, activeTechnology, searchQuery, savedConfig])
+  }, [discoveries, selectedFilter, activePlatform, activeCountry, activeTechnology, activeIndustry, searchQuery, savedConfig])
 
   const toggleCategory = (id: string) =>
     setCategories((prev) => prev.map((cat) => cat.id === id ? { ...cat, selected: !cat.selected } : cat))
@@ -370,7 +372,7 @@ export default function OpportunityHunterPage() {
         stored.unshift(proposalRecord)
         localStorage.setItem("mbpw_proposals", JSON.stringify(stored))
 
-        const recipientEmail = d.contact || `contact@${d.company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`
+        const recipientEmail = d.contactEmail || d.contact || `contact@${d.company.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`
         const emailSubject = `Business Proposal: ${d.title}`
         const emailBody = `${introduction || coverLetter || `Dear ${d.company} team,\n\nWe are pleased to present our proposal for the ${d.title} opportunity.\n\n${technicalPlan}\n\n${costEstimate ? `Investment: ${costEstimate}\n\n` : ""}${callToAction || "We look forward to discussing this opportunity with you."}`}\n\nBest regards,\nMMA Business Prosperity Weapon\nMuhammad Muneeb Akram\nMuhammadmuneebakram819@gmail.com`
 
@@ -441,7 +443,7 @@ export default function OpportunityHunterPage() {
 
   const resetFilters = () => {
     setSearchQuery(""); setSelectedFilter("all")
-    setActivePlatform("all"); setActiveCountry("all"); setActiveTechnology("all")
+    setActivePlatform("all"); setActiveCountry("all"); setActiveTechnology("all"); setActiveIndustry("all")
   }
 
   const handleConfigSave = (toastMsg?: string) => {
@@ -566,6 +568,7 @@ export default function OpportunityHunterPage() {
                   activePlatform={activePlatform} onPlatformChange={setActivePlatform}
                   activeCountry={activeCountry} onCountryChange={setActiveCountry}
                   activeTechnology={activeTechnology} onTechnologyChange={setActiveTechnology}
+                  activeIndustry={activeIndustry} onIndustryChange={setActiveIndustry}
                   onExport={handleExport} onResetFilters={resetFilters} />
                 <DiscoveryFeed discoveries={filteredDiscoveries} bookmarkedIds={bookmarkedIds}
                   onToggleBookmark={toggleBookmark} onSelectDiscovery={setSelectedDiscovery} />

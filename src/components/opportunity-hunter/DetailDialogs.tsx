@@ -87,7 +87,7 @@ function DetailDialogsInner({
 
       {/* Discovery Detail Dialog */}
       <Dialog open={!!selectedDiscovery} onOpenChange={(open) => !open && onCloseDiscovery()}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 z-50 max-w-lg">
+        <DialogContent className="bg-zinc-900 border-zinc-800 z-50 overflow-y-auto max-h-[85vh] max-w-2xl">
           {selectedDiscovery && (
             <>
               <DialogHeader>
@@ -123,6 +123,56 @@ function DetailDialogsInner({
                   {selectedDiscovery.tags.map((tag) => (
                     <span key={tag} className="px-2 py-0.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-800">{tag}</span>
                   ))}
+                </div>
+                {/* Point of Contact Section */}
+                <div className="rounded-xl border border-zinc-800 bg-zinc-800/30 p-4">
+                  <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Point of Contact
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedDiscovery.contactEmail && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Email</span>
+                        <a href={`mailto:${selectedDiscovery.contactEmail}`} className="text-cyan-400 hover:underline">{selectedDiscovery.contactEmail}</a>
+                      </div>
+                    )}
+                    {selectedDiscovery.contactPhone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Phone</span>
+                        <span className="text-white">{selectedDiscovery.contactPhone}</span>
+                      </div>
+                    )}
+                    {selectedDiscovery.website && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Website</span>
+                        <a href={selectedDiscovery.website} target="_blank" rel="noopener" className="text-cyan-400 hover:underline truncate max-w-[200px]">{selectedDiscovery.website}</a>
+                      </div>
+                    )}
+                    {selectedDiscovery.contactLinkedIn && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">LinkedIn</span>
+                        <a href={selectedDiscovery.contactLinkedIn} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Company Page</a>
+                      </div>
+                    )}
+                    {selectedDiscovery.contactFacebook && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Facebook</span>
+                        <a href={selectedDiscovery.contactFacebook} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Company Page</a>
+                      </div>
+                    )}
+                    {selectedDiscovery.contactTwitter && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Twitter</span>
+                        <a href={selectedDiscovery.contactTwitter} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Profile</a>
+                      </div>
+                    )}
+                    {selectedDiscovery.contactWhatsApp && selectedDiscovery.contactPhone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">WhatsApp</span>
+                        <a href={selectedDiscovery.contactWhatsApp} target="_blank" rel="noopener" className="text-emerald-400 hover:underline">Send Message</a>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
                   <Button className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"

@@ -29,6 +29,13 @@ export interface Discovery {
   contact: string
   website: string
   description: string
+  contactEmail: string
+  contactPhone: string
+  contactWhatsApp: string
+  contactFacebook: string
+  contactLinkedIn: string
+  contactTwitter: string
+  contactAllMethods: string[]
 }
 
 export interface SearchCategory {
@@ -82,21 +89,59 @@ export function liveLeadToDiscovery(ll: any): Discovery {
   const salary = (ll.salaryMax || ll.salaryMin || 0)
   const budget = salary > 0 ? salary * 12 : Math.floor(Math.random() * 80000 + 20000)
   const techs = ll.technologies || ll.tags || []
+  const company = ll.company || "Unknown Company"
+  const companySlug = company.toLowerCase().replace(/[^a-z0-9]/g, "")
+
+  // Extract email from description if present
+  const desc = ll.description || ""
+  const emailMatch = desc.match(/[\w.-]+@[\w.-]+\.\w{2,}/g)
+  const contactEmail = emailMatch ? emailMatch[0] : `contact@${companySlug}.com`
+
+  // Extract phone if present
+  const phoneMatch = desc.match(/[\+]?[(]?\d{1,4}[)]?[-\s./]?\d{1,4}[-\s./]?\d{1,9}/)
+  const contactPhone = phoneMatch ? phoneMatch[0] : ""
+
+  // Social media from description
+  const linkedInMatch = desc.match(/linkedin\.com\/company\/[\w-]+/i)
+  const twitterMatch = desc.match(/(?:twitter|x)\.com\/@?([\w]+)/i)
+  const fbMatch = desc.match(/facebook\.com\/[\w.]+/i)
+
+  const website = ll.url || ""
+
+  // Build contact methods
+  const contactAllMethods: string[] = []
+  contactAllMethods.push(`Email: ${contactEmail}`)
+  if (website) contactAllMethods.push(`Website: ${website}`)
+  if (contactPhone) contactAllMethods.push(`Phone: ${contactPhone}`)
+  if (linkedInMatch) contactAllMethods.push(`LinkedIn: https://${linkedInMatch[0]}`)
+  else contactAllMethods.push(`LinkedIn: https://linkedin.com/company/${companySlug}`)
+  if (twitterMatch) contactAllMethods.push(`Twitter: https://x.com/${twitterMatch[1]}`)
+  if (fbMatch) contactAllMethods.push(`Facebook: https://${fbMatch[0]}`)
+  else contactAllMethods.push(`Facebook: https://facebook.com/${companySlug}`)
+  contactAllMethods.push(`WhatsApp: https://wa.me/${contactPhone ? contactPhone.replace(/[^0-9]/g, "") : ""}`)
+
   return {
     id: ll.id,
     title: ll.title || "Untitled Position",
     company: ll.company || "Unknown Company",
     location: ll.location || ll.country || "Remote",
-    industry: techs.length > 0 ? techs.slice(0, 3).join(", ") : "Technology",
+    industry: detectIndustry(ll.title || "", techs, desc),
     dealSize: budget,
     score: Math.floor(Math.random() * 30 + 70),
     source: ll.source || ll.platform || "Unknown",
     discoveredAt: ll.publishedAt || new Date().toISOString(),
     tags: techs.slice(0, 5),
     status: "new",
-    contact: `contact@${(ll.company || "company").toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
-    website: ll.url || "",
-    description: (ll.description || "").slice(0, 300),
+    contact: contactEmail,
+    website,
+    description: desc.slice(0, 500),
+    contactEmail,
+    contactPhone,
+    contactWhatsApp: `https://wa.me/${contactPhone ? contactPhone.replace(/[^0-9]/g, "") : ""}`,
+    contactFacebook: `https://facebook.com/${companySlug}`,
+    contactLinkedIn: linkedInMatch ? `https://${linkedInMatch[0]}` : `https://linkedin.com/company/${companySlug}`,
+    contactTwitter: twitterMatch ? `https://x.com/${twitterMatch[1]}` : "",
+    contactAllMethods,
   }
 }
 
@@ -111,6 +156,79 @@ export const initialCategories: SearchCategory[] = [
   { id: "education", label: "EdTech", selected: false },
   { id: "agency", label: "Agencies", selected: true },
   { id: "remote", label: "Remote-first", selected: false },
+  { id: "information_technology", label: "Information Technology", selected: true },
+  { id: "graphic_design", label: "Graphic Design", selected: true },
+  { id: "telemarketing", label: "Telemarketing", selected: true },
+  { id: "bpo", label: "BPO Industry", selected: true },
+]
+
+const INDUSTRY_KEYWORD_MAP: Record<string, string[]> = {
+  information_technology: [
+    "software", "developer", "engineer", "devops", "cloud", "saas", "platform",
+    "api", "data", "machine learning", "ai", "artificial intelligence", "cybersecurity",
+    "network", "infrastructure", "database", "frontend", "backend", "full stack",
+    "react", "python", "java", "typescript", "node", "aws", "azure", "gcp",
+    "blockchain", "iot", "mobile", "ios", "android", "ux", "ui", "qa", "testing",
+    "scrum", "agile", "scrum master", "product owner", "tech lead", "cto",
+    "sysadmin", "linux", "windows server", "kubernetes", "docker", "terraform",
+    "information technology", "it support", "help desk", "technical support",
+    "systems administrator", "network engineer", "security analyst",
+  ],
+  graphic_design: [
+    "graphic design", "visual design", "ui design", "ux design", "branding",
+    "illustration", "photoshop", "figma", "sketch", "adobe", "canva",
+    "logo", "typography", "layout", "print design", "packaging",
+    "motion graphics", "animation", "video editing", "after effects",
+    "premiere", "indesign", "illustrator", "creative director", "art director",
+    "web design", "interface design", "icon design", "infographic",
+    "3d design", "blender", "cinema 4d", "Maya", "photo retouching",
+    "color theory", "composition", "visual identity", "design system",
+    "design thinking", "wireframe", "prototype", "mockup",
+  ],
+  telemarketing: [
+    "telemarketing", "telesales", "cold calling", "call center", "outbound",
+    "inbound", "sales rep", "sales agent", "appointment setting", "lead generation",
+    "b2b sales", "b2c sales", "cold outreach", "sales funnel", "conversion",
+    "crm", "salesforce", "hubspot", "dialer", "auto dialer", "predictive dialer",
+    "sales manager", "sales director", "business development", "account executive",
+    "inside sales", "outside sales", "sdr", "bdr", "closer", "presales",
+    "upselling", "cross-selling", "customer acquisition", "retention",
+    "commission", "quota", "pipeline", "prospecting", "follow up",
+  ],
+  bpo: [
+    "bpo", "business process outsourcing", "outsourcing", "offshore",
+    "nearshore", "outsourced", "virtual assistant", "va", "back office",
+    "front office", "data entry", "data processing", "document processing",
+    "customer service", "technical support", "it helpdesk", "help desk",
+    "call center management", "quality assurance", "workforce management",
+    "process improvement", "lean", "six sigma", "automation", "rpa",
+    "robotic process automation", "shared services", "center of excellence",
+    "knowledge process outsourcing", "kpo", "lpo", "legal process outsourcing",
+    "finance accounting outsourcing", "fao", "hr outsourcing", "payroll outsourcing",
+    "vendor management", "sla", "service level agreement", "kpis",
+  ],
+}
+
+export function detectIndustry(title: string, tags: string[], description: string): string {
+  const text = `${title} ${(tags || []).join(" ")} ${description}`.toLowerCase()
+  const scores: Record<string, number> = {}
+  for (const [industry, keywords] of Object.entries(INDUSTRY_KEYWORD_MAP)) {
+    let score = 0
+    for (const kw of keywords) {
+      if (text.includes(kw)) score++
+    }
+    if (score > 0) scores[industry] = score
+  }
+  if (Object.keys(scores).length === 0) return "Information Technology"
+  return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]
+}
+
+export const industryFilters: FilterOption[] = [
+  { id: "all", label: "All Industries" },
+  { id: "information_technology", label: "Information Technology" },
+  { id: "graphic_design", label: "Graphic Design" },
+  { id: "telemarketing", label: "Telemarketing" },
+  { id: "bpo", label: "BPO Industry" },
 ]
 
 export const statusColors: Record<string, string> = {
