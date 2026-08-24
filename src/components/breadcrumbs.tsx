@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ChevronRight, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3, Home, Cable, BookOpen, Star, Settings, Shield, LineChart, CalendarDays, UserCog } from "lucide-react"
+import { ChevronRight, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3, Home, Cable, BookOpen, Star, Settings, Shield, LineChart, CalendarDays, UserCog, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const iconMap: Record<string, any> = {
   "": LayoutDashboard,
   "opportunity-hunter": Globe,
+  "ai-teams": Bot,
   leads: Target,
   proposals: FileText,
   "ai-search": Search,
@@ -27,6 +28,7 @@ const iconMap: Record<string, any> = {
 const labelMap: Record<string, string> = {
   "": "Dashboard",
   "opportunity-hunter": "Opportunity Hunter",
+  "ai-teams": "AI Teams",
   leads: "Leads",
   proposals: "Proposals",
   "ai-search": "AI Search",

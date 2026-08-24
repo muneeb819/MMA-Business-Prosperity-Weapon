@@ -21,6 +21,7 @@ import {
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, color: "from-blue-500 to-cyan-400" },
   { name: "Opportunity Hunter", href: "/opportunity-hunter", icon: Globe, color: "from-cyan-500 to-blue-500" },
+  { name: "AI Teams", href: "/ai-teams", icon: Bot, color: "from-violet-500 to-purple-500" },
   { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-teal-400" },
   { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
   { name: "Connectors", href: "/connectors", icon: Cable, color: "from-teal-500 to-cyan-400" },

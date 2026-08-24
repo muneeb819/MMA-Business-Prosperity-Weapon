@@ -158,4 +158,15 @@ export const api = {
     syncAll: (limit?: number) =>
       fetchAPI(`/api/lead-sources/sync-all?limit=${limit || 30}`, { method: "POST" }),
   },
+  aiTeams: {
+    list: () => fetchAPI<any>("/api/ai-teams"),
+    get: (id: string) => fetchAPI<any>(`/api/ai-teams/${id}`),
+    chat: (id: string, message: string) =>
+      fetchAPI<any>(`/api/ai-teams/${id}/chat`, { method: "POST", body: JSON.stringify({ message }) }),
+    toggle: (id: string) =>
+      fetchAPI<any>(`/api/ai-teams/${id}/toggle`, { method: "POST" }),
+    dailyReport: () => fetchAPI<any>("/api/ai-teams/reports/daily"),
+    activity: (limit?: number) =>
+      fetchAPI<any>(`/api/ai-teams/activity?limit=${limit || 50}`),
+  },
 };
