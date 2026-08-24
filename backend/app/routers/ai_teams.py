@@ -518,6 +518,7 @@ class ChatRequest(BaseModel):
 
 
 @router.get("/")
+@router.get("")
 def get_ai_teams() -> Dict[str, Any]:
     def public_view(agent: Dict[str, Any]) -> Dict[str, Any]:
         return {

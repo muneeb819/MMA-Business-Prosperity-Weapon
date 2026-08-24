@@ -8,6 +8,7 @@ app = FastAPI(
     title="MMA Business Prosperity Weapon API",
     description="AI-powered Business Development Platform Backend",
     version="2.0.0",
+    redirect_slashes=False,
 )
 
 app.add_middleware(ErrorHandlerMiddleware)
