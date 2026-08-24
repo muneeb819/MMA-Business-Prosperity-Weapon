@@ -70,6 +70,9 @@ export default function AITeamsPage() {
   const [supervisorChatLoading, setSupervisorChatLoading] = useState(false);
   const [showSupervisorChat, setShowSupervisorChat] = useState(false);
   const [supervisorExpanded, setSupervisorExpanded] = useState(true);
+  const [actionRunning, setActionRunning] = useState<string | null>(null);
+  const [qualityReport, setQualityReport] = useState<any>(null);
+  const [showQualityReport, setShowQualityReport] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -163,6 +166,29 @@ export default function AITeamsPage() {
     } finally { setSupervisorChatLoading(false); }
   };
 
+  const handleSupervisorAction = async (action: string, apiCall: () => Promise<any>) => {
+    setActionRunning(action);
+    try {
+      const res = await apiCall();
+      const userMsg: ChatMessage = { role: "user", content: `[ACTION] ${action}`, timestamp: new Date().toISOString() };
+      const agentMsg: ChatMessage = { role: "agent", content: res.summary || JSON.stringify(res, null, 2), timestamp: new Date().toISOString() };
+      setSupervisorChat(prev => [...prev, userMsg, agentMsg]);
+      setShowSupervisorChat(true);
+      const [healthRes, issuesRes] = await Promise.all([api.aiTeams.supervisor.health(), api.aiTeams.supervisor.issues()]);
+      setSupervisorHealth(healthRes);
+      setSupervisorIssues(issuesRes);
+    } catch {} finally { setActionRunning(null); }
+  };
+
+  const handleGenerateQualityReport = async () => {
+    setActionRunning("report");
+    try {
+      const report = await api.aiTeams.supervisor.report();
+      setQualityReport(report);
+      setShowQualityReport(true);
+    } catch {} finally { setActionRunning(null); }
+  };
+
   const QUICK_QUESTIONS: Record<string, string[]> = {
     manager: ["Give me today's report", "How are both teams performing?", "Any bottlenecks today?", "Who is the top performer?"],
     hunting: ["How many leads found today?", "Which sources are performing best?", "Any issues with the hunters?"],
@@ -170,12 +196,15 @@ export default function AITeamsPage() {
     supervisor: [
       "Run a full system health check",
       "What are the critical issues right now?",
-      "How is data integrity looking?",
-      "Any security concerns detected?",
-      "What's the overall health score?",
-      "Which agents need attention?",
+      "Run a data reconciliation sweep",
+      "Run a security audit",
+      "Check API response times and performance",
+      "Redistribute agent workload",
+      "Generate a full quality report",
       "How is lead quality across industries?",
-      "Is the outreach pipeline bottlenecked?",
+      "What do you recommend I fix first?",
+      "Compare system metrics over time",
+      "Tell me about yourself",
     ],
   };
 
@@ -300,12 +329,43 @@ export default function AITeamsPage() {
           </div>
 
           {/* Supervisor Actions */}
-          <div className="lg:w-72 flex flex-col gap-2">
+          <div className="lg:w-80 flex flex-col gap-2">
             <Button onClick={handleRunScan} disabled={scanRunning}
               className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-semibold h-11 shadow-lg shadow-red-500/20">
               {scanRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Radar className="w-4 h-4 mr-2" />}
               {scanRunning ? "Scanning..." : "Run Full System Scan"}
             </Button>
+            <Button onClick={handleGenerateQualityReport} disabled={actionRunning === "report"}
+              className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold h-11 shadow-lg shadow-emerald-500/20">
+              {actionRunning === "report" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
+              {actionRunning === "report" ? "Generating..." : "Generate Quality Report"}
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => handleSupervisorAction("Data Reconciliation", api.aiTeams.supervisor.reconcile)}
+                disabled={!!actionRunning} variant="outline"
+                className="border-cyan-500/20 text-cyan-300 hover:bg-cyan-500/10 h-9 text-xs">
+                {actionRunning === "Data Reconciliation" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Database className="w-3 h-3 mr-1" />}
+                Reconcile
+              </Button>
+              <Button onClick={() => handleSupervisorAction("Security Audit", api.aiTeams.supervisor.securityAudit)}
+                disabled={!!actionRunning} variant="outline"
+                className="border-amber-500/20 text-amber-300 hover:bg-amber-500/10 h-9 text-xs">
+                {actionRunning === "Security Audit" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Lock className="w-3 h-3 mr-1" />}
+                Security
+              </Button>
+              <Button onClick={() => handleSupervisorAction("Performance Check", api.aiTeams.supervisor.performanceCheck)}
+                disabled={!!actionRunning} variant="outline"
+                className="border-violet-500/20 text-violet-300 hover:bg-violet-500/10 h-9 text-xs">
+                {actionRunning === "Performance Check" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Gauge className="w-3 h-3 mr-1" />}
+                Performance
+              </Button>
+              <Button onClick={() => handleSupervisorAction("Agent Redistribution", api.aiTeams.supervisor.redistribute)}
+                disabled={!!actionRunning} variant="outline"
+                className="border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/10 h-9 text-xs">
+                {actionRunning === "Agent Redistribution" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Users className="w-3 h-3 mr-1" />}
+                Redistribute
+              </Button>
+            </div>
             <Button onClick={() => setShowSupervisorChat(!showSupervisorChat)}
               variant="outline" className="border-red-500/20 text-red-300 hover:bg-red-500/10 h-11">
               <MessageCircle className="w-4 h-4 mr-2" /> Chat with Sentinel
@@ -500,6 +560,86 @@ export default function AITeamsPage() {
           </div>
         )}
       </div>
+
+      {/* ═══ QUALITY REPORT DIALOG ═══ */}
+      {showQualityReport && qualityReport && (
+        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] to-cyan-500/[0.01] p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-emerald-400" /> Comprehensive Quality Report — #{qualityReport.reportId}
+            </h3>
+            <button onClick={() => setShowQualityReport(false)} className="text-zinc-600 hover:text-white text-sm">Close</button>
+          </div>
+          <div className="text-[10px] text-zinc-600 mb-4">Generated: {qualityReport.generatedAt}</div>
+
+          {/* Overall Score */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center col-span-1">
+              <p className={cn("text-3xl font-bold",
+                qualityReport.overallScore >= 90 ? "text-emerald-400" : qualityReport.overallScore >= 70 ? "text-amber-400" : "text-red-400"
+              )}>{qualityReport.overallScore}%</p>
+              <p className="text-[10px] text-zinc-600 uppercase">Overall Score</p>
+              <p className={cn("text-[10px] font-semibold uppercase",
+                qualityReport.overallStatus === "operational" ? "text-emerald-400" : "text-amber-400"
+              )}>{qualityReport.overallStatus}</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
+              <p className="text-2xl font-bold text-cyan-400">{qualityReport.sections?.healthScan?.score}%</p>
+              <p className="text-[10px] text-zinc-600 uppercase">Health Scan</p>
+              <p className="text-[10px] text-zinc-500">{qualityReport.sections?.healthScan?.checksPassed}/{qualityReport.sections?.healthScan?.checksTotal} passed</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
+              <p className="text-2xl font-bold text-violet-400">{qualityReport.sections?.dataReconciliation?.score}%</p>
+              <p className="text-[10px] text-zinc-600 uppercase">Data Recon</p>
+              <p className="text-[10px] text-zinc-500">{qualityReport.sections?.dataReconciliation?.checksPassed}/{qualityReport.sections?.dataReconciliation?.checksTotal} passed</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
+              <p className="text-2xl font-bold text-amber-400">{qualityReport.sections?.securityAudit?.score}%</p>
+              <p className="text-[10px] text-zinc-600 uppercase">Security</p>
+              <p className="text-[10px] text-zinc-500">{qualityReport.sections?.securityAudit?.checksPassed}/{qualityReport.sections?.securityAudit?.checksTotal} passed</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-400">{qualityReport.sections?.performanceCheck?.score}%</p>
+              <p className="text-[10px] text-zinc-600 uppercase">Performance</p>
+              <p className="text-[10px] text-zinc-500">{qualityReport.sections?.performanceCheck?.checksPassed}/{qualityReport.sections?.performanceCheck?.checksTotal} passed</p>
+            </div>
+          </div>
+
+          {/* Section Details */}
+          {["dataReconciliation", "securityAudit", "performanceCheck"].map((section) => {
+            const data = qualityReport.sections?.[section];
+            if (!data) return null;
+            const titles: Record<string, string> = { dataReconciliation: "Data Reconciliation", securityAudit: "Security Audit", performanceCheck: "Performance Check" };
+            const colors: Record<string, string> = { dataReconciliation: "violet", securityAudit: "amber", performanceCheck: "cyan" };
+            return (
+              <div key={section} className="mb-4">
+                <p className={cn("text-xs uppercase tracking-wider font-semibold mb-2", `text-${colors[section]}-400`)}>{titles[section]}</p>
+                <div className="space-y-1">
+                  {(data.findings || []).map((f: any, i: number) => (
+                    <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] text-xs">
+                      <span>{f.status === "pass" ? "✅" : f.status === "warn" ? "⚠️" : "❌"}</span>
+                      <span className="font-medium text-white">{f.check}</span>
+                      <span className="text-zinc-500 flex-1 truncate">{f.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Team Summary */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+              <p className="text-xs text-cyan-400 font-semibold mb-1">Hunting Team</p>
+              <p className="text-sm text-white">{qualityReport.teamSummary?.hunting?.agents} agents | {qualityReport.teamSummary?.hunting?.avgEfficiency}% efficiency | {qualityReport.teamSummary?.hunting?.totalTasks} tasks</p>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+              <p className="text-xs text-violet-400 font-semibold mb-1">Outreach Team</p>
+              <p className="text-sm text-white">{qualityReport.teamSummary?.outreach?.agents} agents | {qualityReport.teamSummary?.outreach?.avgEfficiency}% efficiency | {qualityReport.teamSummary?.outreach?.totalTasks} tasks</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Manager Card */}
       <div className="relative rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.04] to-orange-500/[0.02] p-6 overflow-hidden">

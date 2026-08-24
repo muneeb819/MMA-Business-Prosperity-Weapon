@@ -174,6 +174,11 @@ export const api = {
       issues: () => fetchAPI<any>("/api/ai-teams/supervisor/issues"),
       chat: (message: string) =>
         fetchAPI<any>("/api/ai-teams/supervisor/chat", { method: "POST", body: JSON.stringify({ message }) }),
+      reconcile: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/reconcile", { method: "POST" }),
+      securityAudit: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/security-audit", { method: "POST" }),
+      performanceCheck: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/performance-check", { method: "POST" }),
+      redistribute: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/redistribute", { method: "POST" }),
+      report: () => fetchAPI<any>("/api/ai-teams/supervisor/report"),
     },
   },
 };
