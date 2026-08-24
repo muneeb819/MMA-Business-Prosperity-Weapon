@@ -50,6 +50,7 @@ app.include_router(admin.router)
 app.include_router(reports.router)
 app.include_router(websocket.router)
 app.include_router(lead_sources.router)
+app.include_router(ai_teams.router, prefix="/api/ai-teams", tags=["AI Teams"])
 
 
 @app.get("/")
