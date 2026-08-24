@@ -254,7 +254,7 @@ export default function AITeamsPage() {
             </div>
             AI Teams Command Center
           </h1>
-          <p className="text-zinc-500 text-sm mt-1">14 AI agents working across 3 tiers to find and convert leads</p>
+          <p className="text-zinc-500 text-sm mt-1">{summary?.totalAgents ?? 16} AI agents working across 3 tiers to find and convert leads</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">

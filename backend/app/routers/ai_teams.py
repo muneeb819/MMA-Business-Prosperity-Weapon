@@ -1815,6 +1815,8 @@ def chat_with_agent(agent_id: str, payload: ChatRequest) -> Dict[str, str]:
     agent = _agents.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
+    if agent_id == "supervisor":
+        return {"response": _supervisor_chat_reply(payload.message.strip())}
     if agent["role"] not in ("team_lead", "manager"):
         raise HTTPException(status_code=400, detail="You can only chat with team leads or the manager")
 
@@ -2350,7 +2352,7 @@ def _generate_quality_report() -> Dict[str, Any]:
     redistribution = _analyze_load_balance()
 
     # Calculate overall score
-    scores = [scan["score"], reconciliation["score"], security["score"], performance["score"]]
+    scores = [scan["healthScore"], reconciliation["score"], security["score"], performance["score"]]
     overall_score = round(sum(scores) / len(scores))
 
     # Compile all issues
@@ -2381,7 +2383,7 @@ def _generate_quality_report() -> Dict[str, Any]:
         "overallScore": overall_score,
         "overallStatus": "operational" if overall_score >= 80 else "degraded" if overall_score >= 50 else "critical",
         "sections": {
-            "healthScan": {"score": scan["score"], "checksPassed": scan["checksPassed"], "checksTotal": scan["checksTotal"], "issues": scan["issuesFound"]},
+            "healthScan": {"score": scan["healthScore"], "checksPassed": scan["checksPassed"], "checksTotal": scan["checksTotal"], "issues": scan["issuesFound"]},
             "dataReconciliation": {"score": reconciliation["score"], "checksPassed": reconciliation["checksPassed"], "checksTotal": reconciliation["checksTotal"], "findings": reconciliation["findings"]},
             "securityAudit": {"score": security["score"], "checksPassed": security["checksPassed"], "checksTotal": security["checksTotal"], "findings": security["findings"]},
             "performanceCheck": {"score": performance["score"], "checksPassed": performance["checksPassed"], "checksTotal": performance["checksTotal"], "findings": performance["findings"]},
@@ -2430,16 +2432,4 @@ def action_report() -> Dict[str, Any]:
     return _generate_quality_report()
 
 
-@router.post("/supervisor/chat")
-def supervisor_chat(payload: ChatRequest) -> Dict[str, str]:
-    """Chat with the Quality Sentinel — fully conversational, handles any request."""
-    message = payload.message.strip()
-    if not message:
-        raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    agent = _agents.get("supervisor")
-    if agent:
-        agent["lastActive"] = _now_iso()
-    _log_activity("supervisor", "chat", f"Responded to: {message[:80]}")
-
-    return {"response": _supervisor_chat_reply(message)}

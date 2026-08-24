@@ -178,3 +178,13 @@ Email:     Muhammadmuneebakram819@gmail.com (Gmail SMTP)
 - Fixed mobile-invisible agent pause/play control (now always visible)
 - Verified: 	sc --noEmit clean, python -m compileall clean, 
 ext build clean (19/19 pages)
+
+## Runtime Audit Fixes — Critical Bugs (2026-08-24)
+Installed backend deps and ran live endpoint tests. Found & fixed critical bugs:
+- **Quality Sentinel chat was 400**: route /{agent_id}/chat shadowed /supervisor/chat (registered earlier), so supervisor chat hit the agent-chat guard and was rejected. Added a supervisor guard in chat_with_agent and removed the dead shadowed endpoint.
+- **Quality Report was 500**: _generate_quality_report read scan[\"score\"] but _run_quality_scan returns healthScore (two occurrences). Fixed to healthScore. Report now returns 200.
+- **Report mutated system state**: report generation called _redistribute_agent_load() (mutates agents). Added pure _analyze_load_balance() and made the report read-only. Verified: generating report twice mutates 0 agents; redistribute action still mutates (expected).
+- **Entire API broken in prod (404s)**: backend routes registered WITH trailing slashes (/api/leads/) but frontend calls WITHOUT (/api/leads); with edirect_slashes=False every collection GET/POST 404'd. Set edirect_slashes=True so FastAPI 307-redirects; verified GET + POST-with-body now return 200/201.
+- **Frontend**: fixed 4 dynamic Tailwind class bugs (silent styling loss), bound agent-count subtitle to live summary.totalAgents, made agent pause/play control visible on mobile/touch.
+- Verified: compileall, 	sc --noEmit, and 
+ext build all clean; all supervisor + core endpoints return 200.
