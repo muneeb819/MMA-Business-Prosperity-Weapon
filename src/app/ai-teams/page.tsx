@@ -10,6 +10,7 @@ import {
   Play, Pause, Loader2, CheckCircle, AlertTriangle, Clock, TrendingUp,
   ChevronDown, ChevronUp, Zap, Shield, Briefcase, Eye, Sparkles,
   CircleDot, ArrowUpRight, MessageCircle, FileText, RefreshCw,
+  Radar, Lock, Database, Gauge, Globe, ShieldCheck, ShieldAlert, XCircle,
 } from "lucide-react";
 
 interface Agent {
@@ -59,6 +60,17 @@ export default function AITeamsPage() {
   const [toggling, setToggling] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Supervisor state
+  const [supervisorHealth, setSupervisorHealth] = useState<any>(null);
+  const [supervisorScan, setSupervisorScan] = useState<any>(null);
+  const [supervisorIssues, setSupervisorIssues] = useState<any>(null);
+  const [scanRunning, setScanRunning] = useState(false);
+  const [supervisorChat, setSupervisorChat] = useState<ChatMessage[]>([]);
+  const [supervisorChatInput, setSupervisorChatInput] = useState("");
+  const [supervisorChatLoading, setSupervisorChatLoading] = useState(false);
+  const [showSupervisorChat, setShowSupervisorChat] = useState(false);
+  const [supervisorExpanded, setSupervisorExpanded] = useState(true);
+
   const fetchData = useCallback(async () => {
     try {
       const [teamsRes, actRes] = await Promise.all([api.aiTeams.list(), api.aiTeams.activity(30)]);
@@ -68,6 +80,31 @@ export default function AITeamsPage() {
   }, []);
 
   useEffect(() => { fetchData(); const t = setInterval(fetchData, 15000); return () => clearInterval(t); }, [fetchData]);
+
+  // Supervisor auto-scan on mount + every 60 seconds
+  const fetchSupervisorData = useCallback(async () => {
+    try {
+      const [healthRes, issuesRes] = await Promise.all([
+        api.aiTeams.supervisor.health(),
+        api.aiTeams.supervisor.issues(),
+      ]);
+      setSupervisorHealth(healthRes);
+      setSupervisorIssues(issuesRes);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchSupervisorData();
+    const t = setInterval(fetchSupervisorData, 60000);
+    return () => clearInterval(t);
+  }, [fetchSupervisorData]);
+
+  // Auto-run initial scan if no scan has been done yet
+  useEffect(() => {
+    if (supervisorHealth && supervisorHealth.totalScansCompleted === 0 && !scanRunning) {
+      handleRunScan();
+    }
+  }, [supervisorHealth]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages, chatAgent]);
 
@@ -97,10 +134,49 @@ export default function AITeamsPage() {
     try { const res = await api.aiTeams.dailyReport(); setReport(res); } finally { setReportLoading(false); }
   };
 
+  const handleRunScan = async () => {
+    setScanRunning(true);
+    try {
+      const scanRes = await api.aiTeams.supervisor.scan();
+      setSupervisorScan(scanRes);
+      const [healthRes, issuesRes] = await Promise.all([
+        api.aiTeams.supervisor.health(),
+        api.aiTeams.supervisor.issues(),
+      ]);
+      setSupervisorHealth(healthRes);
+      setSupervisorIssues(issuesRes);
+    } catch {} finally { setScanRunning(false); }
+  };
+
+  const handleSupervisorChat = async () => {
+    if (!supervisorChatInput.trim() || supervisorChatLoading) return;
+    const msg = supervisorChatInput.trim(); setSupervisorChatInput(""); setSupervisorChatLoading(true);
+    const userMsg: ChatMessage = { role: "user", content: msg, timestamp: new Date().toISOString() };
+    setSupervisorChat(prev => [...prev, userMsg]);
+    try {
+      const res = await api.aiTeams.supervisor.chat(msg);
+      const agentMsg: ChatMessage = { role: "agent", content: res.response, timestamp: new Date().toISOString() };
+      setSupervisorChat(prev => [...prev, agentMsg]);
+    } catch {
+      const errMsg: ChatMessage = { role: "agent", content: "Quality Sentinel could not process that request.", timestamp: new Date().toISOString() };
+      setSupervisorChat(prev => [...prev, errMsg]);
+    } finally { setSupervisorChatLoading(false); }
+  };
+
   const QUICK_QUESTIONS: Record<string, string[]> = {
     manager: ["Give me today's report", "How are both teams performing?", "Any bottlenecks today?", "Who is the top performer?"],
     hunting: ["How many leads found today?", "Which sources are performing best?", "Any issues with the hunters?"],
     outreach: ["How many proposals sent?", "What's our response rate?", "Any emails bounced?"],
+    supervisor: [
+      "Run a full system health check",
+      "What are the critical issues right now?",
+      "How is data integrity looking?",
+      "Any security concerns detected?",
+      "What's the overall health score?",
+      "Which agents need attention?",
+      "How is lead quality across industries?",
+      "Is the outreach pipeline bottlenecked?",
+    ],
   };
 
   if (loading) return (
@@ -153,6 +229,276 @@ export default function AITeamsPage() {
             <span className="text-xs text-zinc-500">{summary.averageEfficiency}% avg efficiency</span>
           </div>
         </div>
+      </div>
+
+      {/* ═══ SUPERVISOR COMMAND CENTER ═══ */}
+      <div className="relative rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-500/[0.04] via-amber-500/[0.02] to-orange-500/[0.04] p-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-60 h-60 bg-red-500/[0.03] rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-amber-500/[0.03] rounded-full blur-3xl" />
+
+        {/* Supervisor Header */}
+        <div className="relative flex flex-col lg:flex-row gap-6 mb-5">
+          <div className="flex-1">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/30 to-amber-500/30 border border-red-500/30 flex items-center justify-center text-3xl shadow-lg shadow-red-500/10">
+                🛡️
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-white">Quality Sentinel</h2>
+                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-500/20 text-red-300 border border-red-500/20">SUPERVISOR</span>
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] text-emerald-400 font-semibold uppercase">Always On</span>
+                  </div>
+                </div>
+                <p className="text-zinc-500 text-sm">Perpetual Quality & Testing Supervisor — monitors the entire system 24/7</p>
+              </div>
+            </div>
+
+            {/* Health Score + Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Gauge className="w-3.5 h-3.5 text-red-400" />
+                  <span className="text-[10px] text-zinc-600 uppercase">Health</span>
+                </div>
+                <p className={cn("text-2xl font-bold",
+                  (supervisorHealth?.healthScore || 0) >= 90 ? "text-emerald-400" :
+                  (supervisorHealth?.healthScore || 0) >= 70 ? "text-amber-400" : "text-red-400"
+                )}>{supervisorHealth?.healthScore || 0}%</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Radar className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-[10px] text-zinc-600 uppercase">Scans</span>
+                </div>
+                <p className="text-2xl font-bold text-white">{supervisorHealth?.totalScansCompleted || 0}</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <XCircle className="w-3.5 h-3.5 text-red-400" />
+                  <span className="text-[10px] text-zinc-600 uppercase">Critical</span>
+                </div>
+                <p className="text-2xl font-bold text-red-400">{supervisorHealth?.criticalIssues || 0}</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[10px] text-zinc-600 uppercase">Warnings</span>
+                </div>
+                <p className="text-2xl font-bold text-amber-400">{supervisorIssues?.warnings || 0}</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[10px] text-zinc-600 uppercase">Agents OK</span>
+                </div>
+                <p className="text-2xl font-bold text-emerald-400">{supervisorHealth?.agentsOnline || 0}/{supervisorHealth?.agentsTotal || 0}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Supervisor Actions */}
+          <div className="lg:w-72 flex flex-col gap-2">
+            <Button onClick={handleRunScan} disabled={scanRunning}
+              className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-semibold h-11 shadow-lg shadow-red-500/20">
+              {scanRunning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Radar className="w-4 h-4 mr-2" />}
+              {scanRunning ? "Scanning..." : "Run Full System Scan"}
+            </Button>
+            <Button onClick={() => setShowSupervisorChat(!showSupervisorChat)}
+              variant="outline" className="border-red-500/20 text-red-300 hover:bg-red-500/10 h-11">
+              <MessageCircle className="w-4 h-4 mr-2" /> Chat with Sentinel
+            </Button>
+            <div className="flex items-center gap-2 text-[10px] text-zinc-600 mt-1">
+              <Clock className="w-3 h-3" />
+              <span>Last scan: {supervisorHealth?.lastScanTime ? new Date(supervisorHealth.lastScanTime).toLocaleTimeString() : "Never"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Health Categories Grid */}
+        {supervisorExpanded && supervisorHealth?.categories && (
+          <div className="relative mb-5">
+            <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3">System Health Categories</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+              {[
+                { key: "agentHealth", label: "Agent Health", icon: Users, ok: "healthy" },
+                { key: "dataIntegrity", label: "Data Integrity", icon: Database, ok: "healthy" },
+                { key: "leadQuality", label: "Lead Quality", icon: Target, ok: "healthy" },
+                { key: "outreachQuality", label: "Outreach", icon: Mail, ok: "healthy" },
+                { key: "pipeline", label: "Pipeline", icon: Activity, ok: "healthy" },
+                { key: "security", label: "Security", icon: Lock, ok: "healthy" },
+                { key: "performance", label: "Performance", icon: Gauge, ok: "healthy" },
+              ].map((cat) => {
+                const status = supervisorHealth.categories[cat.key] || "unknown";
+                const isOk = status === cat.ok;
+                return (
+                  <div key={cat.key} className={cn(
+                    "rounded-xl border p-2.5 text-center transition-all",
+                    isOk ? "bg-emerald-500/[0.04] border-emerald-500/10" :
+                    status === "warning" ? "bg-amber-500/[0.04] border-amber-500/10" :
+                    "bg-red-500/[0.04] border-red-500/10"
+                  )}>
+                    <cat.icon className={cn("w-4 h-4 mx-auto mb-1",
+                      isOk ? "text-emerald-400" : status === "warning" ? "text-amber-400" : "text-red-400"
+                    )} />
+                    <p className="text-[10px] text-zinc-400 font-medium">{cat.label}</p>
+                    <p className={cn("text-[10px] font-semibold capitalize mt-0.5",
+                      isOk ? "text-emerald-400" : status === "warning" ? "text-amber-400" : "text-red-400"
+                    )}>{status}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Latest Scan Results */}
+        {supervisorExpanded && supervisorScan && (
+          <div className="relative mb-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold flex items-center gap-1.5">
+                <Radar className="w-3 h-3 text-cyan-400" /> Latest Scan #{supervisorScan.scanId}
+              </p>
+              <span className="text-[10px] text-zinc-600">{new Date(supervisorScan.timestamp).toLocaleString()}</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
+                <p className={cn("text-lg font-bold",
+                  supervisorScan.healthScore >= 90 ? "text-emerald-400" :
+                  supervisorScan.healthScore >= 70 ? "text-amber-400" : "text-red-400"
+                )}>{supervisorScan.healthScore}%</p>
+                <p className="text-[9px] text-zinc-600 uppercase">Score</p>
+              </div>
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
+                <p className="text-lg font-bold text-emerald-400">{supervisorScan.checksPassed}/{supervisorScan.checksTotal}</p>
+                <p className="text-[9px] text-zinc-600 uppercase">Checks Passed</p>
+              </div>
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
+                <p className="text-lg font-bold text-cyan-400">{supervisorScan.agentSummary?.activeAgents || 0}</p>
+                <p className="text-[9px] text-zinc-600 uppercase">Active Agents</p>
+              </div>
+              <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
+                <p className="text-lg font-bold text-amber-400">{supervisorScan.agentSummary?.avgEfficiency || 0}%</p>
+                <p className="text-[9px] text-zinc-600 uppercase">Avg Efficiency</p>
+              </div>
+            </div>
+            {supervisorScan.agentSummary && (
+              <div className="flex items-center gap-4 text-[10px] text-zinc-500">
+                <span>Top performer: <span className="text-emerald-400 font-medium">{supervisorScan.agentSummary.highestEfficiencyAgent}</span></span>
+                <span>Needs attention: <span className="text-amber-400 font-medium">{supervisorScan.agentSummary.lowestEfficiencyAgent}</span></span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Issues Feed */}
+        {supervisorExpanded && supervisorIssues && supervisorIssues.count > 0 && (
+          <div className="relative">
+            <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3 flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 text-amber-500" /> Open Issues ({supervisorIssues.count})
+            </p>
+            <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+              {supervisorIssues.issues.map((issue: any) => (
+                <div key={issue.id} className={cn(
+                  "rounded-xl border p-3 transition-all",
+                  issue.severity === "critical" ? "bg-red-500/[0.04] border-red-500/10" :
+                  issue.severity === "warning" ? "bg-amber-500/[0.04] border-amber-500/10" :
+                  "bg-white/[0.02] border-white/[0.06]"
+                )}>
+                  <div className="flex items-start gap-3">
+                    <div className={cn("mt-0.5 h-2 w-2 rounded-full shrink-0",
+                      issue.severity === "critical" ? "bg-red-500 animate-pulse" :
+                      issue.severity === "warning" ? "bg-amber-500" : "bg-cyan-500"
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn("text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded",
+                          issue.severity === "critical" ? "bg-red-500/20 text-red-300" :
+                          issue.severity === "warning" ? "bg-amber-500/20 text-amber-300" :
+                          "bg-cyan-500/20 text-cyan-300"
+                        )}>{issue.severity}</span>
+                        <span className="text-[10px] text-zinc-600">{issue.category}</span>
+                      </div>
+                      <p className="text-sm text-white font-medium">{issue.title}</p>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">{issue.detail}</p>
+                      {issue.suggestion && (
+                        <p className="text-[11px] text-cyan-400/70 mt-1 italic">Suggestion: {issue.suggestion}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No Issues */}
+        {supervisorExpanded && supervisorIssues && supervisorIssues.count === 0 && supervisorHealth?.totalScansCompleted > 0 && (
+          <div className="relative flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/10">
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-sm text-emerald-300 font-medium">All Systems Operational</p>
+              <p className="text-[11px] text-zinc-500">No issues detected. The Quality Sentinel is continuously monitoring.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Supervisor Chat */}
+        {showSupervisorChat && (
+          <div className="relative mt-5 rounded-xl border border-red-500/10 bg-black/20 overflow-hidden">
+            <div className="px-4 py-2 border-b border-white/[0.04] flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-xs text-zinc-400">Quality Sentinel is online — ask anything about system health</span>
+            </div>
+            <ScrollArea className="h-[280px] p-4">
+              {supervisorChat.length === 0 && (
+                <div className="text-center py-6">
+                  <Shield className="w-10 h-10 text-red-500/30 mx-auto mb-2" />
+                  <p className="text-zinc-600 text-xs mb-3">Ask the Quality Sentinel about system health, issues, or run diagnostics</p>
+                  <div className="flex flex-wrap gap-1.5 justify-center">
+                    {(QUICK_QUESTIONS.supervisor || []).map((q) => (
+                      <button key={q} onClick={() => setSupervisorChatInput(q)}
+                        className="px-2.5 py-1 text-[10px] rounded-lg bg-red-500/10 text-red-300/70 border border-red-500/10 hover:bg-red-500/20 transition-all">
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {supervisorChat.map((m, i) => (
+                <div key={i} className={cn("mb-3 flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                  <div className={cn("max-w-[85%] rounded-xl px-3 py-2 text-sm",
+                    m.role === "user" ? "bg-red-500/20 text-red-100" : "bg-white/[0.04] text-zinc-300 border border-white/[0.06]"
+                  )}>
+                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    <p className="text-[9px] text-zinc-600 mt-1">{new Date(m.timestamp).toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              ))}
+              {supervisorChatLoading && (
+                <div className="flex justify-start mb-3">
+                  <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 flex items-center gap-2">
+                    <Loader2 className="w-3 h-3 text-red-400 animate-spin" />
+                    <span className="text-xs text-zinc-500">Analyzing...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </ScrollArea>
+            <div className="px-4 py-3 border-t border-white/[0.04] flex gap-2">
+              <input value={supervisorChatInput} onChange={(e) => setSupervisorChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSupervisorChat()}
+                placeholder="Ask the Quality Sentinel..."
+                className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-red-500/40" />
+              <Button onClick={handleSupervisorChat} disabled={!supervisorChatInput.trim() || supervisorChatLoading}
+                size="sm" className="bg-red-600 hover:bg-red-500 text-white rounded-xl px-3">
+                <Send className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Manager Card */}

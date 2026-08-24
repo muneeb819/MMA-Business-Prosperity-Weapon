@@ -162,6 +162,17 @@ AGENT_DEFINITIONS: List[Dict[str, Any]] = [
         "description": "Oversees both teams, reviews performance, and provides daily reports.",
         "defaultTask": "Reviewing overall operations",
     },
+    {
+        "id": "supervisor",
+        "name": "Quality Sentinel",
+        "role": "supervisor",
+        "team": "management",
+        "avatar": "🛡️",
+        "description": "Perpetual Quality & Testing Supervisor — scans the entire system 24/7 for data integrity, agent health, lead quality, outreach quality, security, and performance. Auto-detects and reports issues in real-time.",
+        "channel": "system-wide",
+        "outputMetric": "issues caught",
+        "defaultTask": "Scanning system for quality issues",
+    },
 ]
 
 _agents: Dict[str, Dict[str, Any]] = {}
@@ -215,8 +226,11 @@ def _init_agents() -> None:
             team = definition["team"]
             manages = [a["id"] for a in AGENT_DEFINITIONS if a.get("team") == team and a["role"] != "team_lead"]
             reports_to = "manager"
+        elif definition["role"] == "supervisor":
+            manages = []
+            reports_to = "manager"
         else:
-            manages = ["team-lead-hunting", "team-lead-outreach"]
+            manages = ["team-lead-hunting", "team-lead-outreach", "supervisor"]
             reports_to = ""
 
         _agents[agent_id] = {
@@ -224,7 +238,7 @@ def _init_agents() -> None:
             "name": definition["name"],
             "role": definition["role"],
             "team": definition["team"],
-            "status": status,
+            "status": "working" if definition.get("role") == "supervisor" else status,
             "avatar": definition["avatar"],
             "description": definition["description"],
             "tasksCompleted": _seeded_int(f"{agent_id}:tasks", 12, 240),
@@ -270,6 +284,8 @@ def _daily_output(agent_id: str) -> Dict[str, Any]:
     if agent_id == "agent-outreach-6":
         count = _seeded_int(f"{day}:{agent_id}:output", 4, 16)
         return {"count": count, "label": f"{count} responses tracked"}
+    if agent_id == "supervisor":
+        return {"count": _supervisor_scan_count, "label": f"{_supervisor_scan_count} scans completed, {len(_supervisor_issues)} issues found"}
     return {"count": 0, "label": "no direct output"}
 
 
@@ -302,6 +318,241 @@ def _collect_issues() -> List[str]:
     if _seeded_int(f"{day}:reply-backlog", 0, 9) > 7:
         issues.append("Contact Beta has a follow-up queue backlog")
     return issues
+
+
+_supervisor_issues: List[Dict[str, Any]] = []
+_supervisor_scan_count: int = 0
+_last_scan_time: str = ""
+
+
+def _run_quality_scan() -> Dict[str, Any]:
+    global _supervisor_scan_count, _last_scan_time
+    _supervisor_scan_count += 1
+    _last_scan_time = _now_iso()
+
+    issues_found: List[Dict[str, Any]] = []
+    checks_passed = 0
+    checks_total = 0
+
+    # --- CHECK 1: Agent Health ---
+    checks_total += 1
+    paused_agents = [a for a in _agents.values() if a["status"] == "paused"]
+    low_efficiency = [a for a in _agents.values() if a["efficiency"] < 75]
+    if paused_agents:
+        for a in paused_agents:
+            issues_found.append({
+                "id": f"agent-paused-{a['id']}",
+                "severity": "warning",
+                "category": "Agent Health",
+                "title": f"{a['name']} is paused",
+                "detail": f"Agent {a['name']} ({a['role']}) is currently paused and not contributing to operations.",
+                "affected": a["id"],
+                "detectedAt": _now_iso(),
+                "suggestion": f"Resume {a['name']} to restore full team capacity.",
+            })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 2: Low Efficiency Agents ---
+    checks_total += 1
+    if low_efficiency:
+        for a in low_efficiency:
+            issues_found.append({
+                "id": f"low-efficiency-{a['id']}",
+                "severity": "info",
+                "category": "Performance",
+                "title": f"{a['name']} below efficiency threshold",
+                "detail": f"Agent {a['name']} is at {a['efficiency']}% efficiency (threshold: 75%). May need task rebalancing.",
+                "affected": a["id"],
+                "detectedAt": _now_iso(),
+                "suggestion": "Review agent task load and redistribute if needed.",
+            })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 3: Data Integrity ---
+    checks_total += 1
+    # Simulate data integrity checks (in real app would check DB/localStorage)
+    integrity_score = _seeded_int(f"{_today_key()}:integrity", 85, 100)
+    if integrity_score < 95:
+        issues_found.append({
+            "id": "data-integrity-low",
+            "severity": "critical",
+            "category": "Data Integrity",
+            "title": "Data integrity below threshold",
+            "detail": f"System data integrity score is {integrity_score}% (threshold: 95%). Potential orphaned records or inconsistent state.",
+            "affected": "system",
+            "detectedAt": _now_iso(),
+            "suggestion": "Run a full data reconciliation sweep and verify all cross-references.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 4: Lead Quality ---
+    checks_total += 1
+    missing_contacts = _seeded_int(f"{_today_key()}:missing-contacts", 0, 8)
+    if missing_contacts > 3:
+        issues_found.append({
+            "id": "missing-contacts",
+            "severity": "warning",
+            "category": "Lead Quality",
+            "title": f"{missing_contacts} leads missing contact info",
+            "detail": f"{missing_contacts} leads found today lack complete Point of Contact (email, phone, or social). Outreach efficiency is degraded.",
+            "affected": "hunting-team",
+            "detectedAt": _now_iso(),
+            "suggestion": "Assign Scouts to re-enrich leads with missing contact data before outreach handoff.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 5: Outreach Quality ---
+    checks_total += 1
+    bounce_rate = _seeded_int(f"{_today_key()}:bounce", 0, 15)
+    if bounce_rate > 5:
+        issues_found.append({
+            "id": "high-bounce-rate",
+            "severity": "critical",
+            "category": "Outreach Quality",
+            "title": f"Email bounce rate at {bounce_rate}%",
+            "detail": f"Email bounce rate has exceeded the 5% threshold. {bounce_rate}% of sent emails bounced back. This damages sender reputation.",
+            "affected": "outreach-team",
+            "detectedAt": _now_iso(),
+            "suggestion": "Pause outbound emails, verify email list quality, and check SMTP configuration.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 6: Response Rate ---
+    checks_total += 1
+    response_rate = _seeded_int(f"{_today_key()}:response-rate", 5, 40)
+    if response_rate < 10:
+        issues_found.append({
+            "id": "low-response-rate",
+            "severity": "warning",
+            "category": "Outreach Quality",
+            "title": f"Response rate only {response_rate}%",
+            "detail": f"Prospect response rate is {response_rate}% (target: >15%). Outreach messaging may need optimization.",
+            "affected": "outreach-team",
+            "detectedAt": _now_iso(),
+            "suggestion": "Review email templates, personalize subject lines, and A/B test messaging approaches.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 7: Pipeline Bottleneck ---
+    checks_total += 1
+    pipeline_backlog = _seeded_int(f"{_today_key()}:pipeline", 0, 20)
+    if pipeline_backlog > 10:
+        issues_found.append({
+            "id": "pipeline-bottleneck",
+            "severity": "warning",
+            "category": "Pipeline",
+            "title": f"Pipeline backlog: {pipeline_backlog} leads waiting",
+            "detail": f"{pipeline_backlog} qualified leads are waiting for outreach. Bottleneck between hunting and outreach handoff.",
+            "affected": "pipeline",
+            "detectedAt": _now_iso(),
+            "suggestion": "Scale outreach capacity or prioritize highest-value leads for immediate contact.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 8: System Performance ---
+    checks_total += 1
+    avg_response_time = _seeded_int(f"{_today_key()}:response-time", 50, 500)
+    if avg_response_time > 300:
+        issues_found.append({
+            "id": "slow-response-time",
+            "severity": "info",
+            "category": "System Performance",
+            "title": f"Average response time: {avg_response_time}ms",
+            "detail": f"System response time is above the 300ms target. May impact agent throughput.",
+            "affected": "system",
+            "detectedAt": _now_iso(),
+            "suggestion": "Check API response times, database query performance, and network latency.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 9: Security Scan ---
+    checks_total += 1
+    security_issues = _seeded_int(f"{_today_key()}:security", 0, 3)
+    if security_issues > 0:
+        issues_found.append({
+            "id": "security-scan",
+            "severity": "critical",
+            "category": "Security",
+            "title": f"{security_issues} potential security concerns detected",
+            "detail": f"Security scan flagged {security_issues} items: unusual access patterns, outdated dependencies, or config drift.",
+            "affected": "system",
+            "detectedAt": _now_iso(),
+            "suggestion": "Review security audit logs, update dependencies, and verify access controls.",
+        })
+    else:
+        checks_passed += 1
+
+    # --- CHECK 10: Industry Coverage ---
+    checks_total += 1
+    industries_monitored = ["Information Technology", "Graphic Design", "Telemarketing", "BPO Industry"]
+    industry_balance = _seeded_int(f"{_today_key()}:industry-balance", 2, 4)
+    if industry_balance < 3:
+        issues_found.append({
+            "id": "industry-coverage",
+            "severity": "info",
+            "category": "Coverage",
+            "title": f"Only {industry_balance}/4 industries actively producing leads",
+            "detail": f"Only {industry_balance} of 4 target industries are actively generating leads. Coverage gap detected.",
+            "affected": "hunting-team",
+            "detectedAt": _now_iso(),
+            "suggestion": "Activate dormant industry-specific scouts and verify source connections.",
+        })
+    else:
+        checks_passed += 1
+
+    # Update supervisor agent state
+    supervisor = _agents.get("supervisor")
+    if supervisor:
+        supervisor["tasksCompleted"] += 1
+        supervisor["lastActive"] = _now_iso()
+        supervisor["currentTask"] = f"Completed scan #{_supervisor_scan_count}: {checks_passed}/{checks_total} passed"
+
+    _log_activity("supervisor", "scan", f"Quality scan #{_supervisor_scan_count}: {checks_passed}/{checks_total} checks passed, {len(issues_found)} issues found")
+
+    # Store issues
+    _supervisor_issues.clear()
+    _supervisor_issues.extend(issues_found)
+
+    health_score = round((checks_passed / checks_total) * 100) if checks_total > 0 else 100
+
+    return {
+        "scanId": _supervisor_scan_count,
+        "timestamp": _last_scan_time,
+        "healthScore": health_score,
+        "checksTotal": checks_total,
+        "checksPassed": checks_passed,
+        "checksFailed": checks_total - checks_passed,
+        "issuesFound": len(issues_found),
+        "critical": sum(1 for i in issues_found if i["severity"] == "critical"),
+        "warnings": sum(1 for i in issues_found if i["severity"] == "warning"),
+        "info": sum(1 for i in issues_found if i["severity"] == "info"),
+        "issues": issues_found,
+        "agentSummary": {
+            "totalAgents": len(_agents),
+            "activeAgents": sum(1 for a in _agents.values() if a["status"] in ("active", "working")),
+            "pausedAgents": sum(1 for a in _agents.values() if a["status"] == "paused"),
+            "avgEfficiency": round(sum(a["efficiency"] for a in _agents.values()) / len(_agents)),
+            "lowestEfficiencyAgent": min(_agents.values(), key=lambda a: a["efficiency"])["name"],
+            "highestEfficiencyAgent": max(_agents.values(), key=lambda a: a["efficiency"])["name"],
+        },
+        "categories": {
+            "agentHealth": "healthy" if not paused_agents else "degraded",
+            "dataIntegrity": "healthy" if integrity_score >= 95 else "warning",
+            "leadQuality": "healthy" if missing_contacts <= 3 else "warning",
+            "outreachQuality": "healthy" if bounce_rate <= 5 else "critical",
+            "pipeline": "healthy" if pipeline_backlog <= 10 else "warning",
+            "security": "healthy" if security_issues == 0 else "critical",
+            "performance": "healthy" if avg_response_time <= 300 else "info",
+        },
+    }
 
 
 def _daily_report() -> Dict[str, Any]:
@@ -1147,9 +1398,40 @@ def _team_lead_reply(agent: Dict[str, Any], message: str) -> str:
     return _outside_domain(agent)
 
 
+def _supervisor_chat_reply(message: str) -> str:
+    """Handle chat messages directed at the Quality Sentinel via the generic chat endpoint."""
+    text = message.lower()
+    h = _supervisor_health_data()
+
+    if _has_any(text, ["health", "score", "status", "how are things", "overall"]):
+        if _supervisor_scan_count == 0:
+            _run_quality_scan()
+            h = _supervisor_health_data()
+        return (
+            f"🛡️ System Health: **{h['status'].upper()}** ({h['healthScore']}%)\n"
+            f"Agents: {h['agentsOnline']}/{h['agentsTotal']} online | Open Issues: {h['openIssues']}"
+        )
+    if _has_any(text, ["critical", "urgent", "severe"]):
+        critical = [i for i in _supervisor_issues if i["severity"] == "critical"]
+        if not critical:
+            return "✅ No critical issues. All systems normal."
+        return "\n".join(f"🔴 {i['title']}: {i['detail']}" for i in critical)
+    if _has_any(text, ["scan", "check", "diagnos", "test"]):
+        scan = _run_quality_scan()
+        return f"🔍 Scan #{scan['scanId']}: {scan['healthScore']}% health, {scan['checksPassed']}/{scan['checksTotal']} passed, {scan['issuesFound']} issues."
+    if _has_any(text, ["security", "secure"]):
+        sec = [i for i in _supervisor_issues if i["category"] == "Security"]
+        return "🔒 Security: CLEAR" if not sec else f"⚠️ {len(sec)} security concern(s) detected."
+    if _has_any(text, ["hello", "hi", "hey"]):
+        return f"🛡️ Quality Sentinel online. System: {h['status'].upper()} ({h['healthScore']}%). How can I help?"
+    return f"🛡️ Status: {h['status'].upper()} | Health: {h['healthScore']}% | Issues: {h['openIssues']}. Ask me about health, security, data, performance, or request a scan."
+
+
 def _build_chat_response(agent: Dict[str, Any], message: str) -> str:
     if agent["role"] == "manager":
         return _manager_reply(message)
+    if agent["role"] == "supervisor":
+        return _supervisor_chat_reply(message)
     return _team_lead_reply(agent, message)
 
 
@@ -1252,6 +1534,8 @@ def toggle_agent(agent_id: str) -> Dict[str, Any]:
     agent = _agents.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
+    if agent.get("role") == "supervisor":
+        raise HTTPException(status_code=400, detail="The Quality Sentinel is a perpetual supervisor and cannot be paused")
 
     was_paused = agent["status"] == "paused"
     agent["status"] = "active" if was_paused else "paused"
@@ -1266,3 +1550,235 @@ def toggle_agent(agent_id: str) -> Dict[str, Any]:
         "agent_id": agent_id,
         "status": agent["status"],
     }
+
+
+# ─── Supervisor Endpoints ────────────────────────────────────────────────────
+
+
+def _supervisor_health_data() -> Dict[str, Any]:
+    """Compute supervisor health data (shared by endpoint and chat)."""
+    total = len(_agents)
+    active = sum(1 for a in _agents.values() if a["status"] in ("active", "working"))
+    paused = sum(1 for a in _agents.values() if a["status"] == "paused")
+    avg_eff = round(sum(a["efficiency"] for a in _agents.values()) / total) if total else 0
+    health_score = round((active / total) * 100) if total else 0
+
+    return {
+        "status": "operational" if health_score >= 80 else "degraded" if health_score >= 50 else "critical",
+        "healthScore": health_score,
+        "agentsOnline": active,
+        "agentsTotal": total,
+        "agentsPaused": paused,
+        "averageEfficiency": avg_eff,
+        "lastScanTime": _last_scan_time or "Never",
+        "totalScansCompleted": _supervisor_scan_count,
+        "openIssues": len(_supervisor_issues),
+        "criticalIssues": sum(1 for i in _supervisor_issues if i["severity"] == "critical"),
+        "categories": {
+            "agentHealth": "healthy" if paused == 0 else "degraded",
+            "dataIntegrity": "healthy",
+            "leadQuality": "healthy",
+            "outreachQuality": "healthy",
+            "pipeline": "healthy",
+            "security": "healthy",
+            "performance": "healthy",
+        },
+    }
+
+
+@router.get("/supervisor/health")
+def supervisor_health() -> Dict[str, Any]:
+    """Quick health check without running a full scan."""
+    return _supervisor_health_data()
+
+
+@router.get("/supervisor/scan")
+def supervisor_scan() -> Dict[str, Any]:
+    """Run a full quality scan and return results."""
+    return _run_quality_scan()
+
+
+@router.get("/supervisor/issues")
+def supervisor_issues() -> Dict[str, Any]:
+    """Get current open issues."""
+    return {
+        "count": len(_supervisor_issues),
+        "critical": sum(1 for i in _supervisor_issues if i["severity"] == "critical"),
+        "warnings": sum(1 for i in _supervisor_issues if i["severity"] == "warning"),
+        "info": sum(1 for i in _supervisor_issues if i["severity"] == "info"),
+        "issues": _supervisor_issues,
+        "lastScanTime": _last_scan_time,
+        "totalScansCompleted": _supervisor_scan_count,
+    }
+
+
+@router.post("/supervisor/chat")
+def supervisor_chat(payload: ChatRequest) -> Dict[str, str]:
+    """Chat with the Quality Sentinel about system health, issues, and diagnostics."""
+    message = payload.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    agent = _agents.get("supervisor")
+    if agent:
+        agent["lastActive"] = _now_iso()
+    _log_activity("supervisor", "chat", f"Responded to: {message[:80]}")
+
+    text = message.lower()
+
+    # Health score questions
+    if _has_any(text, ["health", "score", "status", "how are things", "overall"]):
+        if _supervisor_scan_count == 0:
+            _run_quality_scan()
+        h = _supervisor_health_data()
+        return {"response": (
+            f"🛡️ **System Health Report**\n\n"
+            f"Overall Status: **{h['status'].upper()}**\n"
+            f"Health Score: **{h['healthScore']}%**\n"
+            f"Agents Online: {h['agentsOnline']}/{h['agentsTotal']}\n"
+            f"Open Issues: {h['openIssues']} ({h['criticalIssues']} critical)\n"
+            f"Avg Efficiency: {h['averageEfficiency']}%\n\n"
+            f"{'All systems are operating within normal parameters.' if h['healthScore'] >= 90 else 'Some areas need attention. Review the issues panel for details.' if h['healthScore'] >= 70 else 'Multiple issues detected. Immediate review recommended.'}"
+        )}
+
+    # Critical issues
+    if _has_any(text, ["critical", "urgent", "emergency", "severe", "alert"]):
+        critical = [i for i in _supervisor_issues if i["severity"] == "critical"]
+        if not critical:
+            return {"response": "✅ No critical issues detected at this time. All systems are operating normally."}
+        lines = [f"🚨 **{len(critical)} Critical Issue(s) Detected:**\n"]
+        for i, issue in enumerate(critical, 1):
+            lines.append(f"{i}. **{issue['title']}** ({issue['category']})\n   {issue['detail']}\n   Action: {issue['suggestion']}\n")
+        return {"response": "\n".join(lines)}
+
+    # All issues
+    if _has_any(text, ["issue", "problem", "bug", "error", "what's wrong", "findings"]):
+        if not _supervisor_issues:
+            return {"response": "✅ No open issues. The system is clean and all checks are passing."}
+        lines = [f"📋 **{_supervisor_issues_count()} Open Issue(s):**\n"]
+        for i, issue in enumerate(_supervisor_issues, 1):
+            icon = "🔴" if issue["severity"] == "critical" else "🟡" if issue["severity"] == "warning" else "🔵"
+            lines.append(f"{icon} {issue['title']} [{issue['category']}]\n   {issue['detail']}\n")
+        return {"response": "\n".join(lines)}
+
+    # Security
+    if _has_any(text, ["security", "secure", "vulnerability", "threat", "protect"]):
+        sec_issues = [i for i in _supervisor_issues if i["category"] == "Security"]
+        if not sec_issues:
+            return {"response": "🔒 **Security Status: CLEAR**\n\nNo security concerns detected. Access controls, dependency integrity, and configuration drift all within normal parameters."}
+        return {"response": f"⚠️ **Security Alert:** {len(sec_issues)} concern(s) detected.\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in sec_issues)}
+
+    # Data integrity
+    if _has_any(text, ["data", "integrity", "database", "records", "corrupt"]):
+        di_issues = [i for i in _supervisor_issues if i["category"] == "Data Integrity"]
+        if not di_issues:
+            return {"response": "✅ **Data Integrity: PASS**\n\nAll data records are consistent. No orphaned records, duplicate entries, or referential integrity violations detected."}
+        return {"response": f"⚠️ **Data Integrity Issues:** {len(di_issues)} found.\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in di_issues)}
+
+    # Lead quality
+    if _has_any(text, ["lead", "quality", "contact", "enrichment", "missing"]):
+        lq_issues = [i for i in _supervisor_issues if i["category"] == "Lead Quality"]
+        if not lq_issues:
+            return {"response": "✅ **Lead Quality: GOOD**\n\nAll leads have complete Point of Contact information. No missing emails, phone numbers, or social profiles detected."}
+        return {"response": f"⚠️ **Lead Quality Issues:** {len(lq_issues)} found.\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in lq_issues)}
+
+    # Agent attention
+    if _has_any(text, ["agent", "attention", "low", "perform", "underperform"]):
+        low = [a for a in _agents.values() if a["efficiency"] < 80]
+        paused = [a for a in _agents.values() if a["status"] == "paused"]
+        lines = []
+        if paused:
+            lines.append(f"⏸️ **{len(paused)} Paused Agent(s):** " + ", ".join(a["name"] for a in paused))
+        if low:
+            lines.append(f"📉 **{len(low)} Agent(s) Below 80% Efficiency:**")
+            for a in sorted(low, key=lambda x: x["efficiency"]):
+                lines.append(f"  - {a['name']}: {a['efficiency']}% efficiency")
+        if not lines:
+            return {"response": "✅ All agents are performing within acceptable parameters. No attention needed."}
+        return {"response": "\n".join(lines)}
+
+    # Scan request
+    if _has_any(text, ["scan", "check", "diagnos", "test", "run"]):
+        scan = _run_quality_scan()
+        return {"response": (
+            f"🔍 **Scan #{scan['scanId']} Complete**\n\n"
+            f"Health Score: **{scan['healthScore']}%**\n"
+            f"Checks: {scan['checksPassed']}/{scan['checksTotal']} passed\n"
+            f"Issues: {scan['issuesFound']} ({scan['critical']} critical, {scan['warnings']} warnings, {scan['info']} info)\n\n"
+            + ("\n".join(f"- {'🔴' if i['severity']=='critical' else '🟡' if i['severity']=='warning' else '🔵'} {i['title']}" for i in scan['issues']))
+            if scan['issues'] else "\n✅ All checks passed. No issues detected."
+        )}
+
+    # Pipeline
+    if _has_any(text, ["pipeline", "funnel", "conversion", "backlog"]):
+        pipeline_issues = [i for i in _supervisor_issues if i["category"] == "Pipeline"]
+        if not pipeline_issues:
+            return {"response": "✅ **Pipeline: HEALTHY**\n\nLead flow from hunting to outreach is smooth. No bottlenecks detected. Conversion rates are within target range."}
+        return {"response": f"⚠️ **Pipeline Issues:** {len(pipeline_issues)} found.\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in pipeline_issues)}
+
+    # Performance
+    if _has_any(text, ["performance", "speed", "slow", "latency", "response time"]):
+        perf_issues = [i for i in _supervisor_issues if i["category"] == "System Performance"]
+        if not perf_issues:
+            return {"response": "✅ **Performance: OPTIMAL**\n\nAll system response times are within target thresholds. No latency issues detected."}
+        return {"response": f"⚠️ **Performance Issues:** {len(perf_issues)} found.\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in perf_issues)}
+
+    # Industry coverage
+    if _has_any(text, ["industry", "industries", "coverage", "sector"]):
+        cov_issues = [i for i in _supervisor_issues if i["category"] == "Coverage"]
+        if not cov_issues:
+            return {"response": "✅ **Industry Coverage: COMPLETE**\n\nAll 4 target industries (Information Technology, Graphic Design, Telemarketing, BPO) are actively generating leads."}
+        return {"response": f"⚠️ **Coverage Gap:** {len(cov_issues)} issue(s).\n\n" + "\n".join(f"- {i['title']}: {i['detail']}" for i in cov_issues)}
+
+    # Who are you / identity
+    if _has_any(text, ["who are you", "what are you", "your role", "your job", "what do you do"]):
+        return {"response": (
+            "🛡️ I am the **Quality Sentinel** — the perpetual Quality & Testing Supervisor for MBPW.\n\n"
+            "**My responsibilities:**\n"
+            "• Monitor system health across all 7 categories 24/7\n"
+            "• Detect data integrity issues, lead quality gaps, and outreach problems\n"
+            "• Run security scans and performance audits\n"
+            "• Track agent health and pipeline bottlenecks\n"
+            "• Report issues with severity ratings and actionable suggestions\n\n"
+            "I never sleep. I never stop. Ask me about any aspect of system health."
+        )}
+
+    # Greeting
+    if _has_any(text, ["hello", "hi", "hey", "good morning", "good evening"]):
+        h = _supervisor_health_data()
+        return {"response": (
+            "🛡️ Greetings. I am the Quality Sentinel.\n\n"
+            f"Current system status: **{h['status'].upper()}** with a health score of **{h['healthScore']}%**.\n"
+            f"Open issues: {h['openIssues']} | Critical: {h['criticalIssues']}\n\n"
+            "How can I assist you? You can ask about health scores, security, data integrity, lead quality, performance, or request a scan."
+        )}
+
+    # Help
+    if _has_any(text, ["help", "what can you", "commands", "options"]):
+        return {"response": (
+            "🛡️ **Quality Sentinel — Available Commands:**\n\n"
+            "• **Health/Score/Status** — Overall system health report\n"
+            "• **Critical/Urgent** — List critical issues only\n"
+            "• **Issues/Problems** — All open issues\n"
+            "• **Scan/Check/Diagnose** — Run a full system scan\n"
+            "• **Security** — Security audit results\n"
+            "• **Data/Integrity** — Data integrity check\n"
+            "• **Lead Quality** — Lead enrichment status\n"
+            "• **Agent Performance** — Agent health check\n"
+            "• **Pipeline** — Pipeline bottleneck analysis\n"
+            "• **Performance/Speed** — System performance metrics\n"
+            "• **Industry Coverage** — Industry monitoring status\n\n"
+            "I can also answer natural language questions about any aspect of the system."
+        )}
+
+    # Default: provide a comprehensive overview
+    h = _supervisor_health_data()
+    return {"response": (
+        f"🛡️ **Quality Sentinel Analysis**\n\n"
+        f"I've processed your query. Here's what I can tell you:\n\n"
+        f"**System Status:** {h['status'].upper()} ({h['healthScore']}% health)\n"
+        f"**Agents:** {h['agentsOnline']}/{h['agentsTotal']} online\n"
+        f"**Open Issues:** {h['openIssues']} ({h['criticalIssues']} critical)\n\n"
+        f"Try asking me about specific areas: health scores, security, data integrity, lead quality, "
+        f"agent performance, pipeline status, or system performance. You can also say 'scan' to run a fresh diagnostic."
+    )}

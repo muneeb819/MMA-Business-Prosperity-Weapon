@@ -168,5 +168,12 @@ export const api = {
     dailyReport: () => fetchAPI<any>("/api/ai-teams/reports/daily"),
     activity: (limit?: number) =>
       fetchAPI<any>(`/api/ai-teams/activity?limit=${limit || 50}`),
+    supervisor: {
+      health: () => fetchAPI<any>("/api/ai-teams/supervisor/health"),
+      scan: () => fetchAPI<any>("/api/ai-teams/supervisor/scan"),
+      issues: () => fetchAPI<any>("/api/ai-teams/supervisor/issues"),
+      chat: (message: string) =>
+        fetchAPI<any>("/api/ai-teams/supervisor/chat", { method: "POST", body: JSON.stringify({ message }) }),
+    },
   },
 };
