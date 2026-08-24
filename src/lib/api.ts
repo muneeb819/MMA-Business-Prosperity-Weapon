@@ -1,8 +1,6 @@
 import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData, Connector } from "./types";
 
-const API_BASE = typeof window !== "undefined" && window.location.hostname !== "localhost"
-  ? ""  // On Vercel/production, use same domain (vercel.json rewrites handle /api/* → Python backend)
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001");
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   let token: string | null = null;
