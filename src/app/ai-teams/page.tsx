@@ -254,7 +254,7 @@ export default function AITeamsPage() {
             </div>
             AI Teams Command Center
           </h1>
-          <p className="text-zinc-500 text-sm mt-1">13 AI agents working across 3 tiers to find and convert leads</p>
+          <p className="text-zinc-500 text-sm mt-1">14 AI agents working across 3 tiers to find and convert leads</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -621,9 +621,10 @@ export default function AITeamsPage() {
             if (!data) return null;
             const titles: Record<string, string> = { dataReconciliation: "Data Reconciliation", securityAudit: "Security Audit", performanceCheck: "Performance Check" };
             const colors: Record<string, string> = { dataReconciliation: "violet", securityAudit: "amber", performanceCheck: "cyan" };
+            const sectionColorClass: Record<string, string> = { dataReconciliation: "text-violet-400", securityAudit: "text-amber-400", performanceCheck: "text-cyan-400" };
             return (
               <div key={section} className="mb-4">
-                <p className={cn("text-xs uppercase tracking-wider font-semibold mb-2", `text-${colors[section]}-400`)}>{titles[section]}</p>
+                <p className={cn("text-xs uppercase tracking-wider font-semibold mb-2", sectionColorClass[section])}>{titles[section]}</p>
                 <div className="space-y-1">
                   {(data.findings || []).map((f: any, i: number) => (
                     <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] text-xs">
@@ -1022,7 +1023,7 @@ function AgentCard({ agent, onToggle, toggling, color }: {
           <p className="text-[10px] text-zinc-600 uppercase tracking-wider">{STATUS_TEXT[agent.status]}</p>
         </div>
         <Button onClick={() => onToggle(agent.id)} size="sm" variant="ghost"
-          className="h-7 w-7 p-0 text-zinc-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-7 w-7 p-0 text-zinc-500 hover:text-white opacity-70 hover:opacity-100 transition-opacity"
           disabled={toggling}>
           {toggling ? <Loader2 className="w-3 h-3 animate-spin" /> :
             agent.status === "paused" ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}

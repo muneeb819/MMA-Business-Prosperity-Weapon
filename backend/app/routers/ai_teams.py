@@ -2243,6 +2243,48 @@ def _run_performance_check() -> Dict[str, Any]:
     }
 
 
+def _analyze_load_balance() -> Dict[str, Any]:
+    """Read-only analysis of current agent load balance (no state mutation)."""
+    all_agents = list(_agents.values())
+    if not all_agents:
+        return {"balanced": True, "totalActions": 0, "actionsTaken": [], "details": ["No agents to analyze."]}
+
+    tasks = [(a["id"], a["tasksCompleted"], a["name"]) for a in all_agents]
+    tasks.sort(key=lambda x: x[1], reverse=True)
+    highest = tasks[0]
+    lowest = tasks[-1]
+
+    details: List[str] = []
+    total_actions = 0
+
+    if highest[1] - lowest[1] > 20:
+        details.append(
+            f"Imbalance detected: {highest[2]} ({highest[1]} tasks) vs {lowest[2]} ({lowest[1]} tasks) — "
+            f"~{(highest[1] - lowest[1]) // 3} tasks recommended for transfer"
+        )
+        total_actions += 1
+
+    low_eff = [a for a in all_agents if a["efficiency"] < 78]
+    if low_eff:
+        details.append(f"{len(low_eff)} agent(s) below 78% efficiency — efficiency boost recommended")
+        total_actions += 1
+
+    paused = [a for a in all_agents if a["status"] == "paused" and a["role"] != "supervisor"]
+    if paused:
+        details.append(f"{len(paused)} agent(s) paused — resume recommended")
+        total_actions += 1
+
+    if not details:
+        details.append("All agents are well balanced. No redistribution needed.")
+
+    return {
+        "balanced": total_actions == 0,
+        "totalActions": total_actions,
+        "actionsTaken": details,
+        "details": details,
+    }
+
+
 def _redistribute_agent_load() -> Dict[str, Any]:
     """Review agent task load and redistribute for optimal balance."""
     actions_taken: List[str] = []
@@ -2305,7 +2347,7 @@ def _generate_quality_report() -> Dict[str, Any]:
     reconciliation = _run_data_reconciliation()
     security = _run_security_audit()
     performance = _run_performance_check()
-    redistribution = _redistribute_agent_load()
+    redistribution = _analyze_load_balance()
 
     # Calculate overall score
     scores = [scan["score"], reconciliation["score"], security["score"], performance["score"]]

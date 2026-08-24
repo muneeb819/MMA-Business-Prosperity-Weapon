@@ -181,15 +181,23 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                       { label: "Success Probability", value: selectedLead.successProbability || 0, color: "emerald", icon: <Target className="w-4 h-4" /> },
                       { label: "Difficulty Score", value: selectedLead.difficulty || 50, color: "amber", icon: <BarChart3 className="w-4 h-4" /> },
                       { label: "Risk Level", value: selectedLead.riskLevel === "low" ? 20 : selectedLead.riskLevel === "medium" ? 50 : selectedLead.riskLevel === "high" ? 75 : 90, color: "red", icon: <AlertTriangle className="w-4 h-4" /> },
-                    ].map((score, i) => (
+                    ].map((score, i) => {
+                      const scoreColorClass: Record<string, { bg: string; text: string }> = {
+                        emerald: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
+                        amber: { bg: "bg-amber-500/10", text: "text-amber-400" },
+                        red: { bg: "bg-red-500/10", text: "text-red-400" },
+                      };
+                      const sc = scoreColorClass[score.color] ?? scoreColorClass.emerald;
+                      return (
                       <div key={i} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-center overflow-hidden">
-                        <div className={cn("mx-auto mb-2 p-2 rounded-lg w-fit", `bg-${score.color}-500/10`)}>
-                          <span className={cn(`text-${score.color}-400`)}>{score.icon}</span>
+                        <div className={cn("mx-auto mb-2 p-2 rounded-lg w-fit", sc.bg)}>
+                          <span className={cn(sc.text)}>{score.icon}</span>
                         </div>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{score.label}</p>
-                        <p className={cn("text-xl font-bold", `text-${score.color}-400`)}>{score.value}%</p>
+                        <p className={cn("text-xl font-bold", sc.text)}>{score.value}%</p>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
