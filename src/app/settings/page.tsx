@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [apolloKey, setApolloKey] = useState("")
   const [provLoading, setProvLoading] = useState(false)
   const [provSaved, setProvSaved] = useState(false)
+  const [testResult, setTestResult] = useState<any>(null)
+  const [testLoading, setTestLoading] = useState(false)
 
   const handleSave = () => {
     setSaved(true)
@@ -55,6 +57,22 @@ export default function SettingsPage() {
       setApolloKey("")
     } catch {}
     setProvLoading(false)
+  }
+
+  const testProvider = async () => {
+    setTestLoading(true)
+    setTestResult(null)
+    try {
+      const d = await api.settings.test({
+        hunter_api_key: hunterKey || undefined,
+        apollo_api_key: apolloKey || undefined,
+      })
+      setTestResult(d)
+    } catch (e: any) {
+      setTestResult({ error: e?.message || "Test failed" })
+    } finally {
+      setTestLoading(false)
+    }
   }
 
   return (
@@ -194,8 +212,22 @@ export default function SettingsPage() {
                   <Button onClick={saveProvider} size="sm" disabled={provLoading} className="bg-gradient-to-r from-primary to-rose-600 hover:from-primary/90 hover:to-rose-500 text-white shadow-lg shadow-primary/20">
                     {provSaved ? <><CheckCircle className="w-4 h-4 mr-2 text-emerald-300" /> Saved</> : <><Save className="w-4 h-4 mr-2" /> {provLoading ? "Saving…" : "Save Provider Keys"}</>}
                   </Button>
+                  <Button onClick={testProvider} size="sm" variant="outline" disabled={testLoading} className="border-border hover:bg-muted/50">
+                    {testLoading ? "Testing…" : "Test connection"}
+                  </Button>
                   <span className="text-xs text-muted-foreground">Keys are stored server-side and never shown in full.</span>
                 </div>
+                {testResult && !testResult.error && (
+                  <div className="text-xs space-y-1">
+                    <p className={testResult.apollo?.ok ? "text-emerald-400" : "text-zinc-400"}>
+                      Apollo: {testResult.apollo?.ok ? `verified (${testResult.apollo.email})` : (testResult.apollo?.error || "not verified")}
+                    </p>
+                    <p className={testResult.hunter?.ok ? "text-emerald-400" : "text-zinc-400"}>
+                      Hunter: {testResult.hunter?.ok ? `verified (${testResult.hunter.email})` : (testResult.hunter?.error || "not verified")}
+                    </p>
+                  </div>
+                )}
+                {testResult?.error && <p className="text-xs text-red-400">{testResult.error}</p>}
               </div>
             </div>
 

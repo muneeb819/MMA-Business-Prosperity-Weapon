@@ -178,6 +178,8 @@ export const api = {
     get: () => fetchAPI<any>(`/api/settings`),
     update: (data: any) =>
       fetchAPI<any>(`/api/settings`, { method: "PUT", body: JSON.stringify(data) }),
+    test: (data: any) =>
+      fetchAPI<any>(`/api/settings/test`, { method: "POST", body: JSON.stringify(data || {}) }),
   },
   aiTeams: {
     list: () => fetchAPI<any>("/api/ai-teams"),

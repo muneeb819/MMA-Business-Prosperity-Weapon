@@ -102,6 +102,12 @@ def _hunter_lookup(domain: str, api_key: str):
     return None
 
 
+def provider_enabled() -> bool:
+    """True if any verified-email provider key is configured (env or DB)."""
+    h, a = _get_keys()
+    return bool(h or a)
+
+
 def enrich(company: str, verify: bool = False, title: Optional[str] = None) -> dict:
     """Return a best-effort contact email for a company.
 

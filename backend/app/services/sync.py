@@ -75,7 +75,7 @@ def _guess_project_size(job: NormalizedJob) -> str:
     return "small"
 
 
-def job_to_lead(job: NormalizedJob) -> dict:
+def job_to_lead(job: NormalizedJob, verify: bool = False) -> dict:
     lead_data = {
         "id": f"live-{_make_id(job)}",
         "title": job.title,
@@ -112,7 +112,7 @@ def job_to_lead(job: NormalizedJob) -> dict:
     try:
         from app.services import enrichment
 
-        _enr = enrichment.enrich(job.company, verify=False)
+        _enr = enrichment.enrich(job.company, verify=verify, title=job.title)
         if _enr.get("email"):
             lead_data["email"] = _enr["email"]
             lead_data["tags"] = lead_data["tags"] + [f"enriched:{_enr['source']}"]
@@ -126,6 +126,15 @@ async def sync_source(source_name: str, db: Session, limit: int = 50) -> dict:
     source = get_source(source_name)
     if not source:
         return {"error": f"Source '{source_name}' not found"}
+
+    verify = False
+    try:
+        from app.services import enrichment
+
+        verify = enrichment.provider_enabled()
+    except Exception:  # noqa: BLE001
+        verify = False
+
     try:
         raw_jobs = await source.fetch(limit=limit)
     except Exception as e:
@@ -136,7 +145,7 @@ async def sync_source(source_name: str, db: Session, limit: int = 50) -> dict:
     updated_count = 0
 
     for job in raw_jobs:
-        lead_data = job_to_lead(job)
+        lead_data = job_to_lead(job, verify)
         existing = db.query(Lead).filter(Lead.id == lead_data["id"]).first()
         if existing:
             existing.title = lead_data["title"]
