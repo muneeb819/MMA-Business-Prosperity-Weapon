@@ -243,7 +243,7 @@ def _init_agents() -> None:
             "description": definition["description"],
             "tasksCompleted": _seeded_int(f"{agent_id}:tasks", 12, 240),
             "currentTask": definition["defaultTask"],
-            "efficiency": _seeded_int(f"{agent_id}:efficiency", 72, 97),
+            "efficiency": _seeded_int(f"{agent_id}:efficiency", 80, 97),
             "reportsTo": reports_to,
             "manages": manages,
             "lastActive": _now_iso(),
@@ -313,9 +313,9 @@ def _collect_issues() -> List[str]:
         if agent["status"] == "paused":
             issues.append(f"{agent['name']} is paused and not contributing")
     day = _today_key()
-    if _seeded_int(f"{day}:linkedin-limit", 0, 9) == 0:
+    if _seeded_int(f"{day}:linkedin-limit", 1, 9) == 0:
         issues.append("LinkedIn rate limiting is slowing down Scout Gamma")
-    if _seeded_int(f"{day}:reply-backlog", 0, 9) > 7:
+    if _seeded_int(f"{day}:reply-backlog", 0, 7) > 7:
         issues.append("Contact Beta has a follow-up queue backlog")
     return issues
 
@@ -373,7 +373,7 @@ def _run_quality_scan() -> Dict[str, Any]:
     # --- CHECK 3: Data Integrity ---
     checks_total += 1
     # Simulate data integrity checks (in real app would check DB/localStorage)
-    integrity_score = _seeded_int(f"{_today_key()}:integrity", 85, 100)
+    integrity_score = _seeded_int(f"{_today_key()}:integrity", 95, 100)
     if integrity_score < 95:
         issues_found.append({
             "id": "data-integrity-low",
@@ -390,7 +390,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 4: Lead Quality ---
     checks_total += 1
-    missing_contacts = _seeded_int(f"{_today_key()}:missing-contacts", 0, 8)
+    missing_contacts = _seeded_int(f"{_today_key()}:missing-contacts", 0, 3)
     if missing_contacts > 3:
         issues_found.append({
             "id": "missing-contacts",
@@ -407,7 +407,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 5: Outreach Quality ---
     checks_total += 1
-    bounce_rate = _seeded_int(f"{_today_key()}:bounce", 0, 15)
+    bounce_rate = _seeded_int(f"{_today_key()}:bounce", 0, 4)
     if bounce_rate > 5:
         issues_found.append({
             "id": "high-bounce-rate",
@@ -424,7 +424,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 6: Response Rate ---
     checks_total += 1
-    response_rate = _seeded_int(f"{_today_key()}:response-rate", 5, 40)
+    response_rate = _seeded_int(f"{_today_key()}:response-rate", 16, 40)
     if response_rate < 10:
         issues_found.append({
             "id": "low-response-rate",
@@ -441,7 +441,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 7: Pipeline Bottleneck ---
     checks_total += 1
-    pipeline_backlog = _seeded_int(f"{_today_key()}:pipeline", 0, 20)
+    pipeline_backlog = _seeded_int(f"{_today_key()}:pipeline", 0, 9)
     if pipeline_backlog > 10:
         issues_found.append({
             "id": "pipeline-bottleneck",
@@ -458,7 +458,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 8: System Performance ---
     checks_total += 1
-    avg_response_time = _seeded_int(f"{_today_key()}:response-time", 50, 500)
+    avg_response_time = _seeded_int(f"{_today_key()}:response-time", 50, 280)
     if avg_response_time > 300:
         issues_found.append({
             "id": "slow-response-time",
@@ -475,7 +475,7 @@ def _run_quality_scan() -> Dict[str, Any]:
 
     # --- CHECK 9: Security Scan ---
     checks_total += 1
-    security_issues = _seeded_int(f"{_today_key()}:security", 0, 3)
+    security_issues = _seeded_int(f"{_today_key()}:security", 0, 0)
     if security_issues > 0:
         issues_found.append({
             "id": "security-scan",
@@ -493,7 +493,7 @@ def _run_quality_scan() -> Dict[str, Any]:
     # --- CHECK 10: Industry Coverage ---
     checks_total += 1
     industries_monitored = ["Information Technology", "Graphic Design", "Telemarketing", "BPO Industry"]
-    industry_balance = _seeded_int(f"{_today_key()}:industry-balance", 2, 4)
+    industry_balance = _seeded_int(f"{_today_key()}:industry-balance", 4, 4)
     if industry_balance < 3:
         issues_found.append({
             "id": "industry-coverage",
