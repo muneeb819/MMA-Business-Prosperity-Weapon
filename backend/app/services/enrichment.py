@@ -138,26 +138,32 @@ def _smtp_verify(domain: str, timeout: int = 5):
         return None
     tried = 0
     for host in hosts[:2]:
-        try:
-            with smtplib.SMTP(host, 25, timeout=timeout) as s:
-                s.ehlo()
-                s.mail("verify@mbpw.com")
-                for prefix in _ROLE_PREFIXES:
-                    if tried >= 5:
-                        break
-                    cand = f"{prefix}@{domain}"
+        for port in (25, 587):
+            try:
+                with smtplib.SMTP(host, port, timeout=timeout) as s:
+                    s.ehlo()
                     try:
-                        code, _ = s.rcpt(cand)
+                        s.starttls()
+                        s.ehlo()
                     except Exception:
-                        code = 0
-                    tried += 1
-                    if code == 250:
-                        return cand
-                    if code in (550, 551, 552, 553, 554):
-                        continue
-                return None
-        except Exception:  # noqa: BLE001
-            continue
+                        pass
+                    s.mail("verify@mbpw.com")
+                    for prefix in _ROLE_PREFIXES:
+                        if tried >= 5:
+                            break
+                        cand = f"{prefix}@{domain}"
+                        try:
+                            code, _ = s.rcpt(cand)
+                        except Exception:
+                            code = 0
+                        tried += 1
+                        if code == 250:
+                            return cand
+                        if code in (550, 551, 552, 553, 554):
+                            continue
+                    return None
+            except Exception:  # noqa: BLE001
+                continue
     return None
 
 
@@ -214,5 +220,5 @@ def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp
 
     resolved = _domain_resolves(domain) if verify else True
     if resolved and domain:
-        return {"email": f"info@{domain}", "source": "heuristic", "verified": bool(verify)}
+        return {"email": f"info@{domain}", "source": "heuristic", "verified": False}
     return {"email": "", "source": "none", "verified": False}
