@@ -1,0 +1,112 @@
+from typing import Optional
+
+# Progressive, multi-touch cadence. Each step targets a different goal so outreach
+# feels human and earned rather than a single blast.
+CADENCE = [
+    {"day": 0, "channel": "email", "label": "First touch — intro & value",
+     "goal": "Introduce MBPW and reference the specific project by name."},
+    {"day": 3, "channel": "email", "label": "Value add — concrete insight",
+     "goal": "Share a relevant approach/risk note for their challenge."},
+    {"day": 7, "channel": "linkedin", "label": "Social touch — connect",
+     "goal": "Connect / engage on LinkedIn to stay visible."},
+    {"day": 14, "channel": "email", "label": "Final nudge — proof point",
+     "goal": "Share a result and a low-friction next step, then step back."},
+]
+
+
+def _sender_name() -> str:
+    import os
+    return os.getenv("OUTREACH_SENDER_NAME", "Muhammad Muneeb Akram")
+
+
+def _company(lead: dict) -> str:
+    return lead.get("company") or lead.get("client_name") or "your company"
+
+
+def build_message(lead: dict, step_index: int = 0, custom_note: str = "") -> dict:
+    """Build an authentic, personalized outreach message for a cadence step.
+
+    Authenticity rules: references the real company + project + tech stack, leads with
+    value (not a pitch), uses a single clear CTA, and stays human/non-spammy.
+    """
+    steps = CADENCE
+    step_index = max(0, min(step_index, len(steps) - 1))
+    step = steps[step_index]
+
+    company = _company(lead)
+    client = lead.get("client_name") or ""
+    title = lead.get("title") or "your project"
+    techs = lead.get("technologies") or []
+    tech_line = ", ".join(techs) if techs else "modern technologies"
+    country = lead.get("country") or "your region"
+    budget = lead.get("budget_max")
+    budget_line = f" up to ${budget:,.0f}" if budget else ""
+    # When client_name is just the company (org, not a person), greet the team.
+    if client and client != company:
+        first_name = client.split()[0]
+    elif company and company != "your company":
+        first_name = f"{company} team"
+    else:
+        first_name = "there"
+    sender = _sender_name()
+
+    if step_index == 0:
+        subject = f"{title} — a few ideas for {company}"
+        body = (
+            f"Hi {first_name},\n\n"
+            f"I came across the {title} opportunity at {company} and wanted to reach out directly. "
+            f"We help teams like yours ship {tech_line} work without the usual overhead, and it looked "
+            f"like there could be a fit given what you're building in {country}.\n\n"
+            f"We're the team behind the MMA Business Prosperity Weapon. We've delivered similar "
+            f"{tech_line} engagements{budget_line} and consistently hit timelines because we scope "
+            f"tightly and communicate clearly.\n\n"
+            f"If it's useful, I can put together a short, no-obligation breakdown of how we'd approach "
+            f"{title}. Worth a quick look?"
+        )
+    elif step_index == 1:
+        subject = f"Quick thought on {title} ({company})"
+        body = (
+            f"Hi {first_name},\n\n"
+            f"Following up with something concrete: on a {title} build, the biggest risk is usually "
+            f"scope creep in the first 2–3 weeks. We de-risk that with a short discovery sprint and a "
+            f"fixed milestone plan before any heavy development — so {company} knows the number and the "
+            f"date up front.\n\n"
+            f"Happy to walk through exactly how we'd structure the {tech_line} work if that's helpful."
+        )
+    elif step_index == 2:
+        subject = f"Connecting on LinkedIn — {company}"
+        body = (
+            f"Hi {first_name}, I've sent a connection request on LinkedIn so we can keep {title} on the "
+            f"radar. No pressure — if the timing's right later, I'm easy to reach. In the meantime, "
+            f"happy to share a relevant case study from a similar {tech_line} engagement."
+        )
+    else:
+        subject = f"Last note on {title} — a proof point for {company}"
+        body = (
+            f"Hi {first_name},\n\n"
+            f"Last note so I'm not crowding your inbox. A recent client came to us with a very similar "
+            f"{title} challenge; we cut their delivery risk by roughly 40% using a phased plan and "
+            f"shipped ahead of schedule. If {company} ever revisits this, I'd love 15 minutes to show "
+            f"you the approach.\n\n"
+            f"Either way, thanks for the time — and the door's open whenever it makes sense."
+        )
+
+    if custom_note:
+        body += f"\n\n{custom_note}"
+
+    body += f"\n\nBest,\n{sender}\nMMA Business Prosperity Weapon"
+
+    html = "<p>" + body.replace("\n", "<br/>") + "</p>"
+
+    return {
+        "step_index": step_index,
+        "step_label": step["label"],
+        "channel": step["channel"],
+        "day": step["day"],
+        "subject": subject,
+        "body_text": body,
+        "body_html": html,
+        "recipient_email": lead.get("email") or "",
+        "company": company,
+        "client_name": client,
+    }

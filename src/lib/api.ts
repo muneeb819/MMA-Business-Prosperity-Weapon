@@ -152,11 +152,23 @@ export const api = {
     summary: () => fetchAPI("/api/reports/summary"),
   },
   leadSources: {
-    list: () => fetchAPI("/api/lead-sources"),
+    list: () => fetchAPI(`/api/lead-sources`),
     sync: (name: string, limit?: number) =>
       fetchAPI(`/api/lead-sources/sync/${name}?limit=${limit || 50}`, { method: "POST" }),
     syncAll: (limit?: number) =>
       fetchAPI(`/api/lead-sources/sync-all?limit=${limit || 30}`, { method: "POST" }),
+  },
+  outreach: {
+    cadence: () => fetchAPI<any>(`/api/outreach/cadence`),
+    leads: () => fetchAPI<any[]>(`/api/outreach/leads`),
+    preview: (data: { lead_id: string; step?: number; custom_note?: string }) =>
+      fetchAPI<any>(`/api/outreach/preview`, { method: "POST", body: JSON.stringify(data) }),
+    send: (data: { lead_id: string; step?: number; custom_note?: string }) =>
+      fetchAPI<any>(`/api/outreach/send`, { method: "POST", body: JSON.stringify(data) }),
+    records: () => fetchAPI<any[]>(`/api/outreach/records`),
+    reply: (id: string) =>
+      fetchAPI<any>(`/api/outreach/${id}/reply`, { method: "POST" }),
+    stats: () => fetchAPI<any>(`/api/outreach/stats`),
   },
   aiTeams: {
     list: () => fetchAPI<any>("/api/ai-teams"),

@@ -121,6 +121,26 @@ class AgentLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 
+class Outreach(Base):
+    __tablename__ = "outreach"
+
+    id = Column(String, primary_key=True)
+    lead_id = Column(String, nullable=True)
+    client_name = Column(String)
+    company = Column(String)
+    email = Column(String)
+    channel = Column(String, default="email")
+    step = Column(Integer, default=0)
+    step_label = Column(String)
+    subject = Column(String)
+    body_text = Column(Text)
+    status = Column(String, default="simulated")  # sent | simulated | logged | replied | failed
+    simulated = Column(Boolean, default=False)
+    sent_at = Column(DateTime, nullable=True)
+    replied_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class KnowledgeEntry(Base):
     __tablename__ = "knowledge_base"
 

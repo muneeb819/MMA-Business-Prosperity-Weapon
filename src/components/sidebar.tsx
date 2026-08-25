@@ -16,6 +16,7 @@ import {
   Menu,
   Cable,
   LineChart,
+  Send,
 } from "lucide-react"
 
 const navigation = [
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-rose-400" },
   { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
   { name: "Connectors", href: "/connectors", icon: Cable, color: "from-indigo-500 to-rose-500" },
+  { name: "Outreach", href: "/outreach", icon: Send, color: "from-indigo-600 to-rose-500" },
   { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
   { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },
   { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-rose-400" },
