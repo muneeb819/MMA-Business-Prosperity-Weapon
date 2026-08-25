@@ -59,6 +59,21 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   error: { label: "Error", color: "text-red-400", bg: "bg-red-500/10 border-red-500/30" },
 };
 
+const CONNECTOR_SOURCES: { value: string; label: string; needsKey: boolean }[] = [
+  { value: "himalayas", label: "Himalayas", needsKey: false },
+  { value: "remoteok", label: "RemoteOK", needsKey: false },
+  { value: "remotive", label: "Remotive", needsKey: false },
+  { value: "arbeitnow", label: "Arbeitnow", needsKey: false },
+  { value: "findwork", label: "Findwork", needsKey: false },
+  { value: "weworkremotely", label: "We Work Remotely", needsKey: false },
+  { value: "hn_hiring", label: "HN Who's Hiring", needsKey: false },
+  { value: "adzuna", label: "Adzuna", needsKey: true },
+  { value: "jooble", label: "Jooble", needsKey: true },
+  { value: "greenhouse", label: "Greenhouse ATS", needsKey: true },
+  { value: "lever", label: "Lever ATS", needsKey: true },
+  { value: "ashby", label: "Ashby ATS", needsKey: true },
+];
+
 export default function ConnectorsPage() {
   useEffect(() => { document.title = "Connectors | MBPW"; }, []);
   const [connectors, setConnectors] = useState<Connector[]>([]);
@@ -138,7 +153,8 @@ export default function ConnectorsPage() {
 
   const handleAdd = useCallback(async () => {
     if (!newName.trim()) { showToast("Name is required"); return; }
-    await api.connectors.create({ name: newName, type: newType, platform: newPlatform || undefined });
+    if (!newPlatform) { showToast("Select a source"); return; }
+    await api.connectors.create({ name: newName, type: newType, platform: newPlatform });
     setShowAdd(false);
     setNewName("");
     setNewType("scraper");
@@ -395,12 +411,24 @@ export default function ConnectorsPage() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Platform (optional)</label>
-                    <Input value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} placeholder="e.g. upwork, indeed, linkedin" className="bg-white/[0.03] border-white/[0.08] text-white" />
+                    <label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2 block">Source <span className="text-red-400">*</span></label>
+                    <Select value={newPlatform} onValueChange={setNewPlatform}>
+                      <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white">
+                        <SelectValue placeholder="Select a data source" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#12131C] border-white/10 max-h-64">
+                        {CONNECTOR_SOURCES.map((s) => (
+                          <SelectItem key={s.value} value={s.value} className="capitalize">
+                            {s.label}{s.needsKey ? " (needs API key)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-zinc-600 mt-1.5">Must match a built-in backend source so sync can resolve and scan it.</p>
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button onClick={handleAdd} disabled={!newName.trim()} className="flex-1 bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white font-semibold h-11">
+                  <Button onClick={handleAdd} disabled={!newName.trim() || !newPlatform} className="flex-1 bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white font-semibold h-11">
                     <Plus className="w-4 h-4 mr-2" /> Create Connector
                   </Button>
                   <Button variant="ghost" onClick={() => setShowAdd(false)} className="text-zinc-500 hover:text-white h-11 px-4">Cancel</Button>
