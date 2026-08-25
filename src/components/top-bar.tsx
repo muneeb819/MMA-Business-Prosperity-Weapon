@@ -57,6 +57,7 @@ const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: stri
   follow_up: { icon: Target, color: "text-amber-400", bg: "bg-amber-500/10" },
   system: { icon: Bot, color: "text-purple-400", bg: "bg-purple-500/10" },
   agent: { icon: Bell, color: "text-slate-400", bg: "bg-slate-500/10" },
+  new_lead: { icon: Target, color: "text-cyan-400", bg: "bg-cyan-500/10" },
 }
 
 const RECENT_SEARCHES_KEY = "mbpw_recent_searches"
@@ -335,7 +336,7 @@ export function TopBar() {
               {recentNotifications.length > 0 ? (
                 <div className="py-1">
                   {recentNotifications.map((notif) => {
-                    const typeMeta = typeIconMap[notif.type]
+                    const typeMeta = typeIconMap[notif.type] || typeIconMap.agent
                     const TypeIcon = typeMeta.icon
                     return (
                       <DropdownMenuItem

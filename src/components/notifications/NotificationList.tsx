@@ -35,6 +35,7 @@ const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: stri
   follow_up: { icon: Target, color: "text-amber-400", bg: "bg-amber-500/10" },
   system: { icon: Bot, color: "text-purple-400", bg: "bg-purple-500/10" },
   agent: { icon: Bell, color: "text-slate-400", bg: "bg-slate-500/10" },
+  new_lead: { icon: Target, color: "text-cyan-400", bg: "bg-cyan-500/10" },
 };
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
@@ -51,6 +52,7 @@ const typeBadgeConfig: Record<Notification["type"], string> = {
   follow_up: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   system: "bg-purple-500/10 text-purple-400 border-purple-500/20",
   agent: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  new_lead: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
 };
 
 interface NotificationListProps {
@@ -105,7 +107,7 @@ const NotificationList = React.memo(function NotificationList({
       {filtered.length > 0 ? (
         <div className="space-y-2">
           {filtered.map((notif) => {
-            const typeMeta = typeIconMap[notif.type];
+            const typeMeta = typeIconMap[notif.type] || typeIconMap.agent;
             const priorityMeta = priorityConfig[notif.priority] || priorityConfig.low;
             const TypeIcon = typeMeta.icon;
 

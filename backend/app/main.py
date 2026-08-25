@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+import re
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.models.database import create_tables
 from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket, lead_sources, ai_teams
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -8,9 +10,24 @@ app = FastAPI(
     title="MMA Business Prosperity Weapon API",
     description="AI-powered Business Development Platform Backend",
     version="2.0.0",
-    redirect_slashes=True,
+    redirect_slashes=False,
 )
 
+
+class _TrailingSlashNormalizer(BaseHTTPMiddleware):
+    """Vercel strips trailing slashes before invoking the serverless function, which
+    made FastAPI's redirect_slashes loop forever. Normalize API resource roots
+    internally (no HTTP redirect) so /api/leads matches the /api/leads/ route."""
+
+    async def dispatch(self, request, call_next):
+        path = request.scope.get("path", "")
+        if re.fullmatch(r"/api/[\w-]+", path):
+            request.scope["path"] = path + "/"
+            request.scope["raw_path"] = (path + "/").encode()
+        return await call_next(request)
+
+
+app.add_middleware(_TrailingSlashNormalizer)
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(
     CORSMiddleware,

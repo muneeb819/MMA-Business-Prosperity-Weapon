@@ -70,7 +70,7 @@ export interface Agent {
 
 export interface Notification {
   id: string
-  type: 'high_value' | 'urgent' | 'government' | 'enterprise' | 'follow_up' | 'system' | 'agent'
+  type: 'high_value' | 'urgent' | 'government' | 'enterprise' | 'follow_up' | 'system' | 'agent' | 'new_lead'
   title: string
   message: string
   leadId?: string
