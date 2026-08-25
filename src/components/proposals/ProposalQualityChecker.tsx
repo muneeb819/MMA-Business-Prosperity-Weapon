@@ -31,7 +31,7 @@ interface ProposalQualityCheckerProps {
 const severityConfig: Record<string, { icon: typeof AlertTriangle; color: string; bg: string }> = {
   high: { icon: XCircle, color: "text-rose-400", bg: "bg-rose-500/10" },
   medium: { icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-500/10" },
-  low: { icon: AlertTriangle, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+  low: { icon: AlertTriangle, color: "text-indigo-400", bg: "bg-indigo-500/10" },
 }
 
 const ProposalQualityChecker = memo(function ProposalQualityChecker({ result, loading, onRunCheck }: ProposalQualityCheckerProps) {
@@ -39,7 +39,7 @@ const ProposalQualityChecker = memo(function ProposalQualityChecker({ result, lo
     return (
       <Card className="bg-zinc-900/80 border-zinc-800/50">
         <CardContent className="p-5 flex items-center justify-center h-24">
-          <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
           <span className="ml-3 text-sm text-zinc-400">Analyzing proposal quality...</span>
         </CardContent>
       </Card>
@@ -48,7 +48,7 @@ const ProposalQualityChecker = memo(function ProposalQualityChecker({ result, lo
 
   if (!result) {
     return (
-      <Button variant="outline" size="sm" onClick={onRunCheck} className="border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 h-9 text-xs">
+      <Button variant="outline" size="sm" onClick={onRunCheck} className="border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 h-9 text-xs">
         <Target className="w-3.5 h-3.5 mr-1.5" /> Check Quality
       </Button>
     )
@@ -68,7 +68,7 @@ const ProposalQualityChecker = memo(function ProposalQualityChecker({ result, lo
             </div>
           </div>
           {!result.passed && onRunCheck && (
-            <Button variant="ghost" size="sm" onClick={onRunCheck} className="text-xs text-cyan-400 h-7 px-2">
+            <Button variant="ghost" size="sm" onClick={onRunCheck} className="text-xs text-indigo-400 h-7 px-2">
               Recheck <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           )}

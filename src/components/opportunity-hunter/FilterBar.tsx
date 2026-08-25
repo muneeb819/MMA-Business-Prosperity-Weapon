@@ -50,7 +50,7 @@ function FilterBarInner({
             placeholder="Search discoveries..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 bg-zinc-900/50 border-zinc-800/50 focus-visible:ring-cyan-500/20"
+            className="pl-9 bg-zinc-900/50 border-zinc-800/50 focus-visible:ring-indigo-500/20"
           />
           {searchQuery && (
             <button
@@ -90,7 +90,7 @@ function FilterBarInner({
             className={cn(
               "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
               activePlatform === pf.id
-                ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30"
                 : "bg-zinc-800/30 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
             )}
           >
@@ -140,7 +140,7 @@ function FilterBarInner({
                 className={cn(
                   "px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200 border",
                   activeTechnology === tf.id
-                    ? "bg-violet-500/10 text-violet-400 border-violet-500/30"
+                    ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
                     : "bg-zinc-800/30 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
                 )}
               >

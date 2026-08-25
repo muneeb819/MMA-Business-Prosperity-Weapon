@@ -321,7 +321,7 @@ export default function LeadsPage() {
           <div className="px-6 pb-6">
             {loading && (
               <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
                 <span className="ml-3 text-sm text-zinc-400">Loading leads...</span>
               </div>
             )}

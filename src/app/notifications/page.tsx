@@ -156,8 +156,8 @@ export default function NotificationsPage() {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-slate-700/50 flex items-center justify-center">
-                    <Bell className="w-6 h-6 text-cyan-400" />
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/10 to-rose-500/10 border border-slate-700/50 flex items-center justify-center">
+                    <Bell className="w-6 h-6 text-indigo-400" />
                   </div>
                   {unreadCount > 0 && (
                     <div className="absolute -top-1.5 -right-1.5 z-10 w-5 h-5 rounded-full bg-rose-500 text-[10px] font-bold text-white flex items-center justify-center border-2 border-[#0a0a0f]">
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
                   className={cn(
                     "h-9 rounded-lg text-xs",
                     showPreferences
-                      ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
+                      ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-400"
                       : "border-slate-700/50 bg-[#12121a] text-slate-300 hover:bg-slate-800 hover:text-white"
                   )}
                 >
@@ -249,8 +249,8 @@ export default function NotificationsPage() {
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 bg-[#1a1a24] border border-cyan-500/30 rounded-xl shadow-xl shadow-cyan-500/10 animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
+          <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 bg-[#1a1a24] border border-indigo-500/30 rounded-xl shadow-xl shadow-indigo-500/10 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="text-sm text-slate-200 min-w-0">{toast}</span>
             <button
               onClick={() => {

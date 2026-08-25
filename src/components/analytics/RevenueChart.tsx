@@ -72,7 +72,7 @@ export const RevenueChart = memo(function RevenueChart({
       <Card className="bg-zinc-900/80 border-zinc-800/80 overflow-hidden">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2 min-w-0">
-            <TrendingUp className="w-5 h-5 text-violet-400 shrink-0" />
+            <TrendingUp className="w-5 h-5 text-rose-400 shrink-0" />
             <span className="truncate">Industry Trends</span>
           </CardTitle>
           <CardDescription className="truncate">Growth rates across key industry sectors</CardDescription>
@@ -94,7 +94,7 @@ export const RevenueChart = memo(function RevenueChart({
               </div>
               <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-600/80 to-violet-400/80 transition-all duration-700 ease-out pointer-events-none"
+                  className="h-full rounded-full bg-gradient-to-r from-rose-600/80 to-rose-400/80 transition-all duration-700 ease-out pointer-events-none"
                   style={{ width: `${Math.min(Math.abs(trend.growth) * 3, 100)}%` }}
                 />
               </div>

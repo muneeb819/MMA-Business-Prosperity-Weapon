@@ -64,9 +64,9 @@ function statusBadge(status: string) {
     case "simulated":
       return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30">Simulated</Badge>;
     case "logged":
-      return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30">Logged</Badge>;
+      return <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30">Logged</Badge>;
     case "replied":
-      return <Badge className="bg-violet-500/15 text-violet-400 border-violet-500/30">Replied</Badge>;
+      return <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30">Replied</Badge>;
     case "failed":
       return <Badge className="bg-red-500/15 text-red-400 border-red-500/30">Failed</Badge>;
     default:
@@ -229,7 +229,7 @@ export default function OutreachPage() {
               {[
                 { k: "Sent", v: stats?.sent ?? 0, c: "text-emerald-400" },
                 { k: "Simulated", v: stats?.simulated ?? 0, c: "text-amber-400" },
-                { k: "Replied", v: stats?.replied ?? 0, c: "text-violet-400" },
+                { k: "Replied", v: stats?.replied ?? 0, c: "text-rose-400" },
                 { k: "Total", v: stats?.total ?? 0, c: "text-indigo-400" },
               ].map((s) => (
                 <Card key={s.k} className="bg-zinc-900/60 border-white/[0.06]">
@@ -289,7 +289,7 @@ export default function OutreachPage() {
                         <span className="text-sm font-semibold text-white truncate">{l.company || l.client_name}</span>
                         {statusBadge(l.outreach_status)}
                         {l.email_source === "hunter" && (
-                          <Badge className="bg-violet-500/15 text-violet-400 border-violet-500/30">verified</Badge>
+                          <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30">verified</Badge>
                         )}
                         {l.email_source === "heuristic" && (
                           <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">heuristic</Badge>
@@ -347,7 +347,7 @@ export default function OutreachPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => markReply(r.id)}
-                          className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 text-xs shrink-0"
+                          className="text-rose-400 hover:text-violet-300 hover:bg-rose-500/10 text-xs shrink-0"
                         >
                           <Reply className="w-3.5 h-3.5 mr-1.5" /> Reply
                         </Button>

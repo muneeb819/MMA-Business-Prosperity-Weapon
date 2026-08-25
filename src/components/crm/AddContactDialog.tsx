@@ -13,7 +13,7 @@ interface AddContactDialogProps {
   onAdd: (contact: { firstName: string; lastName: string; email: string; phone: string; role: string; company: string; notes: string }) => void;
 }
 
-const inputClass = "bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50";
+const inputClass = "bg-zinc-800/60 border-zinc-700/80 focus:border-indigo-500/50";
 
 export const AddContactDialog = memo(function AddContactDialog({ open, onOpenChange, onAdd }: AddContactDialogProps) {
   const [firstName, setFirstName] = useState("");
@@ -30,7 +30,7 @@ export const AddContactDialog = memo(function AddContactDialog({ open, onOpenCha
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md z-50">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-cyan-400" />Add New Contact</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-indigo-400" />Add New Contact</DialogTitle>
           <DialogDescription className="text-zinc-500">Add a new contact to your CRM database.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-4">
@@ -66,7 +66,7 @@ export const AddContactDialog = memo(function AddContactDialog({ open, onOpenCha
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="ghost" onClick={() => { onOpenChange(false); reset(); }} className="text-zinc-400 hover:text-white">Cancel</Button>
-            <Button onClick={() => { onAdd({ firstName, lastName, email, phone, role, company, notes }); reset(); }} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+            <Button onClick={() => { onAdd({ firstName, lastName, email, phone, role, company, notes }); reset(); }} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500">
               <UserPlus className="w-4 h-4 mr-2" />Add Contact
             </Button>
           </div>

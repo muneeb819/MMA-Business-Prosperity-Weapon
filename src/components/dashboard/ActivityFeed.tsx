@@ -23,9 +23,9 @@ interface ActivityFeedProps {
 
 function getActivityIcon(action: string) {
   if (action.includes("lead"))
-    return <Users className="w-3.5 h-3.5 text-cyan-400" />
+    return <Users className="w-3.5 h-3.5 text-indigo-400" />
   if (action.includes("proposal"))
-    return <FileText className="w-3.5 h-3.5 text-violet-400" />
+    return <FileText className="w-3.5 h-3.5 text-rose-400" />
   if (action.includes("system"))
     return <Cpu className="w-3.5 h-3.5 text-amber-400" />
   if (action.includes("agent"))
@@ -44,7 +44,7 @@ const ActivityFeed = React.memo(function ActivityFeed({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20 shrink-0">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg shadow-rose-500/20 shrink-0">
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">

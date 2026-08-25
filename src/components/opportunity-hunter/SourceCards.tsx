@@ -15,9 +15,9 @@ function PulseDot({ status, className = "" }: { status: string; className?: stri
     offline: "bg-zinc-500",
     error: "bg-red-500",
     paused: "bg-zinc-500",
-    scanning: "bg-cyan-500",
-    analyzing: "bg-cyan-500",
-    generating: "bg-cyan-500",
+    scanning: "bg-indigo-500",
+    analyzing: "bg-indigo-500",
+    generating: "bg-indigo-500",
   } as const
 
   return (

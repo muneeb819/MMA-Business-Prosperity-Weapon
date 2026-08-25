@@ -89,7 +89,7 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
         {selectedLead && (
           <>
             <div className="relative p-6 pb-4 border-b border-white/[0.06]">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.03] to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/[0.03] to-transparent pointer-events-none" />
               <div className="relative">
                 <div className="flex items-start justify-between mb-3 gap-2">
                   <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -173,7 +173,7 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
 
                 <div>
                   <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
                     AI Analysis
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
@@ -204,13 +204,13 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                 {selectedLead.technologies && selectedLead.technologies.length > 0 && (
                   <div>
                     <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3 flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-blue-400" />
+                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
                       Technologies
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {selectedLead.technologies.map((tech) => (
                         <Badge key={tech} variant="outline" className="text-xs font-medium text-zinc-300 bg-white/[0.03] border-white/[0.08] px-3 py-1">
-                          <Cpu className="w-3 h-3 mr-1.5 text-blue-400" />
+                          <Cpu className="w-3 h-3 mr-1.5 text-indigo-400" />
                           {tech}
                         </Badge>
                       ))}
@@ -284,7 +284,7 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                   <div className="flex flex-wrap items-center gap-3">
                     <Button
                       onClick={() => onGenerateProposal(selectedLead)}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold h-11 shadow-lg shadow-blue-500/20"
+                      className="flex-1 bg-gradient-to-r from-indigo-600 to-rose-500 hover:from-indigo-500 hover:to-rose-400 text-white font-semibold h-11 shadow-lg shadow-indigo-500/20"
                     >
                       <FileText className="w-4 h-4 mr-2" />
                       Generate Proposal
@@ -338,7 +338,7 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                       variant="ghost"
                       size="sm"
                       onClick={() => onArchive(selectedLead.id)}
-                      className="text-zinc-500 hover:text-blue-400 text-xs h-9"
+                      className="text-zinc-500 hover:text-indigo-400 text-xs h-9"
                     >
                       <Archive className="w-3.5 h-3.5 mr-1" />
                       {archivedIds.has(selectedLead.id) ? "Unarchive" : "Archive"}

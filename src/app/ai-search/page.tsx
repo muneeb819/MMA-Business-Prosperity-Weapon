@@ -262,8 +262,8 @@ export default function AISearchPage() {
             <Breadcrumbs />
             <SearchHero query={query} onQueryChange={setQuery} onSearch={handleSearch} isSearching={isSearching} onSuggestedClick={handleSuggestedClick} />
             {aiInterpretation && (
-              <div className="bg-cyan-500/[0.06] border border-cyan-500/20 rounded-xl px-5 py-3 text-sm text-cyan-300/80">
-                <span className="font-semibold text-cyan-300">AI Understanding:</span> {aiInterpretation}
+              <div className="bg-indigo-500/[0.06] border border-indigo-500/20 rounded-xl px-5 py-3 text-sm text-indigo-300/80">
+                <span className="font-semibold text-indigo-300">AI Understanding:</span> {aiInterpretation}
               </div>
             )}
             <SearchFilters countryFilter={countryFilter} onCountryChange={setCountryFilter} budgetMin={budgetMin} onBudgetMinChange={setBudgetMin} budgetMax={budgetMax} onBudgetMaxChange={setBudgetMax} selectedTechs={selectedTechs} onToggleTech={toggleTech} onApplyFilters={handleApplyFilters} onClearFilters={handleClearFilters} totalActiveFilters={totalActiveFilters} availableTechs={Array.from(new Set(results.flatMap((l) => l.technologies))).sort()} />
@@ -279,8 +279,8 @@ export default function AISearchPage() {
       </div>
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 bg-[#1a1a24] border border-cyan-500/30 rounded-xl shadow-xl shadow-cyan-500/10 animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+          <div className="pointer-events-auto flex items-center gap-3 px-5 py-3 bg-[#1a1a24] border border-indigo-500/30 rounded-xl shadow-xl shadow-indigo-500/10 animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <Check className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="text-sm text-slate-200 min-w-0">{toast}</span>
             <button onClick={() => { setToast(null); if (toastTimer.current) clearTimeout(toastTimer.current); }} className="shrink-0 text-slate-500 hover:text-slate-300 transition-colors ml-2">
               <X className="w-3.5 h-3.5" />

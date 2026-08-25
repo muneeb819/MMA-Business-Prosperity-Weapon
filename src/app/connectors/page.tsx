@@ -46,16 +46,16 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 }
 
 const connectorTypeConfig: Record<string, { label: string; icon: any; color: string }> = {
-  scraper: { label: "Scraper", icon: Globe, color: "text-cyan-400" },
+  scraper: { label: "Scraper", icon: Globe, color: "text-indigo-400" },
   api: { label: "API", icon: Zap, color: "text-amber-400" },
   rss: { label: "RSS Feed", icon: Rss, color: "text-orange-400" },
-  webhook: { label: "Webhook", icon: Database, color: "text-violet-400" },
+  webhook: { label: "Webhook", icon: Database, color: "text-rose-400" },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   active: { label: "Active", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30" },
   inactive: { label: "Inactive", color: "text-zinc-400", bg: "bg-zinc-500/10 border-zinc-500/30" },
-  syncing: { label: "Syncing", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/30" },
+  syncing: { label: "Syncing", color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/30" },
   error: { label: "Error", color: "text-red-400", bg: "bg-red-500/10 border-red-500/30" },
 };
 
@@ -72,6 +72,11 @@ const CONNECTOR_SOURCES: { value: string; label: string; needsKey: boolean }[] =
   { value: "greenhouse", label: "Greenhouse ATS", needsKey: true },
   { value: "lever", label: "Lever ATS", needsKey: true },
   { value: "ashby", label: "Ashby ATS", needsKey: true },
+{ value: "upwork", label: "Upwork", needsKey: false },
+{ value: "workingnomads", label: "Working Nomads", needsKey: false },
+{ value: "jobspresso", label: "Jobspresso", needsKey: false },
+{ value: "remoteco", label: "Remote.co", needsKey: false },
+{ value: "europeremotely", label: "Europe Remotely", needsKey: false },
 ];
 
 export default function ConnectorsPage() {
@@ -205,7 +210,7 @@ export default function ConnectorsPage() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Leads Found</span>
-                    <Database className="w-4 h-4 text-blue-400" />
+                    <Database className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div className="text-3xl font-bold text-white">{totalLeads.toLocaleString()}</div>
                   <div className="text-xs text-zinc-500 mt-1">across all sources</div>
@@ -234,7 +239,7 @@ export default function ConnectorsPage() {
                           {SOURCE_LIST.length} active
                         </Badge>
                         {liveLeadCount > 0 && (
-                          <Badge variant="outline" className="text-[10px] text-blue-400 bg-blue-500/10 border-blue-500/30">
+                          <Badge variant="outline" className="text-[10px] text-indigo-400 bg-indigo-500/10 border-indigo-500/30">
                             {liveLeadCount} leads cached
                           </Badge>
                         )}

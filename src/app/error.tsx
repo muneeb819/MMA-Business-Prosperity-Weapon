@@ -20,7 +20,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <p className="text-zinc-400 text-sm">An unexpected error occurred. The team has been notified.</p>
         {error.digest && <p className="text-[10px] text-zinc-600 font-mono">Error ID: {error.digest}</p>}
         <div className="flex items-center justify-center gap-3">
-          <Button onClick={reset} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20">
+          <Button onClick={reset} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white shadow-lg shadow-indigo-500/20">
             <RefreshCw className="w-4 h-4 mr-2" /> Try Again
           </Button>
           <Button variant="outline" onClick={() => window.location.href = "/"} className="border-zinc-800 hover:bg-zinc-800/50">

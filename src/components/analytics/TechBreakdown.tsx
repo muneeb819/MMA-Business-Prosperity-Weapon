@@ -42,7 +42,7 @@ function SortButton({ label, field, current, onToggle }: { label: string; field:
       )}
     >
       {label}
-      <ArrowUpDown className={cn("w-3 h-3", active && "text-violet-400")} />
+      <ArrowUpDown className={cn("w-3 h-3", active && "text-rose-400")} />
     </button>
   );
 }
@@ -106,7 +106,7 @@ export const TechBreakdown = memo(function TechBreakdown({
           {techItems.length > 3 && (
             <button
               onClick={onToggleShowAllTech}
-              className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40 mt-3"
+              className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-zinc-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-zinc-800/40 mt-3"
             >
               {showAllTech ? (
                 <>Show Less <ChevronUp className="w-3 h-3" /></>
@@ -122,7 +122,7 @@ export const TechBreakdown = memo(function TechBreakdown({
         <CardHeader>
           <div className="flex items-center justify-between min-w-0">
             <CardTitle className="text-lg flex items-center gap-2 min-w-0">
-              <Zap className="w-5 h-5 text-blue-400 shrink-0" />
+              <Zap className="w-5 h-5 text-indigo-400 shrink-0" />
               <span className="truncate">Leads by Platform</span>
             </CardTitle>
             <div className="flex items-center gap-1 shrink-0">
@@ -141,7 +141,7 @@ export const TechBreakdown = memo(function TechBreakdown({
               <span className="text-sm font-medium text-zinc-300 w-28 shrink-0 truncate">{platform.platform}</span>
               <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative min-w-0">
                 <div
-                  className="h-full rounded-lg bg-gradient-to-r from-blue-600/80 to-blue-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3 pointer-events-none"
+                  className="h-full rounded-lg bg-gradient-to-r from-indigo-600/80 to-rose-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3 pointer-events-none"
                   style={{ width: `${(platform.leads / maxPlatformLeads) * 100}%` }}
                 >
                   <span className="text-xs font-semibold text-white drop-shadow-lg">{platform.leads}</span>
@@ -152,7 +152,7 @@ export const TechBreakdown = memo(function TechBreakdown({
           {platformItems.length > 4 && (
             <button
               onClick={onToggleShowAllPlatforms}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40"
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-zinc-800/40"
             >
               {showAllPlatforms ? (
                 <>Show Less <ChevronUp className="w-3 h-3" /></>

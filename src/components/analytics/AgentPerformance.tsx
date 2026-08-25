@@ -29,7 +29,7 @@ export const AgentPerformance = memo(function AgentPerformance({
     <Card className="bg-zinc-900/80 border-zinc-800/80 overflow-hidden">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2 min-w-0">
-          <Brain className="w-5 h-5 text-violet-400 shrink-0" />
+          <Brain className="w-5 h-5 text-rose-400 shrink-0" />
           <span className="truncate">AI Agent Performance</span>
         </CardTitle>
         <CardDescription className="truncate">Performance metrics for your AI-powered agents</CardDescription>
@@ -41,10 +41,10 @@ export const AgentPerformance = memo(function AgentPerformance({
               key={agent.agent}
               className="p-5 rounded-xl bg-zinc-800/20 border border-zinc-800/60 hover:border-zinc-700 hover:bg-zinc-800/40 transition-all duration-300 group overflow-hidden relative"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-purple-500/5 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-rose-500/5 pointer-events-none" />
               <div className="flex items-center gap-3 mb-4 min-w-0 relative">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/20 flex items-center justify-center group-hover:from-violet-500/30 group-hover:to-purple-500/30 transition-all shrink-0">
-                  <Brain className="w-5 h-5 text-violet-400" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500/20 to-rose-500/20 border border-rose-500/20 flex items-center justify-center group-hover:from-rose-500/30 group-hover:to-rose-500/30 transition-all shrink-0">
+                  <Brain className="w-5 h-5 text-rose-400" />
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-sm font-semibold text-white truncate">{agent.agent}</h4>
@@ -55,11 +55,11 @@ export const AgentPerformance = memo(function AgentPerformance({
                 <div>
                   <div className="flex items-center justify-between mb-1.5 min-w-0">
                     <span className="text-xs text-zinc-500 shrink-0">Efficiency</span>
-                    <span className="text-xs font-semibold text-violet-400 shrink-0">{agent.efficiency}%</span>
+                    <span className="text-xs font-semibold text-rose-400 shrink-0">{agent.efficiency}%</span>
                   </div>
                   <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-violet-600/80 to-purple-400/80 transition-all duration-700 ease-out pointer-events-none"
+                      className="h-full rounded-full bg-gradient-to-r from-rose-600/80 to-rose-400/80 transition-all duration-700 ease-out pointer-events-none"
                       style={{ width: `${agent.efficiency}%` }}
                     />
                   </div>
@@ -77,7 +77,7 @@ export const AgentPerformance = memo(function AgentPerformance({
         {totalCount > 3 && (
           <button
             onClick={onToggleShowAll}
-            className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40 mt-4"
+            className="w-full flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-zinc-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-zinc-800/40 mt-4"
           >
             {showAll ? (
               <>Show Less <ChevronUp className="w-3 h-3" /></>

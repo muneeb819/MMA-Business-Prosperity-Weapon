@@ -26,8 +26,8 @@ function PulseDot({
     idle: "bg-amber-500",
     offline: "bg-zinc-500",
     error: "bg-red-500",
-    searching: "bg-cyan-500",
-    scanning: "bg-cyan-500",
+    searching: "bg-indigo-500",
+    scanning: "bg-indigo-500",
   } as const
 
   return (
@@ -52,15 +52,15 @@ function TypingDots() {
   return (
     <span className="inline-flex gap-0.5 ml-1">
       <span
-        className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce"
+        className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"
         style={{ animationDelay: "0ms" }}
       />
       <span
-        className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce"
+        className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"
         style={{ animationDelay: "150ms" }}
       />
       <span
-        className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce"
+        className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"
         style={{ animationDelay: "300ms" }}
       />
     </span>
@@ -116,7 +116,7 @@ const AgentFleet = React.memo(function AgentFleet({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 shrink-0">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-rose-600 shadow-lg shadow-indigo-500/20 shrink-0">
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
@@ -190,7 +190,7 @@ const AgentFleet = React.memo(function AgentFleet({
                 {(agent.status === "scanning" ||
                   agent.status === "analyzing" ||
                   agent.status === "generating") && (
-                  <div className="mt-2 text-xs text-cyan-400 font-medium flex items-center gap-1">
+                  <div className="mt-2 text-xs text-indigo-400 font-medium flex items-center gap-1">
                     <span>Working</span>
                     <TypingDots />
                   </div>
@@ -213,7 +213,7 @@ const AgentFleet = React.memo(function AgentFleet({
             <Button
               variant="ghost"
               size="sm"
-              className="text-cyan-400 hover:text-cyan-300 text-xs"
+              className="text-indigo-400 hover:text-indigo-300 text-xs"
               onClick={() => onToggleExpanded(true)}
             >
               Show all {filteredAgents.length} agents{" "}

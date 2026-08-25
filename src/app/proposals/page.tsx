@@ -241,14 +241,14 @@ export default function ProposalsPage() {
 <style>
 @page{size:A4;margin:20mm 18mm}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1a1a2e;margin:0;padding:0;line-height:1.6;font-size:11pt}
-.header{border-bottom:3px solid #3b82f6;padding-bottom:16px;margin-bottom:24px}
+.header{border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px}
 .header h1{font-size:22pt;color:#1a1a2e;margin:0 0 6px 0}
 .header .meta{color:#6b7280;font-size:10pt}
 .header .meta span{margin-right:16px}
-.status{display:inline-block;background:#dbeafe;color:#1e40af;padding:2px 10px;border-radius:4px;font-size:9pt;font-weight:600;text-transform:uppercase}
+.status{display:inline-block;background:#e0e7ff;color:#3730a3;padding:2px 10px;border-radius:4px;font-size:9pt;font-weight:600;text-transform:uppercase}
 .budget{float:right;font-size:16pt;font-weight:700;color:#059669}
 .section{margin-bottom:20px;page-break-inside:avoid}
-.section h2{font-size:13pt;color:#3b82f6;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin:0 0 10px 0}
+.section h2{font-size:13pt;color:#6366f1;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin:0 0 10px 0}
 .section .content{color:#374151;white-space:pre-wrap;font-size:10.5pt}
 .footer{border-top:2px solid #e5e7eb;padding-top:12px;margin-top:30px;text-align:center;color:#9ca3af;font-size:8pt}
 @media print{body{margin:0}}
@@ -305,8 +305,9 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
         const proposal = mapApiProposalToMock(result);
         const updated = [proposal, ...proposals];
         persistProposals(updated);
-        showToast("Proposal generated successfully!", "success");
+        setSelectedProposal(proposal);
         setShowGenerateDialog(false);
+        showToast("Proposal generated successfully!", "success");
       }
     } catch (e: any) {
       showToast(`Generation failed: ${e?.message || "API unavailable"}`, "error");
@@ -334,7 +335,7 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
         <ScrollArea className="flex-1 px-6 pb-6">
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
               <span className="ml-3 text-sm text-zinc-400">Loading proposals...</span>
             </div>
           )}

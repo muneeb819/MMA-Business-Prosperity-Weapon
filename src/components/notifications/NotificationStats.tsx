@@ -42,7 +42,7 @@ const NotificationStats = React.memo(function NotificationStats({
 }: NotificationStatsProps) {
   const statItems: StatItem[] = [
     { label: "Total", value: stats.total, icon: Bell, color: "text-slate-400", bg: "from-slate-500/5 to-slate-800/5", filterType: "all" },
-    { label: "Unread", value: stats.unread, icon: Eye, color: "text-cyan-400", bg: "from-cyan-500/5 to-cyan-800/5", filterType: "unread" },
+    { label: "Unread", value: stats.unread, icon: Eye, color: "text-indigo-400", bg: "from-indigo-500/5 to-indigo-800/5", filterType: "unread" },
     { label: "High Value", value: stats.highValue, icon: DollarSign, color: "text-emerald-400", bg: "from-emerald-500/5 to-emerald-800/5", filterType: "high_value" },
     { label: "Urgent", value: stats.urgent, icon: AlertTriangle, color: "text-rose-400", bg: "from-rose-500/5 to-rose-800/5", filterType: "urgent" },
   ];
@@ -57,7 +57,7 @@ const NotificationStats = React.memo(function NotificationStats({
             "border-slate-800/50 bg-gradient-to-br cursor-pointer transition-all duration-200 hover:scale-[1.02] overflow-hidden",
             stat.bg,
             filter === stat.filterType
-              ? "ring-1 ring-cyan-500/30 shadow-lg shadow-cyan-500/5"
+              ? "ring-1 ring-indigo-500/30 shadow-lg shadow-indigo-500/5"
               : "hover:border-slate-700/50"
           )}
         >

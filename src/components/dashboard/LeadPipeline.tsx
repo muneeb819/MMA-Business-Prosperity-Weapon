@@ -189,7 +189,7 @@ const LeadPipeline = React.memo(function LeadPipeline({
                 className={cn(
                   "p-3 rounded-xl bg-zinc-800/30 border transition-all cursor-pointer group",
                   selectedLeadId === lead.id
-                    ? "border-cyan-500/50 bg-zinc-800/50"
+                    ? "border-indigo-500/50 bg-zinc-800/50"
                     : "border-zinc-800/50 hover:border-zinc-700/50"
                 )}
                 onClick={() =>
@@ -253,7 +253,7 @@ const LeadPipeline = React.memo(function LeadPipeline({
             )}
           </div>
           {selectedLead && (
-            <div className="mt-3 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-3">
+            <div className="mt-3 p-4 rounded-xl border border-indigo-500/30 bg-indigo-500/5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-sm truncate">
@@ -319,7 +319,7 @@ const LeadPipeline = React.memo(function LeadPipeline({
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20 shrink-0">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-rose-600 shadow-lg shadow-indigo-500/20 shrink-0">
                 <Globe className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
@@ -351,7 +351,7 @@ const LeadPipeline = React.memo(function LeadPipeline({
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-full border transition-all cursor-pointer group",
                     filterSource === source.name
-                      ? "bg-cyan-500/10 border-cyan-500/30"
+                      ? "bg-indigo-500/10 border-indigo-500/30"
                       : "bg-zinc-800/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800"
                   )}
                   onClick={() => {

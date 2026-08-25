@@ -17,10 +17,10 @@ import type { KnowledgeEntry } from "@/lib/types"
 
 const typeConfig: Record<string, { label: string; color: string; bg: string; icon: typeof BookOpen }> = {
   playbook: { label: "Playbook", color: "text-emerald-400", bg: "bg-emerald-500/10", icon: BookOpen },
-  industry_knowledge: { label: "Industry Knowledge", color: "text-cyan-400", bg: "bg-cyan-500/10", icon: FileText },
-  past_win: { label: "Past Win", color: "text-blue-400", bg: "bg-blue-500/10", icon: TrendingUp },
+  industry_knowledge: { label: "Industry Knowledge", color: "text-indigo-400", bg: "bg-indigo-500/10", icon: FileText },
+  past_win: { label: "Past Win", color: "text-indigo-400", bg: "bg-indigo-500/10", icon: TrendingUp },
   past_loss: { label: "Past Loss", color: "text-amber-400", bg: "bg-amber-500/10", icon: AlertCircle },
-  client_history: { label: "Client History", color: "text-violet-400", bg: "bg-violet-500/10", icon: Clock },
+  client_history: { label: "Client History", color: "text-rose-400", bg: "bg-rose-500/10", icon: Clock },
 }
 
 export default function KnowledgePage() {
@@ -76,7 +76,7 @@ export default function KnowledgePage() {
                         <Breadcrumbs />
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-slate-700/50 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/10 to-indigo-500/10 border border-slate-700/50 flex items-center justify-center">
                   <BookOpen className="w-6 h-6 text-emerald-400" />
                 </div>
                 <div>
@@ -97,9 +97,9 @@ export default function KnowledgePage() {
                 />
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={() => setTypeFilter("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", typeFilter === "all" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-[#12121a] text-slate-400 border border-slate-800/50 hover:border-slate-700/50")}>All ({entries.length})</button>
+                <button onClick={() => setTypeFilter("all")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", typeFilter === "all" ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "bg-[#12121a] text-slate-400 border border-slate-800/50 hover:border-slate-700/50")}>All ({entries.length})</button>
                 {allTypes.map((t) => (
-                  <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", typeFilter === t ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" : "bg-[#12121a] text-slate-400 border border-slate-800/50 hover:border-slate-700/50")}>
+                  <button key={t} onClick={() => setTypeFilter(t)} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-all", typeFilter === t ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" : "bg-[#12121a] text-slate-400 border border-slate-800/50 hover:border-slate-700/50")}>
                     {typeConfig[t]?.label || t} ({typeCounts[t] || 0})
                   </button>
                 ))}
@@ -108,7 +108,7 @@ export default function KnowledgePage() {
 
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+                <Loader2 className="w-6 h-6 text-indigo-400 animate-spin" />
                 <span className="ml-3 text-sm text-slate-500">Loading knowledge base...</span>
               </div>
             ) : filtered.length > 0 ? (
@@ -122,7 +122,7 @@ export default function KnowledgePage() {
                       onClick={() => setSelected(selected?.id === entry.id ? null : entry)}
                       className={cn(
                         "bg-[#12121a] border-slate-800/50 hover:border-slate-700/50 transition-all cursor-pointer overflow-hidden",
-                        selected?.id === entry.id && "border-cyan-500/40 ring-1 ring-cyan-500/20"
+                        selected?.id === entry.id && "border-indigo-500/40 ring-1 ring-indigo-500/20"
                       )}
                     >
                       <CardContent className="p-4">
@@ -159,7 +159,7 @@ export default function KnowledgePage() {
             )}
 
             {selected && (
-              <Card className="bg-[#12121a] border-cyan-500/20 ring-1 ring-cyan-500/10 overflow-hidden">
+              <Card className="bg-[#12121a] border-indigo-500/20 ring-1 ring-indigo-500/10 overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3">

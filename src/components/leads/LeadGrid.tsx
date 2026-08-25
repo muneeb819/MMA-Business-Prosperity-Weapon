@@ -34,12 +34,12 @@ const sourceColors: Record<string, string> = {
   remoteok: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
   remotive: "text-orange-400 bg-orange-500/10 border-orange-500/30",
   greenhouse: "text-green-400 bg-green-500/10 border-green-500/30",
-  lever: "text-blue-400 bg-blue-500/10 border-blue-500/30",
-  ashby: "text-violet-400 bg-violet-500/10 border-violet-500/30",
+  lever: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
+  ashby: "text-rose-400 bg-rose-500/10 border-rose-500/30",
   hn_hiring: "text-amber-400 bg-amber-500/10 border-amber-500/30",
   arbeitnow: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
-  findwork: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
-  weworkremotely: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+  findwork: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
+  weworkremotely: "text-rose-400 bg-rose-500/10 border-rose-500/30",
   adzuna: "text-rose-400 bg-rose-500/10 border-rose-500/30",
   jooble: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
 };
@@ -92,7 +92,7 @@ const LeadGrid = memo(function LeadGrid({
                     </div>
                   </div>
 
-                  <h3 className="text-white font-semibold text-[15px] leading-tight mb-1 group-hover:text-blue-300 transition-colors line-clamp-2">
+                  <h3 className="text-white font-semibold text-[15px] leading-tight mb-1 group-hover:text-indigo-300 transition-colors line-clamp-2">
                     {lead.title}
                   </h3>
                   <div className="flex items-center gap-2 text-zinc-500 text-xs mb-3">
@@ -172,7 +172,7 @@ const LeadGrid = memo(function LeadGrid({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-white font-semibold text-sm leading-tight group-hover:text-blue-300 transition-colors truncate">
+                    <h3 className="text-white font-semibold text-sm leading-tight group-hover:text-indigo-300 transition-colors truncate">
                       {lead.title}
                     </h3>
                     <div className="flex items-center gap-2 text-zinc-500 text-xs mt-1">

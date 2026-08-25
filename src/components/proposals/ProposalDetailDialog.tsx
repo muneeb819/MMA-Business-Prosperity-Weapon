@@ -173,7 +173,7 @@ function ProposalDetailDialogInner({
           {selectedProposal && (
             <>
               <div className="relative p-6 pb-4 border-b border-white/[0.06]">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-500/[0.03] to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/[0.03] to-transparent pointer-events-none" />
                 <div className="relative">
                   <div className="flex items-start justify-between mb-3 gap-3">
                     <Badge variant="outline" className={cn("text-[11px] font-semibold border px-2.5 py-1 shrink-0", proposalStatusConfig[selectedProposal.status]?.bg, proposalStatusConfig[selectedProposal.status]?.color)}>
@@ -226,7 +226,7 @@ function ProposalDetailDialogInner({
                   {detailTabs.map((tab) => (
                     <TabsContent key={tab.value} value={tab.value} className="p-6 mt-0">
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="text-blue-400">{tab.icon}</span>
+                        <span className="text-indigo-400">{tab.icon}</span>
                         <h3 className="text-white font-semibold text-sm">{tab.title}</h3>
                       </div>
                       <div className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] overflow-hidden break-words">
@@ -239,7 +239,7 @@ function ProposalDetailDialogInner({
                 {selectedProposal.portfolioSuggestions && selectedProposal.portfolioSuggestions.length > 0 && (
                   <div className="px-6 pb-4 border-t border-white/[0.06] pt-4">
                     <h4 className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-3 flex items-center gap-2">
-                      <LayoutTemplate className="w-3.5 h-3.5 text-blue-400" />
+                      <LayoutTemplate className="w-3.5 h-3.5 text-indigo-400" />
                       Related Portfolio Projects
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -262,7 +262,7 @@ function ProposalDetailDialogInner({
                   {selectedProposal.status === "draft" && (
                     <Button
                       onClick={() => handleSubmitProposal(selectedProposal.id)}
-                      className="flex-1 min-w-[140px] bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold h-11 shadow-lg shadow-blue-500/20"
+                      className="flex-1 min-w-[140px] bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white font-semibold h-11 shadow-lg shadow-indigo-500/20"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Submit Proposal
@@ -297,7 +297,7 @@ function ProposalDetailDialogInner({
                     variant="outline"
                     onClick={handleQualityCheck}
                     disabled={qualityLoading}
-                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-cyan-400 h-11"
+                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-indigo-400 h-11"
                   >
                     {qualityLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Shield className="w-4 h-4 mr-2" />}
                     Check Quality
@@ -310,7 +310,7 @@ function ProposalDetailDialogInner({
                       setEmailMessage("");
                       setShowEmailDialog(true);
                     }}
-                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-blue-400 h-11"
+                    className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-indigo-400 h-11"
                   >
                     <Mail className="w-4 h-4 mr-2" />
                     Send Email
@@ -331,8 +331,8 @@ function ProposalDetailDialogInner({
         <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-lg z-50">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-blue-500/20">
-                <Sparkles className="w-5 h-5 text-blue-400" />
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20">
+                <Sparkles className="w-5 h-5 text-indigo-400" />
               </div>
               AI Proposal Generator
             </DialogTitle>
@@ -377,12 +377,12 @@ function ProposalDetailDialogInner({
                               className={cn(
                                 "w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-start gap-3 group/item",
                                 genLeadId === lead.id
-                                  ? "bg-blue-500/10 border border-blue-500/30"
+                                  ? "bg-indigo-500/10 border border-indigo-500/30"
                                   : "hover:bg-white/[0.04] border border-transparent"
                               )}
                             >
                               <div className="flex-1 min-w-0">
-                                <p className={cn("text-sm font-medium truncate", genLeadId === lead.id ? "text-blue-300" : "text-white")}>{lead.title}</p>
+                                <p className={cn("text-sm font-medium truncate", genLeadId === lead.id ? "text-indigo-300" : "text-white")}>{lead.title}</p>
                                 <p className="text-xs text-zinc-500 truncate mt-0.5">{lead.company} · {lead.location}</p>
                                 {lead.tags.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
@@ -394,7 +394,7 @@ function ProposalDetailDialogInner({
                                 )}
                               </div>
                               {genLeadId === lead.id && (
-                                <div className="shrink-0 mt-1"><Check className="w-4 h-4 text-blue-400" /></div>
+                                <div className="shrink-0 mt-1"><Check className="w-4 h-4 text-indigo-400" /></div>
                               )}
                             </button>
                           ))}
@@ -419,11 +419,11 @@ function ProposalDetailDialogInner({
                     className={cn(
                       "p-3 min-h-9 rounded-xl border text-left transition-all duration-300 overflow-hidden",
                       genTone === tone.value
-                        ? "border-blue-500/40 bg-blue-500/[0.08] shadow-lg shadow-blue-500/10"
+                        ? "border-indigo-500/40 bg-indigo-500/[0.08] shadow-lg shadow-indigo-500/10"
                         : "border-white/[0.06] bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
                     )}
                   >
-                    <p className={cn("text-sm font-semibold", genTone === tone.value ? "text-blue-300" : "text-white")}>{tone.label}</p>
+                    <p className={cn("text-sm font-semibold", genTone === tone.value ? "text-indigo-300" : "text-white")}>{tone.label}</p>
                     <p className="text-[10px] text-zinc-600 mt-0.5">{tone.description}</p>
                   </button>
                 ))}
@@ -436,7 +436,7 @@ function ProposalDetailDialogInner({
                 value={genInstructions}
                 onChange={(e) => setGenInstructions(e.target.value)}
                 placeholder="Any specific requirements, emphasis areas, or special instructions for the AI..."
-                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 min-h-[100px] resize-none focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 min-h-[100px] resize-none focus:border-indigo-500/50 focus:ring-indigo-500/20"
               />
             </div>
           </div>
@@ -445,7 +445,7 @@ function ProposalDetailDialogInner({
             <Button
               onClick={handleGenerate}
               disabled={!genLeadId || isGenerating}
-              className="flex-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white font-semibold h-11 shadow-lg shadow-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 bg-gradient-to-r from-indigo-600 via-rose-500 to-rose-600 hover:from-indigo-500 hover:via-rose-400 hover:to-rose-500 text-white font-semibold h-11 shadow-lg shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isGenerating ? (
                 <>
@@ -470,8 +470,8 @@ function ProposalDetailDialogInner({
         <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-lg z-50">
           <DialogHeader>
             <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 border border-blue-500/20">
-                <Mail className="w-5 h-5 text-blue-400" />
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20">
+                <Mail className="w-5 h-5 text-indigo-400" />
               </div>
               Send Proposal via Email
             </DialogTitle>
@@ -487,7 +487,7 @@ function ProposalDetailDialogInner({
                 value={emailRecipient}
                 onChange={(e) => setEmailRecipient(e.target.value)}
                 placeholder="client@company.com"
-                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-blue-500/50"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-indigo-500/50"
               />
             </div>
             <div>
@@ -496,7 +496,7 @@ function ProposalDetailDialogInner({
                 value={emailSubject}
                 onChange={(e) => setEmailSubject(e.target.value)}
                 placeholder="Proposal: {title}"
-                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-blue-500/50"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 h-11 focus:border-indigo-500/50"
               />
             </div>
             <div>
@@ -505,7 +505,7 @@ function ProposalDetailDialogInner({
                 value={emailMessage}
                 onChange={(e) => setEmailMessage(e.target.value)}
                 placeholder="Add a personal note to include in the email body..."
-                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 min-h-[80px] resize-none focus:border-blue-500/50 focus:ring-blue-500/20"
+                className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-700 min-h-[80px] resize-none focus:border-indigo-500/50 focus:ring-indigo-500/20"
               />
             </div>
           </div>
@@ -514,7 +514,7 @@ function ProposalDetailDialogInner({
             <Button
               onClick={handleSendEmail}
               disabled={!emailRecipient.trim() || isSending}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-semibold h-11 shadow-lg shadow-blue-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white font-semibold h-11 shadow-lg shadow-indigo-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSending ? (
                 <>
@@ -542,7 +542,7 @@ function ProposalDetailDialogInner({
             className={cn(
               "pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl bg-zinc-900/80 animate-in slide-in-from-bottom-5 fade-in duration-300",
               toast.type === "success" && "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
-              toast.type === "info" && "bg-blue-500/10 border-blue-500/30 text-blue-300",
+              toast.type === "info" && "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
               toast.type === "error" && "bg-red-500/10 border-red-500/30 text-red-300"
             )}
           >

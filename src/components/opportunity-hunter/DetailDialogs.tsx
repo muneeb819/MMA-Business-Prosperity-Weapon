@@ -58,7 +58,7 @@ function DetailDialogsInner({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
                     <p className="text-xs text-zinc-500">Leads Found</p>
-                    <p className="text-xl font-bold text-cyan-400">{selectedSource.leadsFound}</p>
+                    <p className="text-xl font-bold text-indigo-400">{selectedSource.leadsFound}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
                     <p className="text-xs text-zinc-500">Status</p>
@@ -66,7 +66,7 @@ function DetailDialogsInner({
                   </div>
                   <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
                     <p className="text-xs text-zinc-500">Accuracy</p>
-                    <p className="text-xl font-bold text-violet-400">{selectedSource.metrics.accuracy}%</p>
+                    <p className="text-xl font-bold text-rose-400">{selectedSource.metrics.accuracy}%</p>
                   </div>
                   <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-800">
                     <p className="text-xs text-zinc-500">Speed</p>
@@ -133,7 +133,7 @@ function DetailDialogsInner({
                     {selectedDiscovery.contactEmail && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">Email</span>
-                        <a href={`mailto:${selectedDiscovery.contactEmail}`} className="text-cyan-400 hover:underline">{selectedDiscovery.contactEmail}</a>
+                        <a href={`mailto:${selectedDiscovery.contactEmail}`} className="text-indigo-400 hover:underline">{selectedDiscovery.contactEmail}</a>
                       </div>
                     )}
                     {selectedDiscovery.contactPhone && (
@@ -145,31 +145,31 @@ function DetailDialogsInner({
                     {selectedDiscovery.website && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">Website</span>
-                        <a href={selectedDiscovery.website} target="_blank" rel="noopener" className="text-cyan-400 hover:underline truncate max-w-[200px]">{selectedDiscovery.website}</a>
+                        <a href={selectedDiscovery.website} target="_blank" rel="noopener" className="text-indigo-400 hover:underline truncate max-w-[200px]">{selectedDiscovery.website}</a>
                       </div>
                     )}
                     {selectedDiscovery.contactLinkedIn && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">LinkedIn</span>
-                        <a href={selectedDiscovery.contactLinkedIn} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Company Page</a>
+                        <a href={selectedDiscovery.contactLinkedIn} target="_blank" rel="noopener" className="text-indigo-400 hover:underline">Company Page</a>
                       </div>
                     )}
                     {selectedDiscovery.contactFacebook && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">Facebook</span>
-                        <a href={selectedDiscovery.contactFacebook} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Company Page</a>
+                        <a href={selectedDiscovery.contactFacebook} target="_blank" rel="noopener" className="text-indigo-400 hover:underline">Company Page</a>
                       </div>
                     )}
                     {selectedDiscovery.contactTwitter && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">Twitter</span>
-                        <a href={selectedDiscovery.contactTwitter} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Profile</a>
+                        <a href={selectedDiscovery.contactTwitter} target="_blank" rel="noopener" className="text-indigo-400 hover:underline">Profile</a>
                       </div>
                     )}
                     {selectedDiscovery.contactInstagram && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">Instagram</span>
-                        <a href={selectedDiscovery.contactInstagram} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Profile</a>
+                        <a href={selectedDiscovery.contactInstagram} target="_blank" rel="noopener" className="text-indigo-400 hover:underline">Profile</a>
                       </div>
                     )}
                     {selectedDiscovery.contactWhatsApp && selectedDiscovery.contactPhone && (
@@ -181,7 +181,7 @@ function DetailDialogsInner({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
-                  <Button className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+                  <Button className="flex-1 bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white"
                     onClick={() => window.open(selectedDiscovery.website, "_blank")}>
                     <ExternalLink className="w-4 h-4 mr-2" />Open Website
                   </Button>
@@ -240,7 +240,7 @@ function DetailDialogsInner({
                 </SelectContent>
               </Select>
             </div>
-            <Button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+            <Button className="w-full bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white"
               onClick={onConfigSave}>
               Done
             </Button>

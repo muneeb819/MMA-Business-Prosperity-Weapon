@@ -50,7 +50,7 @@ const LeadFilters = memo(function LeadFilters({
             placeholder="Search leads by title, client, or company..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-600 focus:border-blue-500/50 focus:ring-blue-500/20 h-11"
+            className="pl-10 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-600 focus:border-indigo-500/50 focus:ring-indigo-500/20 h-11"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>

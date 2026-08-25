@@ -20,15 +20,15 @@ import {
 } from "lucide-react"
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, color: "from-blue-500 to-cyan-400" },
-  { name: "Opportunity Hunter", href: "/opportunity-hunter", icon: Globe, color: "from-cyan-500 to-blue-500" },
-  { name: "AI Teams", href: "/ai-teams", icon: Bot, color: "from-violet-500 to-purple-500" },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, color: "from-indigo-500 to-indigo-400" },
+  { name: "Opportunity Hunter", href: "/opportunity-hunter", icon: Globe, color: "from-indigo-500 to-rose-500" },
+  { name: "AI Teams", href: "/ai-teams", icon: Bot, color: "from-rose-500 to-rose-500" },
   { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-rose-400" },
-  { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
+  { name: "Proposals", href: "/proposals", icon: FileText, color: "from-rose-500 to-rose-400" },
   { name: "Connectors", href: "/connectors", icon: Cable, color: "from-indigo-500 to-rose-500" },
   { name: "Outreach", href: "/outreach", icon: Send, color: "from-indigo-600 to-rose-500" },
-  { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
-  { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },
+  { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-rose-400" },
+  { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-rose-500 to-rose-400" },
   { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-rose-400" },
 ]
 
@@ -135,7 +135,7 @@ export function Sidebar() {
                 )}
               >
                 {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-blue-500 to-purple-500" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-indigo-500 to-rose-500" />
                 )}
                 <div className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg shrink-0 transition-all duration-200",
@@ -161,7 +161,7 @@ export function Sidebar() {
             {expanded ? (
               <div className="space-y-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                  <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-indigo-500 to-rose-500 flex items-center justify-center">
                     <Bot className="h-3.5 w-3.5 text-white" />
                   </div>
                   <span className="text-xs font-semibold text-gradient">AI Agents</span>
@@ -172,7 +172,7 @@ export function Sidebar() {
                     <span className="text-[11px] text-muted-foreground">3 agents running</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
                     <span className="text-[11px] text-muted-foreground">94.7% efficiency</span>
                   </div>
                 </div>

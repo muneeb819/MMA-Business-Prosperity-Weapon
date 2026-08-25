@@ -27,10 +27,10 @@ const LeadStats = memo(function LeadStats({
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         {[
-          { label: "Total Leads", value: activeLeadCount, icon: <Users className="w-5 h-5" />, color: "text-blue-400", bg: "from-blue-500/10 to-blue-600/5 border-blue-500/20" },
+          { label: "Total Leads", value: activeLeadCount, icon: <Users className="w-5 h-5" />, color: "text-indigo-400", bg: "from-indigo-500/10 to-rose-600/5 border-indigo-500/20" },
           { label: "Total Pipeline", value: formatCurrency(totalBudget), icon: <DollarSign className="w-5 h-5" />, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20" },
           { label: "Avg. Win Probability", value: `${avgProbability}%`, icon: <TrendingUp className="w-5 h-5" />, color: "text-amber-400", bg: "from-amber-500/10 to-amber-600/5 border-amber-500/20" },
-          { label: "Conversion Rate", value: `${activeLeadCount ? Math.round(((statusCounts.won || 0) / activeLeadCount) * 100) : 0}%`, icon: <Target className="w-5 h-5" />, color: "text-violet-400", bg: "from-violet-500/10 to-violet-600/5 border-violet-500/20" },
+          { label: "Conversion Rate", value: `${activeLeadCount ? Math.round(((statusCounts.won || 0) / activeLeadCount) * 100) : 0}%`, icon: <Target className="w-5 h-5" />, color: "text-rose-400", bg: "from-rose-500/10 to-rose-600/5 border-rose-500/20" },
         ].map((stat, i) => (
           <Card key={i} className={cn("bg-zinc-900/80 bg-gradient-to-br border animate-in fade-in slide-in-from-bottom-4 duration-500", stat.bg)} style={{ animationDelay: `${i * 80}ms` }}>
             <CardContent className="p-4 flex items-center gap-4 overflow-hidden">

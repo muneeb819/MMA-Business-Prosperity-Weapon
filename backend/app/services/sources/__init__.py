@@ -11,6 +11,11 @@ from app.services.sources.findwork import FindworkSource
 from app.services.sources.weworkremotely import WeWorkRemotelySource
 from app.services.sources.adzuna import AdzunaSource
 from app.services.sources.jooble import JoobleSource
+from app.services.sources.upwork import UpworkSource
+from app.services.sources.workingnomads import WorkingNomadsSource
+from app.services.sources.jobspresso import JobspressoSource
+from app.services.sources.remoteco import RemoteCoSource
+from app.services.sources.europeremotely import EuropeRemotelySource
 
 ALL_SOURCES: dict[str, BaseSource] = {}
 
@@ -31,6 +36,11 @@ register_source(FindworkSource())
 register_source(WeWorkRemotelySource())
 register_source(AdzunaSource())
 register_source(JoobleSource())
+register_source(UpworkSource())
+register_source(WorkingNomadsSource())
+register_source(JobspressoSource())
+register_source(RemoteCoSource())
+register_source(EuropeRemotelySource())
 
 
 def get_source(name: str) -> BaseSource | None:

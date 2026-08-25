@@ -34,7 +34,7 @@ function SortButton({ label, field, current, onToggle }: { label: string; field:
       )}
     >
       {label}
-      <ArrowUpDown className={cn("w-3 h-3", active && "text-violet-400")} />
+      <ArrowUpDown className={cn("w-3 h-3", active && "text-rose-400")} />
     </button>
   );
 }
@@ -55,7 +55,7 @@ export const CountryBreakdown = memo(function CountryBreakdown({
       <CardHeader>
         <div className="flex items-center justify-between min-w-0">
           <CardTitle className="text-lg flex items-center gap-2 min-w-0">
-            <Globe className="w-5 h-5 text-cyan-400 shrink-0" />
+            <Globe className="w-5 h-5 text-indigo-400 shrink-0" />
             <span className="truncate">Leads by Country</span>
           </CardTitle>
           <div className="flex items-center gap-1 shrink-0">
@@ -83,7 +83,7 @@ export const CountryBreakdown = memo(function CountryBreakdown({
               </div>
               <div className="h-2 bg-zinc-800/50 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-600/80 to-cyan-400/80 transition-all duration-700 ease-out pointer-events-none"
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-600/80 to-indigo-400/80 transition-all duration-700 ease-out pointer-events-none"
                   style={{ width: `${(country.count / maxCount) * 100}%` }}
                 />
               </div>
@@ -93,7 +93,7 @@ export const CountryBreakdown = memo(function CountryBreakdown({
         {totalCount > 3 && (
           <button
             onClick={onToggleShowAll}
-            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40"
+            className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-zinc-800/40"
           >
             {showAll ? (
               <>Show Less <ChevronUp className="w-3 h-3" /></>

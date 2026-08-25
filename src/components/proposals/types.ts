@@ -28,7 +28,7 @@ export interface Toast {
 
 export const proposalStatusConfig: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: "Draft", color: "text-zinc-400", bg: "bg-zinc-500/10 border-zinc-500/20" },
-  submitted: { label: "Submitted", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20" },
+  submitted: { label: "Submitted", color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/20" },
   accepted: { label: "Accepted", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
   rejected: { label: "Rejected", color: "text-red-400", bg: "bg-red-500/10 border-red-500/20" },
   revision: { label: "Revision", color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },

@@ -182,7 +182,7 @@ export default function DashboardPage() {
                   <Button variant="outline" size="sm" className="border-zinc-800 hover:bg-zinc-800/50" onClick={() => showToast("Dashboard exported as PDF")}>
                     <Download className="w-4 h-4 mr-2" /> Export
                   </Button>
-                  <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20" onClick={() => setShowInsightsModal(true)}>
+                  <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white shadow-lg shadow-indigo-500/20" onClick={() => setShowInsightsModal(true)}>
                     <Sparkles className="w-4 h-4 mr-2" /> AI Insights
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleRefresh("Dashboard")} disabled={refreshing === "Dashboard"} className="text-zinc-400 hover:text-white h-9 w-9 p-0">
@@ -260,7 +260,7 @@ export default function DashboardPage() {
           <div className="relative w-full max-w-lg mx-4 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl shadow-zinc-900/50 overflow-hidden animate-fade-in-up">
             <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
+                <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-rose-600 shadow-lg shadow-indigo-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
                 <div>
                   <h2 className="text-lg font-bold">AI Insights</h2>
                   <p className="text-xs text-zinc-400">Powered by MBPW Intelligence</p>
@@ -271,14 +271,14 @@ export default function DashboardPage() {
             <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
               {loadingInsights ? (
                 <div className="flex items-center justify-center py-8" role="status">
-                  <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
                   <span className="ml-3 text-sm text-zinc-400">Generating AI insights...</span>
                 </div>
               ) : aiInsights ? (
                 <>
                   {aiInsights.summary && (
-                    <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-                      <p className="text-sm text-cyan-300/80">{aiInsights.summary}</p>
+                    <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                      <p className="text-sm text-indigo-300/80">{aiInsights.summary}</p>
                     </div>
                   )}
                   {aiInsights.top_recommendations?.map((rec, i) => (
@@ -302,7 +302,7 @@ export default function DashboardPage() {
                   {aiInsights.market_trends?.map((trend, i) => (
                     <div key={i} className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50">
                       <div className="flex items-center gap-2 mb-2">
-                        <Brain className="w-4 h-4 text-violet-400" />
+                        <Brain className="w-4 h-4 text-rose-400" />
                         <span className="text-sm font-medium">Market Trend</span>
                       </div>
                       <p className="text-sm text-zinc-300">{trend}</p>
@@ -322,7 +322,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="p-5 border-t border-zinc-800/50 flex justify-end">
-              <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white" onClick={() => { setShowInsightsModal(false); showToast("Full report sent to your email") }}>
+              <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white" onClick={() => { setShowInsightsModal(false); showToast("Full report sent to your email") }}>
                 <Send className="w-4 h-4 mr-2" /> Send Full Report
               </Button>
             </div>

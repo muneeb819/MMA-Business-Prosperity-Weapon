@@ -41,7 +41,7 @@ function ProposalFiltersInner({
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <Button
           onClick={onOpenGenerate}
-          className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white font-semibold h-11 px-6 shadow-lg shadow-blue-500/25 shrink-0"
+          className="bg-gradient-to-r from-indigo-600 via-rose-500 to-rose-600 hover:from-indigo-500 hover:via-rose-400 hover:to-rose-500 text-white font-semibold h-11 px-6 shadow-lg shadow-indigo-500/25 shrink-0"
         >
           <Sparkles className="w-4 h-4 mr-2" />
           AI Generate Proposal
@@ -93,12 +93,12 @@ function ProposalFiltersInner({
             className={cn(
               "px-3 h-9 rounded-lg text-xs font-medium transition-all duration-200 border inline-flex items-center",
               statusFilter === f.key
-                ? "bg-blue-500/15 border-blue-500/30 text-blue-300"
+                ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-300"
                 : "bg-white/[0.02] border-white/[0.06] text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
             )}
           >
             {f.label}
-            <span className={cn("ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full", statusFilter === f.key ? "bg-blue-500/20 text-blue-300" : "bg-white/[0.05] text-zinc-600")}>
+            <span className={cn("ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full", statusFilter === f.key ? "bg-indigo-500/20 text-indigo-300" : "bg-white/[0.05] text-zinc-600")}>
               {f.count}
             </span>
           </button>

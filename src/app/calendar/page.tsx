@@ -19,8 +19,8 @@ const events = [
 ]
 
 const typeColors: Record<string, string> = {
-  meeting: "border-l-blue-500 bg-blue-500/10",
-  review: "border-l-purple-500 bg-purple-500/10",
+  meeting: "border-l-indigo-500 bg-indigo-500/10",
+  review: "border-l-rose-500 bg-rose-500/10",
   call: "border-l-emerald-500 bg-emerald-500/10",
 }
 
@@ -42,7 +42,7 @@ export default function CalendarPage() {
               <Breadcrumbs />
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">
                     Calendar
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">Schedule & event management</p>
@@ -105,7 +105,7 @@ export default function CalendarPage() {
                   <GlassCard glow="purple">
                     <GlassCardHeader>
                       <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-purple-400" />
+                        <Calendar className="w-4 h-4 text-rose-400" />
                         Events for Day {selectedDay}
                       </h2>
                     </GlassCardHeader>

@@ -52,7 +52,7 @@ const LIVE_SOURCE_MAP: Record<string, SourceMeta> = {
     name: "Remotive",
     icon: Laptop,
     description: "RSS feed of hand-screened remote jobs across all categories",
-    gradient: "from-violet-500 to-purple-600",
+    gradient: "from-rose-500 to-rose-600",
     metrics: { accuracy: 93, speed: 88 },
   },
   weworkremotely: {
@@ -60,7 +60,7 @@ const LIVE_SOURCE_MAP: Record<string, SourceMeta> = {
     name: "We Work Remotely",
     icon: Globe,
     description: "Largest remote work community RSS with tech-enriched listings",
-    gradient: "from-blue-500 to-indigo-600",
+    gradient: "from-indigo-500 to-indigo-600",
     metrics: { accuracy: 95, speed: 90 },
   },
   arbeitnow: {
@@ -76,7 +76,7 @@ const LIVE_SOURCE_MAP: Record<string, SourceMeta> = {
     name: "Findwork",
     icon: SearchIcon,
     description: "Curated job API ordered by date posted with role taxonomy",
-    gradient: "from-cyan-500 to-sky-600",
+    gradient: "from-indigo-500 to-sky-600",
     metrics: { accuracy: 92, speed: 89 },
   },
 }
@@ -493,7 +493,7 @@ export default function OpportunityHunterPage() {
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="min-w-0">
                   <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3 flex-wrap">
-                    <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-indigo-400 to-rose-500 bg-clip-text text-transparent">
                       Global Opportunity Hunter
                     </span>
                     <Badge variant="secondary" className={cn("text-xs font-medium shrink-0",
@@ -512,7 +512,7 @@ export default function OpportunityHunterPage() {
                   <Button variant="outline" size="sm"
                     onClick={handleAutoOutreach}
                     disabled={outreachRunning || hunterFetching || discoveries.length === 0}
-                    className="border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 hover:text-violet-200">
+                    className="border-rose-500/30 bg-rose-500/10 text-violet-300 hover:bg-rose-500/20 hover:text-violet-200">
                     {outreachRunning
                       ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Outreach {outreachProgress}%</>
                       : <><Sparkles className="w-4 h-4 mr-2" />Auto Outreach</>}
@@ -537,15 +537,15 @@ export default function OpportunityHunterPage() {
                 </div>
               </div>
               {outreachRunning && (
-                <div className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-3">
+                <div className="mt-4 rounded-xl border border-rose-500/20 bg-rose-500/5 px-5 py-3">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="flex items-center gap-2 text-violet-300">
                       <Send className="w-4 h-4" />Generating proposals & sending emails...
                     </span>
-                    <span className="text-violet-400 font-medium">{outreachProgress}%</span>
+                    <span className="text-rose-400 font-medium">{outreachProgress}%</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-500"
+                    <div className="h-full bg-gradient-to-r from-rose-500 to-rose-500 transition-all duration-500"
                       style={{ width: `${outreachProgress}%` }} />
                   </div>
                   {outreachLog.length > 0 && (

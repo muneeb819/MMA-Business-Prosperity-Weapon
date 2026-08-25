@@ -36,7 +36,7 @@ function ConfigPanelInner({
       <Card className="card-hover glass border-zinc-800/50 bg-zinc-900/80">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-rose-500 to-rose-600 shadow-lg shadow-rose-500/20">
               <Target className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -51,7 +51,7 @@ function ConfigPanelInner({
               <button key={category.id} onClick={() => onToggleCategory(category.id)}
                 className={cn("px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border",
                   category.selected
-                    ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30 shadow-lg shadow-cyan-500/10"
+                    ? "bg-indigo-500/10 text-indigo-400 border-indigo-500/30 shadow-lg shadow-indigo-500/10"
                     : "bg-zinc-800/30 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
                 )}>
                 {category.selected && <CheckCircle className="w-3.5 h-3.5 inline mr-1.5" />}
@@ -113,7 +113,7 @@ function ConfigPanelInner({
             </Select>
           </div>
           <div className="pt-2">
-            <Button className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+            <Button className="w-full bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white"
               onClick={onSave}>
               <Save className="w-4 h-4 mr-2" />Save Configuration
             </Button>

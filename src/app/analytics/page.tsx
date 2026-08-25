@@ -106,12 +106,12 @@ export default function AnalyticsPage() {
   });
 
   const kpis = [
-    { label: "Total Leads", value: formatNumber(data.totalLeads), trend: "+12.5%", up: true, icon: Target, color: "text-cyan-400", glow: "bg-cyan-500/10" },
-    { label: "Total Proposals", value: String(data.totalProposals), trend: "+8.2%", up: true, icon: FileText, color: "text-violet-400", glow: "bg-violet-500/10" },
+    { label: "Total Leads", value: formatNumber(data.totalLeads), trend: "+12.5%", up: true, icon: Target, color: "text-indigo-400", glow: "bg-indigo-500/10" },
+    { label: "Total Proposals", value: String(data.totalProposals), trend: "+8.2%", up: true, icon: FileText, color: "text-rose-400", glow: "bg-rose-500/10" },
     { label: "Win Rate", value: `${data.winRate}%`, trend: "+3.1%", up: true, icon: TrendingUp, color: "text-emerald-400", glow: "bg-emerald-500/10" },
     { label: "Total Revenue", value: formatCurrency(data.totalRevenue), trend: "+18.7%", up: true, icon: DollarSign, color: "text-amber-400", glow: "bg-amber-500/10" },
     { label: "Avg Deal Size", value: formatCurrency(data.avgDealSize), trend: "-2.3%", up: false, icon: Briefcase, color: "text-rose-400", glow: "bg-rose-500/10" },
-    { label: "Conversion Rate", value: `${data.conversionRate}%`, trend: "+5.4%", up: true, icon: Zap, color: "text-blue-400", glow: "bg-blue-500/10" },
+    { label: "Conversion Rate", value: `${data.conversionRate}%`, trend: "+5.4%", up: true, icon: Zap, color: "text-indigo-400", glow: "bg-indigo-500/10" },
   ];
 
   const handleExportCSV = useCallback(() => {
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
           <Breadcrumbs />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 shrink-0"><BarChart3 className="w-6 h-6 text-violet-400" /></div>
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 shrink-0"><BarChart3 className="w-6 h-6 text-rose-400" /></div>
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent truncate">Analytics</h1>
                 <p className="text-sm text-zinc-500 truncate">{loading ? "Loading analytics..." : "AI-powered business intelligence"}</p>
@@ -165,7 +165,7 @@ export default function AnalyticsPage() {
                 {PERIODS.map((p) => (
                   <button key={p.value} onClick={() => setSelectedPeriod(p.value)}
                     className={cn("px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 min-h-9",
-                      selectedPeriod === p.value ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                      selectedPeriod === p.value ? "bg-rose-600 text-white shadow-lg shadow-rose-500/20" : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                     )}>{p.label}</button>
                 ))}
               </div>
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
           </div>
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
               <span className="ml-3 text-sm text-zinc-400">Loading analytics data...</span>
             </div>
           )}
@@ -206,17 +206,17 @@ export default function AnalyticsPage() {
               <div className="bg-zinc-900/80 border-zinc-800/80 rounded-xl overflow-hidden">
                 <div className="px-6 py-4 border-b border-zinc-800/60 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-blue-400" />
+                    <Zap className="w-5 h-5 text-indigo-400" />
                     <h3 className="text-lg font-semibold text-white">Leads by Platform</h3>
                   </div>
                   <div className="flex items-center gap-1">
                     <button onClick={() => toggleSort(platformSort, setPlatformSort, "count")}
                       className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 min-h-9 ${platformSort.field === "count" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}>
-                      Count <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "count" ? "text-violet-400" : ""}`} />
+                      Count <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "count" ? "text-rose-400" : ""}`} />
                     </button>
                     <button onClick={() => toggleSort(platformSort, setPlatformSort, "name")}
                       className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1.5 rounded-md transition-colors shrink-0 min-h-9 ${platformSort.field === "name" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"}`}>
-                      Name <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "name" ? "text-violet-400" : ""}`} />
+                      Name <ArrowUpDown className={`w-3 h-3 ${platformSort.field === "name" ? "text-rose-400" : ""}`} />
                     </button>
                   </div>
                 </div>
@@ -231,7 +231,7 @@ export default function AnalyticsPage() {
                           <div key={p.platform} className="flex items-center gap-4">
                             <span className="text-sm font-medium text-zinc-300 w-28 shrink-0 truncate">{p.platform}</span>
                             <div className="flex-1 h-8 bg-zinc-800/50 rounded-lg overflow-hidden relative">
-                              <div className="h-full rounded-lg bg-gradient-to-r from-blue-600/80 to-blue-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3"
+                              <div className="h-full rounded-lg bg-gradient-to-r from-indigo-600/80 to-rose-400/80 transition-all duration-700 ease-out flex items-center justify-end pr-3"
                                 style={{ width: `${(p.leads / maxLeads) * 100}%` }}>
                                 <span className="text-xs font-semibold text-white drop-shadow-lg">{p.leads}</span>
                               </div>
@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
                       })}
                       {sortedPlatforms.length > 5 && (
                         <button onClick={() => setShowAllPlatforms(!showAllPlatforms)}
-                          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-violet-400 transition-colors rounded-lg hover:bg-zinc-800/40">
+                          className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-zinc-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-zinc-800/40">
                           {showAllPlatforms ? <>Show Less <ChevronUp className="w-3 h-3" /></> : <>See All ({sortedPlatforms.length}) <ChevronDown className="w-3 h-3" /></>}
                         </button>
                       )}

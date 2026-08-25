@@ -123,7 +123,7 @@ export default function ReportsPage() {
               <Breadcrumbs />
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-rose-400 bg-clip-text text-transparent">
                     Analytics & Reports
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">Pipeline performance & business intelligence</p>
@@ -148,7 +148,7 @@ export default function ReportsPage() {
 
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
                   <span className="ml-3 text-sm text-muted-foreground">Loading reports...</span>
                 </div>
               ) : (

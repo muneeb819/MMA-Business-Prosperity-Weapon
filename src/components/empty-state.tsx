@@ -7,12 +7,12 @@ import { useRouter } from "next/navigation"
 
 const illustrations: Record<string, { icon: any; gradient: string }> = {
   default: { icon: Inbox, gradient: "from-zinc-500/20 to-zinc-600/20" },
-  search: { icon: Search, gradient: "from-cyan-500/20 to-blue-500/20" },
+  search: { icon: Search, gradient: "from-indigo-500/20 to-rose-500/20" },
   leads: { icon: Globe, gradient: "from-emerald-500/20 to-rose-500/20" },
-  proposals: { icon: FileText, gradient: "from-violet-500/20 to-purple-500/20" },
-  crm: { icon: Users, gradient: "from-indigo-500/20 to-blue-500/20" },
-  notifications: { icon: Bell, gradient: "from-rose-500/20 to-pink-500/20" },
-  analytics: { icon: BarChart3, gradient: "from-purple-500/20 to-violet-500/20" },
+  proposals: { icon: FileText, gradient: "from-rose-500/20 to-rose-500/20" },
+  crm: { icon: Users, gradient: "from-indigo-500/20 to-rose-500/20" },
+  notifications: { icon: Bell, gradient: "from-rose-500/20 to-rose-500/20" },
+  analytics: { icon: BarChart3, gradient: "from-rose-500/20 to-rose-500/20" },
 }
 
 interface EmptyStateProps {

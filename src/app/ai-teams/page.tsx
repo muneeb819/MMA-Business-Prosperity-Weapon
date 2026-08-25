@@ -42,7 +42,7 @@ interface ChatMessage {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  active: "bg-emerald-500", working: "bg-cyan-500", idle: "bg-amber-500", paused: "bg-zinc-500",
+  active: "bg-emerald-500", working: "bg-indigo-500", idle: "bg-amber-500", paused: "bg-zinc-500",
 };
 const STATUS_TEXT: Record<string, string> = {
   active: "Active", working: "Working", idle: "Idle", paused: "Paused",
@@ -214,7 +214,7 @@ export default function AITeamsPage() {
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
         <p className="text-zinc-500 text-sm">Loading AI Teams...</p>
       </div>
     </div>
@@ -249,8 +249,8 @@ export default function AITeamsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/20">
-              <Users className="w-6 h-6 text-violet-400" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-rose-500/20 to-rose-500/20 border border-rose-500/20">
+              <Users className="w-6 h-6 text-rose-400" />
             </div>
             AI Teams Command Center
           </h1>
@@ -309,7 +309,7 @@ export default function AITeamsPage() {
               </div>
               <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Radar className="w-3.5 h-3.5 text-cyan-400" />
+                  <Radar className="w-3.5 h-3.5 text-indigo-400" />
                   <span className="text-[10px] text-zinc-600 uppercase">Scans</span>
                 </div>
                 <p className="text-2xl font-bold text-white">{supervisorHealth?.totalScansCompleted || 0}</p>
@@ -346,14 +346,14 @@ export default function AITeamsPage() {
               {scanRunning ? "Scanning..." : "Run Full System Scan"}
             </Button>
             <Button onClick={handleGenerateQualityReport} disabled={actionRunning === "report"}
-              className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold h-11 shadow-lg shadow-emerald-500/20">
+              className="bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-semibold h-11 shadow-lg shadow-emerald-500/20">
               {actionRunning === "report" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />}
               {actionRunning === "report" ? "Generating..." : "Generate Quality Report"}
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => handleSupervisorAction("Data Reconciliation", api.aiTeams.supervisor.reconcile)}
                 disabled={!!actionRunning} variant="outline"
-                className="border-cyan-500/20 text-cyan-300 hover:bg-cyan-500/10 h-9 text-xs">
+                className="border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/10 h-9 text-xs">
                 {actionRunning === "Data Reconciliation" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Database className="w-3 h-3 mr-1" />}
                 Reconcile
               </Button>
@@ -365,7 +365,7 @@ export default function AITeamsPage() {
               </Button>
               <Button onClick={() => handleSupervisorAction("Performance Check", api.aiTeams.supervisor.performanceCheck)}
                 disabled={!!actionRunning} variant="outline"
-                className="border-violet-500/20 text-violet-300 hover:bg-violet-500/10 h-9 text-xs">
+                className="border-rose-500/20 text-violet-300 hover:bg-rose-500/10 h-9 text-xs">
                 {actionRunning === "Performance Check" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Gauge className="w-3 h-3 mr-1" />}
                 Performance
               </Button>
@@ -429,7 +429,7 @@ export default function AITeamsPage() {
           <div className="relative mb-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold flex items-center gap-1.5">
-                <Radar className="w-3 h-3 text-cyan-400" /> Latest Scan #{supervisorScan.scanId}
+                <Radar className="w-3 h-3 text-indigo-400" /> Latest Scan #{supervisorScan.scanId}
               </p>
               <span className="text-[10px] text-zinc-600">{new Date(supervisorScan.timestamp).toLocaleString()}</span>
             </div>
@@ -446,7 +446,7 @@ export default function AITeamsPage() {
                 <p className="text-[9px] text-zinc-600 uppercase">Checks Passed</p>
               </div>
               <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
-                <p className="text-lg font-bold text-cyan-400">{supervisorScan.agentSummary?.activeAgents || 0}</p>
+                <p className="text-lg font-bold text-indigo-400">{supervisorScan.agentSummary?.activeAgents || 0}</p>
                 <p className="text-[9px] text-zinc-600 uppercase">Active Agents</p>
               </div>
               <div className="rounded-lg bg-white/[0.03] border border-white/[0.04] p-2 text-center">
@@ -480,21 +480,21 @@ export default function AITeamsPage() {
                   <div className="flex items-start gap-3">
                     <div className={cn("mt-0.5 h-2 w-2 rounded-full shrink-0",
                       issue.severity === "critical" ? "bg-red-500 animate-pulse" :
-                      issue.severity === "warning" ? "bg-amber-500" : "bg-cyan-500"
+                      issue.severity === "warning" ? "bg-amber-500" : "bg-indigo-500"
                     )} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={cn("text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded",
                           issue.severity === "critical" ? "bg-red-500/20 text-red-300" :
                           issue.severity === "warning" ? "bg-amber-500/20 text-amber-300" :
-                          "bg-cyan-500/20 text-cyan-300"
+                          "bg-indigo-500/20 text-indigo-300"
                         )}>{issue.severity}</span>
                         <span className="text-[10px] text-zinc-600">{issue.category}</span>
                       </div>
                       <p className="text-sm text-white font-medium">{issue.title}</p>
                       <p className="text-[11px] text-zinc-500 mt-0.5">{issue.detail}</p>
                       {issue.suggestion && (
-                        <p className="text-[11px] text-cyan-400/70 mt-1 italic">Suggestion: {issue.suggestion}</p>
+                        <p className="text-[11px] text-indigo-400/70 mt-1 italic">Suggestion: {issue.suggestion}</p>
                       )}
                     </div>
                   </div>
@@ -573,7 +573,7 @@ export default function AITeamsPage() {
 
       {/* ═══ QUALITY REPORT DIALOG ═══ */}
       {showQualityReport && qualityReport && (
-        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] to-cyan-500/[0.01] p-6">
+        <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] to-indigo-500/[0.01] p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-emerald-400" /> Comprehensive Quality Report — #{qualityReport.reportId}
@@ -594,12 +594,12 @@ export default function AITeamsPage() {
               )}>{qualityReport.overallStatus}</p>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
-              <p className="text-2xl font-bold text-cyan-400">{qualityReport.sections?.healthScan?.score}%</p>
+              <p className="text-2xl font-bold text-indigo-400">{qualityReport.sections?.healthScan?.score}%</p>
               <p className="text-[10px] text-zinc-600 uppercase">Health Scan</p>
               <p className="text-[10px] text-zinc-500">{qualityReport.sections?.healthScan?.checksPassed}/{qualityReport.sections?.healthScan?.checksTotal} passed</p>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
-              <p className="text-2xl font-bold text-violet-400">{qualityReport.sections?.dataReconciliation?.score}%</p>
+              <p className="text-2xl font-bold text-rose-400">{qualityReport.sections?.dataReconciliation?.score}%</p>
               <p className="text-[10px] text-zinc-600 uppercase">Data Recon</p>
               <p className="text-[10px] text-zinc-500">{qualityReport.sections?.dataReconciliation?.checksPassed}/{qualityReport.sections?.dataReconciliation?.checksTotal} passed</p>
             </div>
@@ -621,7 +621,7 @@ export default function AITeamsPage() {
             if (!data) return null;
             const titles: Record<string, string> = { dataReconciliation: "Data Reconciliation", securityAudit: "Security Audit", performanceCheck: "Performance Check" };
             const colors: Record<string, string> = { dataReconciliation: "violet", securityAudit: "amber", performanceCheck: "cyan" };
-            const sectionColorClass: Record<string, string> = { dataReconciliation: "text-violet-400", securityAudit: "text-amber-400", performanceCheck: "text-cyan-400" };
+            const sectionColorClass: Record<string, string> = { dataReconciliation: "text-rose-400", securityAudit: "text-amber-400", performanceCheck: "text-indigo-400" };
             return (
               <div key={section} className="mb-4">
                 <p className={cn("text-xs uppercase tracking-wider font-semibold mb-2", sectionColorClass[section])}>{titles[section]}</p>
@@ -641,11 +641,11 @@ export default function AITeamsPage() {
           {/* Team Summary */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-              <p className="text-xs text-cyan-400 font-semibold mb-1">Hunting Team</p>
+              <p className="text-xs text-indigo-400 font-semibold mb-1">Hunting Team</p>
               <p className="text-sm text-white">{qualityReport.teamSummary?.hunting?.agents} agents | {qualityReport.teamSummary?.hunting?.avgEfficiency}% efficiency | {qualityReport.teamSummary?.hunting?.totalTasks} tasks</p>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-              <p className="text-xs text-violet-400 font-semibold mb-1">Outreach Team</p>
+              <p className="text-xs text-rose-400 font-semibold mb-1">Outreach Team</p>
               <p className="text-sm text-white">{qualityReport.teamSummary?.outreach?.agents} agents | {qualityReport.teamSummary?.outreach?.avgEfficiency}% efficiency | {qualityReport.teamSummary?.outreach?.totalTasks} tasks</p>
             </div>
           </div>
@@ -673,8 +673,8 @@ export default function AITeamsPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: "Tasks Done", value: manager.tasksCompleted, icon: CheckCircle, color: "text-emerald-400" },
-                { label: "Efficiency", value: `${manager.efficiency}%`, icon: TrendingUp, color: "text-cyan-400" },
-                { label: "Teams Managed", value: 2, icon: Shield, color: "text-violet-400" },
+                { label: "Efficiency", value: `${manager.efficiency}%`, icon: TrendingUp, color: "text-indigo-400" },
+                { label: "Teams Managed", value: 2, icon: Shield, color: "text-rose-400" },
                 { label: "Agents Oversight", value: 12, icon: Users, color: "text-amber-400" },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
@@ -785,11 +785,11 @@ export default function AITeamsPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
-              <p className="text-2xl font-bold text-cyan-400">{report.leadsFoundToday?.total || 0}</p>
+              <p className="text-2xl font-bold text-indigo-400">{report.leadsFoundToday?.total || 0}</p>
               <p className="text-[10px] text-zinc-600 uppercase">Leads Found</p>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
-              <p className="text-2xl font-bold text-violet-400">{report.emailsSent || 0}</p>
+              <p className="text-2xl font-bold text-rose-400">{report.emailsSent || 0}</p>
               <p className="text-[10px] text-zinc-600 uppercase">Emails Sent</p>
             </div>
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 text-center">
@@ -809,7 +809,7 @@ export default function AITeamsPage() {
                   <div key={h.agentId} className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-white/[0.02]">
                     <span className="text-sm">{h.agentName}</span>
                     <span className="text-[10px] text-zinc-600 ml-auto">{h.channel}</span>
-                    <span className="text-xs font-semibold text-cyan-400">{h.count} leads</span>
+                    <span className="text-xs font-semibold text-indigo-400">{h.count} leads</span>
                   </div>
                 ))}
               </div>
@@ -846,7 +846,7 @@ export default function AITeamsPage() {
                   <div className={cn("h-2 w-2 rounded-full shrink-0",
                     evt.action === "chat" ? "bg-amber-500" :
                     evt.action === "paused" ? "bg-red-500" :
-                    evt.action === "resumed" ? "bg-emerald-500" : "bg-cyan-500"
+                    evt.action === "resumed" ? "bg-emerald-500" : "bg-indigo-500"
                   )} />
                   <span className="text-sm text-zinc-300 truncate flex-1">
                     <span className="font-medium text-white">{evt.agent_name}</span>
@@ -888,8 +888,8 @@ function TeamSection({
     : 0;
   const teamTasks = team.agents.reduce((s, a) => s + a.tasksCompleted, 0);
   const colorMap: Record<string, { gradient: string; border: string; text: string; bg: string; shadow: string }> = {
-    cyan: { gradient: "from-cyan-500 to-blue-500", border: "border-cyan-500/20", text: "text-cyan-400", bg: "bg-cyan-500/[0.04]", shadow: "shadow-cyan-500/10" },
-    violet: { gradient: "from-violet-500 to-purple-500", border: "border-violet-500/20", text: "text-violet-400", bg: "bg-violet-500/[0.04]", shadow: "shadow-violet-500/10" },
+    cyan: { gradient: "from-indigo-500 to-rose-500", border: "border-indigo-500/20", text: "text-indigo-400", bg: "bg-indigo-500/[0.04]", shadow: "shadow-indigo-500/10" },
+    violet: { gradient: "from-rose-500 to-rose-500", border: "border-rose-500/20", text: "text-rose-400", bg: "bg-rose-500/[0.04]", shadow: "shadow-rose-500/10" },
   };
   const c = colorMap[color] || colorMap.cyan;
 
@@ -1008,7 +1008,7 @@ function TeamSection({
 function AgentCard({ agent, onToggle, toggling, color }: {
   agent: Agent; onToggle: (id: string) => void; toggling: boolean; color: string;
 }) {
-  const colorMap: Record<string, string> = { cyan: "text-cyan-400", violet: "text-violet-400" };
+  const colorMap: Record<string, string> = { cyan: "text-indigo-400", violet: "text-rose-400" };
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 hover:bg-white/[0.04] transition-all group">
       <div className="flex items-start gap-3 mb-2.5">
@@ -1036,7 +1036,7 @@ function AgentCard({ agent, onToggle, toggling, color }: {
       </div>
       <div className="h-1 rounded-full bg-white/[0.04] overflow-hidden">
         <div className={cn("h-full rounded-full transition-all",
-          color === "cyan" ? "bg-gradient-to-r from-cyan-500 to-blue-500" : "bg-gradient-to-r from-violet-500 to-purple-500"
+          color === "cyan" ? "bg-gradient-to-r from-indigo-500 to-rose-500" : "bg-gradient-to-r from-rose-500 to-rose-500"
         )} style={{ width: `${agent.efficiency}%` }} />
       </div>
     </div>

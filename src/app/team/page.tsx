@@ -8,12 +8,12 @@ import { GlassCard, GlassCardContent } from "@/components/glass-card"
 import { Mail, Phone, Calendar, Award, TrendingUp } from "lucide-react"
 
 const teamMembers = [
-  { name: "Alex Morgan", role: "CEO / Founder", email: "alex@mbpw.com", phone: "+1 (555) 0101", deals: 28, revenue: "$2.4M", avatar: "AM", color: "from-blue-500 to-blue-600" },
-  { name: "Sarah Chen", role: "Head of Sales", email: "sarah@mbpw.com", phone: "+1 (555) 0102", deals: 42, revenue: "$3.8M", avatar: "SC", color: "from-purple-500 to-purple-600" },
+  { name: "Alex Morgan", role: "CEO / Founder", email: "alex@mbpw.com", phone: "+1 (555) 0101", deals: 28, revenue: "$2.4M", avatar: "AM", color: "from-indigo-500 to-rose-600" },
+  { name: "Sarah Chen", role: "Head of Sales", email: "sarah@mbpw.com", phone: "+1 (555) 0102", deals: 42, revenue: "$3.8M", avatar: "SC", color: "from-rose-500 to-rose-600" },
   { name: "Marcus Johnson", role: "Lead Developer", email: "marcus@mbpw.com", phone: "+1 (555) 0103", deals: 15, revenue: "$1.2M", avatar: "MJ", color: "from-emerald-500 to-emerald-600" },
   { name: "Emily Watson", role: "Marketing Director", email: "emily@mbpw.com", phone: "+1 (555) 0104", deals: 22, revenue: "$1.8M", avatar: "EW", color: "from-orange-500 to-orange-600" },
-  { name: "David Park", role: "AI Engineer", email: "david@mbpw.com", phone: "+1 (555) 0105", deals: 18, revenue: "$1.5M", avatar: "DP", color: "from-pink-500 to-pink-600" },
-  { name: "Lisa Rodriguez", role: "Customer Success", email: "lisa@mbpw.com", phone: "+1 (555) 0106", deals: 35, revenue: "$2.9M", avatar: "LR", color: "from-cyan-500 to-cyan-600" },
+  { name: "David Park", role: "AI Engineer", email: "david@mbpw.com", phone: "+1 (555) 0105", deals: 18, revenue: "$1.5M", avatar: "DP", color: "from-rose-500 to-pink-600" },
+  { name: "Lisa Rodriguez", role: "Customer Success", email: "lisa@mbpw.com", phone: "+1 (555) 0106", deals: 35, revenue: "$2.9M", avatar: "LR", color: "from-indigo-500 to-indigo-600" },
 ]
 
 const performanceData = [
@@ -36,7 +36,7 @@ export default function TeamPage() {
             <div className="space-y-6">
               <Breadcrumbs />
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-rose-400 bg-clip-text text-transparent">
                   Team
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">Team members & performance</p>
@@ -90,7 +90,7 @@ export default function TeamPage() {
                         <span className="text-xs text-muted-foreground w-24 truncate">{member.name}</span>
                         <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-rose-500 transition-all duration-1000"
                             style={{ width: `${member.value}%` }}
                           />
                         </div>

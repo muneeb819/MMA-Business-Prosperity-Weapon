@@ -32,14 +32,14 @@ import {
 } from "lucide-react"
 
 const features = [
-  { icon: Bot, label: "AI Agents", desc: "3 autonomous agents hunting opportunities 24/7", color: "from-blue-500 to-cyan-400" },
+  { icon: Bot, label: "AI Agents", desc: "3 autonomous agents hunting opportunities 24/7", color: "from-indigo-500 to-indigo-400" },
   { icon: Globe, label: "Opportunity Hunter", desc: "Scan global platforms for the best contracts", color: "from-indigo-500 to-rose-400" },
   { icon: Target, label: "Lead Scoring", desc: "AI-ranked leads with revenue projections", color: "from-emerald-500 to-rose-400" },
-  { icon: FileText, label: "Proposal Studio", desc: "Generate winning proposals in seconds", color: "from-violet-500 to-purple-400" },
+  { icon: FileText, label: "Proposal Studio", desc: "Generate winning proposals in seconds", color: "from-rose-500 to-rose-400" },
   { icon: Search, label: "AI Search", desc: "Natural language search across all data", color: "from-amber-500 to-orange-400" },
-  { icon: Bell, label: "Smart Alerts", desc: "Never miss a high-value opportunity", color: "from-rose-500 to-pink-400" },
-  { icon: Users, label: "CRM", desc: "Manage companies, contacts & relationships", color: "from-indigo-500 to-blue-400" },
-  { icon: BarChart3, label: "Analytics", desc: "Revenue, pipeline & performance insights", color: "from-purple-500 to-violet-400" },
+  { icon: Bell, label: "Smart Alerts", desc: "Never miss a high-value opportunity", color: "from-rose-500 to-rose-400" },
+  { icon: Users, label: "CRM", desc: "Manage companies, contacts & relationships", color: "from-indigo-500 to-rose-400" },
+  { icon: BarChart3, label: "Analytics", desc: "Revenue, pipeline & performance insights", color: "from-rose-500 to-rose-400" },
   { icon: BookOpen, label: "Knowledge Base", desc: "Playbooks, retrospectives & best practices", color: "from-emerald-500 to-rose-400" },
   { icon: Cable, label: "Connectors", desc: "Upwork, LinkedIn, Indeed & more", color: "from-indigo-500 to-rose-500" },
 ]
@@ -130,17 +130,17 @@ export default function LoginPage() {
         <motion.div
           animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-blue-600/8 rounded-full blur-[120px]"
+          className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-indigo-600/8 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{ x: [0, -25, 0], y: [0, 30, 0] }}
           transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-purple-600/8 rounded-full blur-[120px]"
+          className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-rose-600/8 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{ x: [0, 20, 0], y: [0, 15, 0] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[40%] left-[50%] w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-[100px]"
+          className="absolute top-[40%] left-[50%] w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px]"
         />
 
         {/* Dot Grid */}
@@ -156,7 +156,7 @@ export default function LoginPage() {
         <motion.div
           animate={{ y: ["-100%", "100vh"] }}
           transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"
+          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"
         />
       </div>
 
@@ -196,7 +196,7 @@ export default function LoginPage() {
             className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-8 backdrop-blur-xl shadow-2xl shadow-black/40 relative overflow-hidden"
           >
             {/* Card Glow Effect */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Field */}
@@ -212,9 +212,9 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@company.com"
                     required
-                    className="w-full h-12 px-4 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 transition-all duration-200 group-hover:border-zinc-600/60"
+                    className="w-full h-12 px-4 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/40 transition-all duration-200 group-hover:border-zinc-600/60"
                   />
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/5 to-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </div>
               </div>
 
@@ -238,7 +238,7 @@ export default function LoginPage() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="John Doe"
                       required
-                      className="w-full h-12 px-4 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 transition-all duration-200"
+                      className="w-full h-12 px-4 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/40 transition-all duration-200"
                     />
                   </motion.div>
                 )}
@@ -257,7 +257,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     required
-                    className="w-full h-12 px-4 pr-12 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 transition-all duration-200 group-hover:border-zinc-600/60"
+                    className="w-full h-12 px-4 pr-12 bg-zinc-800/40 border border-zinc-700/50 rounded-xl text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/40 transition-all duration-200 group-hover:border-zinc-600/60"
                   />
                   <button
                     type="button"
@@ -280,7 +280,7 @@ export default function LoginPage() {
                       onChange={(e) => setRememberMe(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-800/50 peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all duration-200 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded border border-zinc-700 bg-zinc-800/50 peer-checked:bg-indigo-600 peer-checked:border-indigo-600 transition-all duration-200 flex items-center justify-center">
                       {rememberMe && (
                         <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -290,7 +290,7 @@ export default function LoginPage() {
                   </div>
                   <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors">Remember me</span>
                 </label>
-                <button type="button" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                <button type="button" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
                   Forgot password?
                 </button>
               </div>
@@ -318,7 +318,7 @@ export default function LoginPage() {
                 disabled={loading}
                 whileHover={{ scale: loading ? 1 : 1.01 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 relative overflow-hidden group"
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-500 hover:from-indigo-500 hover:via-indigo-400 hover:to-indigo-400 text-white font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700" />
                 {loading ? (
@@ -365,12 +365,12 @@ export default function LoginPage() {
             <div className="mt-6 text-center">
               <button
                 onClick={() => { setIsRegister(!isRegister); setError("") }}
-                className="text-sm text-zinc-500 hover:text-blue-400 transition-colors duration-200"
+                className="text-sm text-zinc-500 hover:text-indigo-400 transition-colors duration-200"
               >
                 {isRegister ? (
-                  <>Already have an account? <span className="font-medium text-blue-400">Sign in</span></>
+                  <>Already have an account? <span className="font-medium text-indigo-400">Sign in</span></>
                 ) : (
-                  <>Don&apos;t have an account? <span className="font-medium text-blue-400">Register</span></>
+                  <>Don&apos;t have an account? <span className="font-medium text-indigo-400">Register</span></>
                 )}
               </button>
             </div>
@@ -385,9 +385,9 @@ export default function LoginPage() {
           >
             <button
               onClick={fillDemo}
-              className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/30 border border-zinc-800/40 hover:border-blue-500/20 hover:bg-zinc-900/50 transition-all duration-300"
+              className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900/30 border border-zinc-800/40 hover:border-indigo-500/20 hover:bg-zinc-900/50 transition-all duration-300"
             >
-              <Zap className="w-3.5 h-3.5 text-blue-400 group-hover:text-blue-300" />
+              <Zap className="w-3.5 h-3.5 text-indigo-400 group-hover:text-indigo-300" />
               <span className="text-xs text-zinc-500 group-hover:text-zinc-400 transition-colors">
                 Quick fill demo credentials
               </span>
@@ -405,7 +405,7 @@ export default function LoginPage() {
         className="hidden lg:flex w-[420px] xl:w-[480px] bg-zinc-900/30 border-l border-zinc-800/40 flex-col relative overflow-hidden"
       >
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/3 via-transparent to-purple-500/3 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/3 via-transparent to-rose-500/3 pointer-events-none" />
 
         <div className="relative flex flex-col h-full p-8 xl:p-10">
           {/* Header */}
@@ -480,7 +480,7 @@ export default function LoginPage() {
                   {activeFeature === i && (
                     <motion.div
                       layoutId="activeIndicator"
-                      className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"
+                      className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0"
                     />
                   )}
                 </motion.div>
@@ -493,9 +493,9 @@ export default function LoginPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2 }}
-            className="mt-6 p-4 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 border border-blue-500/10"
+            className="mt-6 p-4 rounded-xl bg-gradient-to-br from-indigo-500/5 to-rose-500/5 border border-indigo-500/10"
           >
-            <Quote className="w-4 h-4 text-blue-500/40 mb-2" />
+            <Quote className="w-4 h-4 text-indigo-500/40 mb-2" />
             <AnimatePresence mode="wait">
               <motion.div
                 key={testiIndex}
@@ -508,7 +508,7 @@ export default function LoginPage() {
                   &ldquo;{testimonials[testiIndex].text}&rdquo;
                 </p>
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-rose-500 flex items-center justify-center text-[10px] font-bold text-white">
                     {testimonials[testiIndex].author[0]}
                   </div>
                   <div>
@@ -526,7 +526,7 @@ export default function LoginPage() {
                   key={i}
                   onClick={() => setTestiIndex(i)}
                   className={`h-1 rounded-full transition-all duration-300 ${
-                    i === testiIndex ? "w-4 bg-blue-500" : "w-1 bg-zinc-700 hover:bg-zinc-600"
+                    i === testiIndex ? "w-4 bg-indigo-500" : "w-1 bg-zinc-700 hover:bg-zinc-600"
                   }`}
                 />
               ))}

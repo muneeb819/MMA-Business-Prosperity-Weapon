@@ -55,7 +55,7 @@ export default function AdminPage() {
               <Breadcrumbs />
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-rose-400 bg-clip-text text-transparent">
                     Admin Panel
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">System administration & monitoring</p>
@@ -94,7 +94,7 @@ export default function AdminPage() {
                 <GlassCard glow="blue">
                   <GlassCardHeader>
                     <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-blue-400" /> System Overview
+                      <Shield className="w-4 h-4 text-indigo-400" /> System Overview
                     </h2>
                   </GlassCardHeader>
                   <GlassCardContent>
@@ -128,15 +128,15 @@ export default function AdminPage() {
                 <GlassCard glow="purple">
                   <GlassCardHeader>
                     <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                      <Settings className="w-4 h-4 text-purple-400" /> Quick Actions
+                      <Settings className="w-4 h-4 text-rose-400" /> Quick Actions
                     </h2>
                   </GlassCardHeader>
                   <GlassCardContent className="space-y-2">
                     {[
-                      { label: "Seed Database", desc: "Generate sample data", color: "bg-blue-400" },
+                      { label: "Seed Database", desc: "Generate sample data", color: "bg-indigo-400" },
                       { label: "Cleanup Sessions", desc: "Remove expired sessions", color: "bg-emerald-400" },
-                      { label: "Export Audit Logs", desc: "Download system audit trail", color: "bg-purple-400" },
-                      { label: "System Health Check", desc: "Verify all services", color: "bg-blue-400" },
+                      { label: "Export Audit Logs", desc: "Download system audit trail", color: "bg-rose-400" },
+                      { label: "System Health Check", desc: "Verify all services", color: "bg-indigo-400" },
                     ].map((action, i) => (
                       <button
                         key={i}

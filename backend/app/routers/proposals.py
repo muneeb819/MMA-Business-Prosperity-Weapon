@@ -299,7 +299,7 @@ async def generate_proposal(request: GenerateRequest, db: Session = Depends(get_
     generated = await ai_service.generate_proposal(lead_data, tone=request.tone, instructions=request.instructions)
 
     lead_id = request.leadId or ""
-    if not lead_id and db_lead if 'db_lead' in dir() else False:
+    if not lead_id and "db_lead" in dir() and db_lead:
         lead_id = db_lead.id
 
     title = generated.get("title", f"Proposal for {lead_data.get('title', 'Project')}")
@@ -453,7 +453,7 @@ def _build_email_html(salutation: str, body: str, closing: str, signature: str, 
         if field:
             sections_html += f"""
             <tr>
-                <td style="padding:8px 0 4px;font-size:13px;font-weight:600;color:#3b82f6;border-bottom:1px solid #e5e7eb">{label}</td>
+                <td style="padding:8px 0 4px;font-size:13px;font-weight:600;color:#6366f1;border-bottom:1px solid #e5e7eb">{label}</td>
             </tr>
             <tr>
                 <td style="padding:4px 0 12px;font-size:12px;color:#374151;white-space:pre-wrap;line-height:1.6">{field}</td>
@@ -465,7 +465,7 @@ def _build_email_html(salutation: str, body: str, closing: str, signature: str, 
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',system-ui,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-<tr><td style="padding:32px 32px 16px;background:linear-gradient(135deg,#1e3a5f,#3b82f6)">
+<tr><td style="padding:32px 32px 16px;background:linear-gradient(135deg,#312e81,#6366f1)">
 <h1 style="margin:0;font-size:20px;color:#ffffff;font-weight:700">Proposal: {proposal.title}</h1>
 <p style="margin:6px 0 0;font-size:13px;color:#93c5fd">{lead.client_name} &middot; {lead.company}</p>
 </td></tr>

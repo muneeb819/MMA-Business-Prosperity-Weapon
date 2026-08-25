@@ -110,8 +110,8 @@ export default function CRMPage() {
   const totalRevenue = companies.reduce((a, c) => a + c.revenue, 0);
 
   const stats = [
-    { label: "Companies", value: totalCompanies, icon: Building2, color: "text-cyan-400", glow: "bg-cyan-500/10" },
-    { label: "Contacts", value: totalContacts, icon: Users, color: "text-violet-400", glow: "bg-violet-500/10" },
+    { label: "Companies", value: totalCompanies, icon: Building2, color: "text-indigo-400", glow: "bg-indigo-500/10" },
+    { label: "Contacts", value: totalContacts, icon: Users, color: "text-rose-400", glow: "bg-rose-500/10" },
     { label: "Active Leads", value: activeLeads, icon: Target, color: "text-amber-400", glow: "bg-amber-500/10" },
     { label: "Total Revenue", value: formatCurrency(totalRevenue), icon: DollarSign, color: "text-emerald-400", glow: "bg-emerald-500/10" },
   ];
@@ -261,7 +261,7 @@ export default function CRMPage() {
           <Breadcrumbs />
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20"><Users className="w-6 h-6 text-cyan-400" /></div>
+              <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20"><Users className="w-6 h-6 text-indigo-400" /></div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">CRM</h1>
                 <p className="text-sm text-zinc-500">Manage your customer relationships</p>
@@ -269,12 +269,12 @@ export default function CRMPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={() => setShowAddCompany(true)} variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"><Building2 className="w-4 h-4 mr-2" />Add Company</Button>
-              <Button onClick={() => setShowAddContact(true)} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/20"><UserPlus className="w-4 h-4 mr-2" />Add Contact</Button>
+              <Button onClick={() => setShowAddContact(true)} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-indigo-500/20"><UserPlus className="w-4 h-4 mr-2" />Add Contact</Button>
             </div>
           </div>
           {loading && (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
               <span className="ml-3 text-sm text-zinc-400">Loading CRM data...</span>
             </div>
           )}
@@ -295,7 +295,7 @@ export default function CRMPage() {
             <TabsContent value="meetings" className="mt-4">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-zinc-500">{meetings.length} meeting{meetings.length !== 1 ? "s" : ""}</p>
-                <Button onClick={() => setShowAddMeeting(true)} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/20"><Plus className="w-4 h-4 mr-2" />Schedule Meeting</Button>
+                <Button onClick={() => setShowAddMeeting(true)} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-indigo-500/20"><Plus className="w-4 h-4 mr-2" />Schedule Meeting</Button>
               </div>
               {meetings.length === 0 ? (
                 <div className="bg-zinc-900/80 border border-zinc-800/80 rounded-xl p-12 flex flex-col items-center justify-center text-center">
@@ -309,8 +309,8 @@ export default function CRMPage() {
                     <Card key={m.id} className="bg-zinc-900/60 border-zinc-800/60">
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
-                          <div className={`p-2.5 rounded-xl ${m.status === "completed" ? "bg-emerald-500/10" : m.status === "cancelled" ? "bg-red-500/10" : "bg-cyan-500/10"}`}>
-                            <Calendar className={`w-5 h-5 ${m.status === "completed" ? "text-emerald-400" : m.status === "cancelled" ? "text-red-400" : "text-cyan-400"}`} />
+                          <div className={`p-2.5 rounded-xl ${m.status === "completed" ? "bg-emerald-500/10" : m.status === "cancelled" ? "bg-red-500/10" : "bg-indigo-500/10"}`}>
+                            <Calendar className={`w-5 h-5 ${m.status === "completed" ? "text-emerald-400" : m.status === "cancelled" ? "text-red-400" : "text-indigo-400"}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -318,7 +318,7 @@ export default function CRMPage() {
                               <Badge variant="outline" className={`text-[10px] px-2 py-0.5 ${
                                 m.status === "completed" ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" :
                                 m.status === "cancelled" ? "text-red-400 border-red-500/30 bg-red-500/10" :
-                                "text-cyan-400 border-cyan-500/30 bg-cyan-500/10"
+                                "text-indigo-400 border-indigo-500/30 bg-indigo-500/10"
                               }`}>{m.status}</Badge>
                             </div>
                             <div className="flex items-center gap-4 mt-1 text-xs text-zinc-500">
@@ -347,7 +347,7 @@ export default function CRMPage() {
             <TabsContent value="activities" className="mt-4">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-zinc-500">{activities.length} activit{activities.length !== 1 ? "ies" : "y"}</p>
-                <Button onClick={() => setShowLogActivity(true)} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-0 shadow-lg shadow-cyan-500/20"><Plus className="w-4 h-4 mr-2" />Log Activity</Button>
+                <Button onClick={() => setShowLogActivity(true)} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white border-0 shadow-lg shadow-indigo-500/20"><Plus className="w-4 h-4 mr-2" />Log Activity</Button>
               </div>
               {activities.length === 0 ? (
                 <div className="bg-zinc-900/80 border border-zinc-800/80 rounded-xl p-12 flex flex-col items-center justify-center text-center">
@@ -358,7 +358,7 @@ export default function CRMPage() {
               ) : (
                 <div className="space-y-2">
                   {activities.map((a) => {
-                    const typeConfig = { call: { icon: Phone, color: "text-green-400" }, email: { icon: Mail, color: "text-blue-400" }, meeting: { icon: Calendar, color: "text-cyan-400" }, note: { icon: Clock, color: "text-amber-400" } };
+                    const typeConfig = { call: { icon: Phone, color: "text-green-400" }, email: { icon: Mail, color: "text-indigo-400" }, meeting: { icon: Calendar, color: "text-indigo-400" }, note: { icon: Clock, color: "text-amber-400" } };
                     const Icon = typeConfig[a.type].icon;
                     return (
                       <Card key={a.id} className="bg-zinc-900/60 border-zinc-800/60">
@@ -393,7 +393,7 @@ export default function CRMPage() {
       <Dialog open={showAddMeeting} onOpenChange={setShowAddMeeting}>
         <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md z-[100]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-cyan-400"><Calendar className="w-5 h-5" />Schedule Meeting</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-indigo-400"><Calendar className="w-5 h-5" />Schedule Meeting</DialogTitle>
             <DialogDescription className="text-zinc-500">Plan a meeting with a contact or company.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -428,7 +428,7 @@ export default function CRMPage() {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="ghost" onClick={() => setShowAddMeeting(false)} className="text-zinc-400 hover:text-white">Cancel</Button>
-            <Button onClick={handleAddMeeting} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white">Schedule</Button>
+            <Button onClick={handleAddMeeting} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white">Schedule</Button>
           </div>
         </DialogContent>
       </Dialog>

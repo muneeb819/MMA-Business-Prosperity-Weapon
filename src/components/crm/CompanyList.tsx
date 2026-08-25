@@ -14,10 +14,10 @@ import {
 const STATUS_FILTERS = ["all", "prospect", "active", "inactive", "partner"] as const;
 
 const STATUS_COLORS: Record<string, string> = {
-  prospect: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+  prospect: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
   active: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   inactive: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
-  partner: "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  partner: "bg-rose-500/20 text-violet-300 border-rose-500/30",
 };
 
 interface CompanyListProps {
@@ -50,7 +50,7 @@ export const CompanyList = memo(function CompanyList({
             placeholder="Search companies..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 bg-zinc-900/60 border-zinc-800/80 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+            className="pl-10 bg-zinc-900/60 border-zinc-800/80 focus:border-indigo-500/50 focus:ring-indigo-500/20"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export const CompanyList = memo(function CompanyList({
             >
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-lg shrink-0 group-hover:from-cyan-500/30 group-hover:to-blue-500/30 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-lg shrink-0 group-hover:from-indigo-500/30 group-hover:to-rose-500/30 transition-all">
                     {company.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">

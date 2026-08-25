@@ -28,9 +28,9 @@ interface ProposalStatsProps {
 
 function ProposalStatsInner({ stats, totalBudget }: ProposalStatsProps) {
   const statCards = [
-    { label: "Total Proposals", value: stats.total, icon: <FileText className="w-5 h-5" />, color: "text-blue-400", bg: "from-blue-500/10 to-blue-600/5 border-blue-500/20" },
+    { label: "Total Proposals", value: stats.total, icon: <FileText className="w-5 h-5" />, color: "text-indigo-400", bg: "from-indigo-500/10 to-indigo-600/5 border-indigo-500/20" },
     { label: "Drafts", value: stats.drafts, icon: <Edit3 className="w-5 h-5" />, color: "text-zinc-400", bg: "from-zinc-500/10 to-zinc-600/5 border-zinc-500/20" },
-    { label: "Submitted", value: stats.submitted, icon: <Send className="w-5 h-5" />, color: "text-blue-400", bg: "from-blue-500/10 to-blue-600/5 border-blue-500/20" },
+    { label: "Submitted", value: stats.submitted, icon: <Send className="w-5 h-5" />, color: "text-indigo-400", bg: "from-indigo-500/10 to-indigo-600/5 border-indigo-500/20" },
     { label: "Accepted", value: stats.accepted, icon: <CheckCircle2 className="w-5 h-5" />, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20" },
   ];
 
@@ -55,17 +55,17 @@ function ProposalStatsInner({ stats, totalBudget }: ProposalStatsProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-        <Card className="bg-gradient-to-br from-violet-500/[0.06] to-purple-600/[0.02] border-violet-500/15 bg-zinc-900/80 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
+        <Card className="bg-gradient-to-br from-rose-500/[0.06] to-rose-600/[0.02] border-rose-500/15 bg-zinc-900/80 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 min-w-0">
-                <Target className="w-4 h-4 text-violet-400 shrink-0" />
+                <Target className="w-4 h-4 text-rose-400 shrink-0" />
                 <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">Avg. Win Rate</span>
               </div>
-              <span className="text-lg font-bold text-violet-400 shrink-0">{stats.avgWin}%</span>
+              <span className="text-lg font-bold text-rose-400 shrink-0">{stats.avgWin}%</span>
             </div>
             <div className="h-2 bg-white/[0.05] rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-violet-500 to-purple-400 rounded-full transition-all duration-1000" style={{ width: `${stats.avgWin}%` }} />
+              <div className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-1000" style={{ width: `${stats.avgWin}%` }} />
             </div>
           </CardContent>
         </Card>

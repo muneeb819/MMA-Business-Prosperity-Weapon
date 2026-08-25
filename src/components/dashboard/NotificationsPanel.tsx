@@ -21,9 +21,9 @@ function NotificationIcon({ type }: { type: string }) {
     urgent: <AlertTriangle className="w-4 h-4 text-amber-400" />,
     government: <CheckCircle className="w-4 h-4 text-emerald-400" />,
     enterprise: <CheckCircle className="w-4 h-4 text-emerald-400" />,
-    follow_up: <Info className="w-4 h-4 text-cyan-400" />,
-    system: <Info className="w-4 h-4 text-cyan-400" />,
-    agent: <Bot className="w-4 h-4 text-violet-400" />,
+    follow_up: <Info className="w-4 h-4 text-indigo-400" />,
+    system: <Info className="w-4 h-4 text-indigo-400" />,
+    agent: <Bot className="w-4 h-4 text-rose-400" />,
   }
   return <>{iconMap[type] || iconMap.system}</>
 }
@@ -139,7 +139,7 @@ const NotificationsPanel = React.memo(function NotificationsPanel({
                       </p>
                     </div>
                     {!notification.read && (
-                      <span className="w-2 h-2 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
                     )}
                   </div>
                 </div>

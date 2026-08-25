@@ -53,7 +53,7 @@ export function Breadcrumbs({ className }: { className?: string }) {
 
   return (
     <nav aria-label="Breadcrumb" className={cn("flex items-center gap-1.5 text-xs text-zinc-500 mb-4", className)}>
-      <Link href="/" className="flex items-center gap-1 hover:text-cyan-400 transition-colors">
+      <Link href="/" className="flex items-center gap-1 hover:text-indigo-400 transition-colors">
         <Home className="w-3 h-3" />
       </Link>
       {segments.map((seg, i) => {
@@ -70,7 +70,7 @@ export function Breadcrumbs({ className }: { className?: string }) {
                 {label}
               </span>
             ) : (
-              <Link href={href} className="flex items-center gap-1 hover:text-cyan-400 transition-colors">
+              <Link href={href} className="flex items-center gap-1 hover:text-indigo-400 transition-colors">
                 <Icon className="w-3 h-3" />
                 {label}
               </Link>

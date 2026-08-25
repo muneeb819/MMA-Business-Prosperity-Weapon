@@ -64,9 +64,9 @@ const SearchResults = React.memo(function SearchResults({
         <Card className="border-0 bg-[#12121a] overflow-hidden">
           <CardContent className="p-12 flex flex-col items-center justify-center space-y-6">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-xl animate-pulse pointer-events-none" />
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 flex items-center justify-center shrink-0">
-                <Brain className="w-10 h-10 text-cyan-400 animate-pulse shrink-0" />
+              <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-xl animate-pulse pointer-events-none" />
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500/10 to-rose-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                <Brain className="w-10 h-10 text-indigo-400 animate-pulse shrink-0" />
               </div>
             </div>
             <div className="text-center space-y-2">
@@ -75,9 +75,9 @@ const SearchResults = React.memo(function SearchResults({
             </div>
             <div className="flex items-center gap-2 text-slate-500">
               <div className="flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
               <span className="text-sm ml-1">Processing</span>
             </div>
@@ -90,7 +90,7 @@ const SearchResults = React.memo(function SearchResults({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <h2 className="text-lg font-semibold text-white shrink-0">Search Results</h2>
-              <Badge variant="outline" className="shrink-0 border-cyan-500/30 text-cyan-400 bg-cyan-500/10 text-xs">
+              <Badge variant="outline" className="shrink-0 border-indigo-500/30 text-indigo-400 bg-indigo-500/10 text-xs">
                 {results.length} leads found
               </Badge>
             </div>
@@ -112,7 +112,7 @@ const SearchResults = React.memo(function SearchResults({
                 onClick={onSaveSearch}
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-700/50 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 text-xs"
+                className="h-8 border-slate-700/50 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 text-xs"
               >
                 <Save className="w-3 h-3 mr-1 shrink-0" />
                 Save Search
@@ -121,7 +121,7 @@ const SearchResults = React.memo(function SearchResults({
                 onClick={onExport}
                 variant="outline"
                 size="sm"
-                className="h-8 border-slate-700/50 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 text-xs"
+                className="h-8 border-slate-700/50 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 text-xs"
               >
                 <Download className="w-3 h-3 mr-1 shrink-0" />
                 Export
@@ -145,18 +145,18 @@ const SearchResults = React.memo(function SearchResults({
             {results.map((lead, i) => (
               <Card
                 key={lead.id}
-                className="group border-0 bg-[#12121a] hover:bg-[#16161f] hover:border-cyan-500/20 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-cyan-500/5 overflow-hidden"
+                className="group border-0 bg-[#12121a] hover:bg-[#16161f] hover:border-indigo-500/20 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-indigo-500/5 overflow-hidden"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-slate-700/50 flex items-center justify-center shrink-0">
-                          <Building2 className="w-5 h-5 text-cyan-400 shrink-0" />
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/10 to-rose-500/10 border border-slate-700/50 flex items-center justify-center shrink-0">
+                          <Building2 className="w-5 h-5 text-indigo-400 shrink-0" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-white truncate group-hover:text-cyan-300 transition-colors">
+                          <h3 className="font-semibold text-white truncate group-hover:text-indigo-300 transition-colors">
                             {lead.title}
                           </h3>
                           <p className="text-sm text-slate-400 truncate">{lead.company}</p>
@@ -214,7 +214,7 @@ const SearchResults = React.memo(function SearchResults({
                             e.preventDefault();
                             showToast(`Viewing details for "${lead.title}"`);
                           }}
-                          className="h-7 px-2 border-slate-700/50 text-slate-500 hover:text-cyan-400 hover:border-cyan-500/30 text-[10px] rounded-md"
+                          className="h-7 px-2 border-slate-700/50 text-slate-500 hover:text-indigo-400 hover:border-indigo-500/30 text-[10px] rounded-md"
                         >
                           <Eye className="w-3 h-3 mr-1 shrink-0" />
                           View
@@ -237,12 +237,12 @@ const SearchResults = React.memo(function SearchResults({
                             e.preventDefault();
                             showToast(`Saved "${lead.title}"`);
                           }}
-                          className="h-7 px-2 border-slate-700/50 text-slate-500 hover:text-purple-400 hover:border-purple-500/30 text-[10px] rounded-md"
+                          className="h-7 px-2 border-slate-700/50 text-slate-500 hover:text-rose-400 hover:border-rose-500/30 text-[10px] rounded-md"
                         >
                           <Bookmark className="w-3 h-3 shrink-0" />
                         </Button>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-cyan-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </div>
                   </div>
                 </CardContent>
@@ -267,7 +267,7 @@ const SearchResults = React.memo(function SearchResults({
                 <button
                   key={s}
                   onClick={() => onSuggestedClick(s)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-300 hover:border-cyan-500/30 transition-all duration-200 text-left leading-relaxed"
+                  className="px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-400 hover:bg-indigo-500/10 hover:text-indigo-300 hover:border-indigo-500/30 transition-all duration-200 text-left leading-relaxed"
                 >
                   {s}
                 </button>

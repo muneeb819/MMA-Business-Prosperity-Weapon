@@ -117,10 +117,10 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                       onMouseEnter={() => setSelectedIndex(globalIdx)}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
-                        globalIdx === selectedIndex ? "bg-cyan-500/10 text-cyan-300" : "text-zinc-300 hover:bg-zinc-800/50"
+                        globalIdx === selectedIndex ? "bg-indigo-500/10 text-indigo-300" : "text-zinc-300 hover:bg-zinc-800/50"
                       )}
                     >
-                      <cmd.icon className={cn("w-4 h-4 shrink-0", globalIdx === selectedIndex ? "text-cyan-400" : "text-zinc-500")} />
+                      <cmd.icon className={cn("w-4 h-4 shrink-0", globalIdx === selectedIndex ? "text-indigo-400" : "text-zinc-500")} />
                       <div className="flex-1 text-left">
                         <span className="font-medium">{cmd.label}</span>
                         <span className="text-xs text-zinc-500 ml-2">{cmd.description}</span>

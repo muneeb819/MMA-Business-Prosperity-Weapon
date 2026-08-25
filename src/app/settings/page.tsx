@@ -85,7 +85,7 @@ export default function SettingsPage() {
               <h2 className="text-sm font-semibold flex items-center gap-2"><User className="w-4 h-4 text-primary" /> Profile</h2>
               <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 via-rose-600 to-rose-500 flex items-center justify-center text-white text-xl font-bold shadow-lg">
                     {name.split(" ").map((s) => s[0]).join("").toUpperCase().slice(0, 2)}
                   </div>
                   <div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-                <Button onClick={handleSave} size="sm" className="bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-500 text-white shadow-lg shadow-primary/20">
+                <Button onClick={handleSave} size="sm" className="bg-gradient-to-r from-primary to-rose-600 hover:from-primary/90 hover:to-rose-500 text-white shadow-lg shadow-primary/20">
                   {saved ? <><CheckCircle className="w-4 h-4 mr-2 text-emerald-300" /> Saved</> : <><Save className="w-4 h-4 mr-2" /> Save Changes</>}
                 </Button>
               </div>

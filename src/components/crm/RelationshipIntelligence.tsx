@@ -22,11 +22,11 @@ interface RelationshipIntelligenceProps {
 }
 
 const itemConfig: Record<string, { icon: typeof FileText; color: string; bg: string }> = {
-  proposal: { icon: FileText, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+  proposal: { icon: FileText, color: "text-indigo-400", bg: "bg-indigo-500/10" },
   conversation: { icon: MessageSquare, color: "text-amber-400", bg: "bg-amber-500/10" },
   project: { icon: Briefcase, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  contact: { icon: Users, color: "text-blue-400", bg: "bg-blue-500/10" },
-  meeting: { icon: Clock, color: "text-violet-400", bg: "bg-violet-500/10" },
+  contact: { icon: Users, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+  meeting: { icon: Clock, color: "text-rose-400", bg: "bg-rose-500/10" },
 }
 
 const RelationshipIntelligence = memo(function RelationshipIntelligence({
@@ -36,7 +36,7 @@ const RelationshipIntelligence = memo(function RelationshipIntelligence({
     return (
       <Card className="bg-zinc-900/80 border-zinc-800/50">
         <CardContent className="p-4 flex items-center justify-center h-20">
-          <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
           <span className="ml-3 text-sm text-zinc-400">Loading relationship data...</span>
         </CardContent>
       </Card>
@@ -47,8 +47,8 @@ const RelationshipIntelligence = memo(function RelationshipIntelligence({
     <Card className="bg-zinc-900/80 border-zinc-800/50 overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 flex items-center justify-center">
-            <Users className="w-4 h-4 text-cyan-400" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500/10 to-rose-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <Users className="w-4 h-4 text-indigo-400" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Relationship Intelligence</h3>
@@ -80,7 +80,7 @@ const RelationshipIntelligence = memo(function RelationshipIntelligence({
                   </div>
                   {item.link && (
                     <Link href={item.link} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ArrowRight className="w-4 h-4 text-cyan-400" />
+                      <ArrowRight className="w-4 h-4 text-indigo-400" />
                     </Link>
                   )}
                 </div>

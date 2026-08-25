@@ -15,10 +15,10 @@ import {
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
-  prospect: "bg-cyan-500/20 text-cyan-300 border-cyan-500/30",
+  prospect: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
   active: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   inactive: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
-  partner: "bg-violet-500/20 text-violet-300 border-violet-500/30",
+  partner: "bg-rose-500/20 text-violet-300 border-rose-500/30",
 };
 
 interface CompanyDetailProps {
@@ -83,7 +83,7 @@ export const CompanyDetail = memo(function CompanyDetail({
           <>
             <DialogHeader>
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold text-xl shrink-0">
+                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold text-xl shrink-0">
                   {isEditing ? editForm.name.charAt(0) : company.name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ export const CompanyDetail = memo(function CompanyDetail({
                     <div className="space-y-2">
                       {company.contacts.map((contact) => (
                         <div key={contact.id} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/60 hover:bg-zinc-800/50 transition-colors">
-                          <div className="w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/20 flex items-center justify-center text-violet-300 text-xs font-semibold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-rose-500/20 border border-rose-500/20 flex items-center justify-center text-violet-300 text-xs font-semibold shrink-0">
                             {contact.name.split(" ").map((n: string) => n[0]).join("")}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -178,7 +178,7 @@ export const CompanyDetail = memo(function CompanyDetail({
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {contact.email && (
-                              <Button size="icon" variant="ghost" className="h-9 w-9 text-zinc-500 hover:text-cyan-400"
+                              <Button size="icon" variant="ghost" className="h-9 w-9 text-zinc-500 hover:text-indigo-400"
                                 onClick={() => { openMailto(contact.email, `Re: ${company.name}`, `Hi ${contact.name.split(" ")[0]},\n\n`); onShowToast(`Opening email to ${contact.name}`); }}>
                                 <Mail className="w-3.5 h-3.5" />
                               </Button>
@@ -209,7 +209,7 @@ export const CompanyDetail = memo(function CompanyDetail({
 
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-800/60">
                     <Button size="sm" onClick={() => { const email = company.contacts[0]?.email || ""; if (email) { openMailto(email, `Partnership: ${company.name}`, `Dear ${company.name} team,\n\n`); onShowToast(`Opening email to ${company.name}`); } else { onShowToast("No email address available"); } }}
-                      className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+                      className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500">
                       <Mail className="w-3.5 h-3.5 mr-1.5" />Send Email
                     </Button>
                     <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"

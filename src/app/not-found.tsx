@@ -16,7 +16,7 @@ export default function NotFound() {
         <h1 className="text-2xl font-bold">Page Not Found</h1>
         <p className="text-zinc-400 text-sm">The page you are looking for does not exist or has been moved.</p>
         <div className="flex items-center justify-center gap-3">
-          <Link href="/" className="inline-flex items-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-medium shadow-lg shadow-cyan-500/20 transition-all">
+          <Link href="/" className="inline-flex items-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white text-sm font-medium shadow-lg shadow-indigo-500/20 transition-all">
             <Home className="w-4 h-4 mr-2" /> Go Home
           </Link>
           <Link href="/ai-search" className="inline-flex items-center px-4 py-2.5 rounded-xl border border-zinc-800 hover:bg-zinc-800/50 text-zinc-300 text-sm font-medium transition-all">

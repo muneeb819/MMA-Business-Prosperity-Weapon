@@ -13,7 +13,7 @@ interface AddCompanyDialogProps {
   onAdd: (company: { name: string; industry: string; country: string; revenue: string; website: string; notes: string }) => void;
 }
 
-const inputClass = "bg-zinc-800/60 border-zinc-700/80 focus:border-cyan-500/50";
+const inputClass = "bg-zinc-800/60 border-zinc-700/80 focus:border-indigo-500/50";
 
 export const AddCompanyDialog = memo(function AddCompanyDialog({ open, onOpenChange, onAdd }: AddCompanyDialogProps) {
   const [name, setName] = useState("");
@@ -29,7 +29,7 @@ export const AddCompanyDialog = memo(function AddCompanyDialog({ open, onOpenCha
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md z-50">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-cyan-400" />Add New Company</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Building2 className="w-5 h-5 text-indigo-400" />Add New Company</DialogTitle>
           <DialogDescription className="text-zinc-500">Add a new company to your CRM database.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 mt-4">
@@ -61,7 +61,7 @@ export const AddCompanyDialog = memo(function AddCompanyDialog({ open, onOpenCha
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="ghost" onClick={() => { onOpenChange(false); reset(); }} className="text-zinc-400 hover:text-white">Cancel</Button>
-            <Button onClick={() => { onAdd({ name, industry, country, revenue, website, notes }); reset(); }} className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
+            <Button onClick={() => { onAdd({ name, industry, country, revenue, website, notes }); reset(); }} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500">
               <Building2 className="w-4 h-4 mr-2" />Add Company
             </Button>
           </div>

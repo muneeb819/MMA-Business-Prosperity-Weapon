@@ -51,12 +51,12 @@ const NotificationPreferences = React.memo(function NotificationPreferences({
                 onClick={() => onTogglePref(key)}
                 className={cn(
                   "w-9 h-5 rounded-full flex items-center cursor-pointer transition-colors duration-200",
-                  prefs[key] ? "bg-cyan-500/30 justify-end" : "bg-slate-700/50 justify-start"
+                  prefs[key] ? "bg-indigo-500/30 justify-end" : "bg-slate-700/50 justify-start"
                 )}
               >
                 <div className={cn(
                   "w-4 h-4 rounded-full mx-0.5 transition-colors duration-200",
-                  prefs[key] ? "bg-cyan-400" : "bg-slate-500"
+                  prefs[key] ? "bg-indigo-400" : "bg-slate-500"
                 )} />
               </button>
             </div>

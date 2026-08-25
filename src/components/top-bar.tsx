@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -52,12 +52,12 @@ import { api } from "@/lib/api"
 const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: string; bg: string }> = {
   high_value: { icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   urgent: { icon: AlertTriangle, color: "text-rose-400", bg: "bg-rose-500/10" },
-  government: { icon: Building2, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  enterprise: { icon: Globe, color: "text-blue-400", bg: "bg-blue-500/10" },
+  government: { icon: Building2, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+  enterprise: { icon: Globe, color: "text-indigo-400", bg: "bg-indigo-500/10" },
   follow_up: { icon: Target, color: "text-amber-400", bg: "bg-amber-500/10" },
-  system: { icon: Bot, color: "text-purple-400", bg: "bg-purple-500/10" },
+  system: { icon: Bot, color: "text-rose-400", bg: "bg-rose-500/10" },
   agent: { icon: Bell, color: "text-slate-400", bg: "bg-slate-500/10" },
-  new_lead: { icon: Target, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+  new_lead: { icon: Target, color: "text-indigo-400", bg: "bg-indigo-500/10" },
 }
 
 const RECENT_SEARCHES_KEY = "mbpw_recent_searches"
@@ -224,14 +224,14 @@ export function TopBar() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
           <Input
             ref={inputRef}
-            placeholder="Search anything... (⌘K)"
+            placeholder="Search anything... (?K)"
             className="pl-10 pr-12 bg-muted/30 border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:bg-muted/50 transition-all h-10 rounded-xl relative z-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             onFocus={() => setSearchFocused(true)}
           />
-          <button type="button" onClick={openCommandPalette} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors z-10" aria-label="Open command palette (⌘K)">
+          <button type="button" onClick={openCommandPalette} className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50 hover:bg-muted transition-colors z-10" aria-label="Open command palette (?K)">
             <Command className="h-2.5 w-2.5 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground font-medium">K</span>
           </button>
@@ -346,7 +346,7 @@ export function TopBar() {
                         className={cn(
                           "flex items-start gap-3 px-3 py-2.5 mx-1 rounded-lg cursor-pointer",
                           "focus:bg-muted/50 focus:text-white",
-                          !notif.read && "bg-muted/20 border-l-2 border-l-cyan-500/60"
+                          !notif.read && "bg-muted/20 border-l-2 border-l-indigo-500/60"
                         )}
                       >
                         <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5", typeMeta.bg)}>
@@ -362,7 +362,7 @@ export function TopBar() {
                               <Clock className="w-2.5 h-2.5" />
                               {timeAgo(new Date(notif.createdAt))}
                             </span>
-                            {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                            {!notif.read && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />}
                           </div>
                         </div>
                         <ExternalLink className="w-3 h-3 text-muted-foreground/30 shrink-0 mt-1.5" />
@@ -381,7 +381,7 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2.5 px-2 h-10 rounded-xl hover:bg-muted/50 transition-all">
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                <AvatarFallback className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white text-xs font-bold shadow-lg">
+                <AvatarFallback className="bg-gradient-to-br from-indigo-600 via-rose-600 to-rose-500 text-white text-xs font-bold shadow-lg">
                   {initials}
                 </AvatarFallback>
               </Avatar>

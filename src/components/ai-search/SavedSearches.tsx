@@ -42,7 +42,7 @@ const SavedSearches = React.memo(function SavedSearches({
       <Card className="border-0 bg-[#12121a] overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-rose-400 shrink-0" />
             Suggested Searches
           </CardTitle>
         </CardHeader>
@@ -52,7 +52,7 @@ const SavedSearches = React.memo(function SavedSearches({
               <button
                 key={s}
                 onClick={() => onSuggestedClick(s)}
-                className="px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-400 hover:bg-cyan-500/10 hover:text-cyan-300 hover:border-cyan-500/30 transition-all duration-200 text-left leading-relaxed"
+                className="px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs text-slate-400 hover:bg-indigo-500/10 hover:text-indigo-300 hover:border-indigo-500/30 transition-all duration-200 text-left leading-relaxed"
               >
                 {s}
               </button>
@@ -95,7 +95,7 @@ const SavedSearches = React.memo(function SavedSearches({
       <Card className="border-0 bg-[#12121a] overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-            <Users className="w-4 h-4 text-cyan-400 shrink-0" />
+            <Users className="w-4 h-4 text-indigo-400 shrink-0" />
             Active Agents
           </CardTitle>
         </CardHeader>
@@ -108,7 +108,7 @@ const SavedSearches = React.memo(function SavedSearches({
         <Card className="border-0 bg-[#12121a] overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-              <Bookmark className="w-4 h-4 text-purple-400 shrink-0" />
+              <Bookmark className="w-4 h-4 text-rose-400 shrink-0" />
               Saved Searches
             </CardTitle>
           </CardHeader>
@@ -121,7 +121,7 @@ const SavedSearches = React.memo(function SavedSearches({
                 <div className="flex items-center gap-3 min-w-0">
                   <button
                     onClick={() => onSuggestedClick(s.query)}
-                    className="text-sm text-slate-300 hover:text-cyan-300 transition-colors truncate text-left min-w-0"
+                    className="text-sm text-slate-300 hover:text-indigo-300 transition-colors truncate text-left min-w-0"
                   >
                     {s.query}
                   </button>

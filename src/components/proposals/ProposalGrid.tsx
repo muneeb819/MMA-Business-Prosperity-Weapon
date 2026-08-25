@@ -60,7 +60,7 @@ function ProposalGridInner({ filteredProposals, onSelectProposal }: ProposalGrid
                 </div>
               </div>
 
-              <h3 className="text-white font-semibold text-[15px] leading-tight mb-1 group-hover:text-blue-300 transition-colors line-clamp-2">
+              <h3 className="text-white font-semibold text-[15px] leading-tight mb-1 group-hover:text-indigo-300 transition-colors line-clamp-2">
                 {proposal.title}
               </h3>
               <div className="flex items-center gap-2 text-zinc-500 text-xs mb-4 truncate">
@@ -95,7 +95,7 @@ function ProposalGridInner({ filteredProposals, onSelectProposal }: ProposalGrid
                     Created {timeAgo(new Date(proposal.createdAt))}
                   </span>
                   {proposal.submittedAt && (
-                    <span className="flex items-center gap-1 text-blue-400/60 shrink-0">
+                    <span className="flex items-center gap-1 text-indigo-400/60 shrink-0">
                       <Send className="w-3 h-3" />
                       Sent {timeAgo(new Date(proposal.submittedAt))}
                     </span>

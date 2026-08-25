@@ -30,12 +30,12 @@ type FilterType = "all" | "unread" | "high_value" | "urgent";
 const typeIconMap: Record<Notification["type"], { icon: typeof Bell; color: string; bg: string }> = {
   high_value: { icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   urgent: { icon: AlertTriangle, color: "text-rose-400", bg: "bg-rose-500/10" },
-  government: { icon: Building2, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  enterprise: { icon: Globe, color: "text-blue-400", bg: "bg-blue-500/10" },
+  government: { icon: Building2, color: "text-indigo-400", bg: "bg-indigo-500/10" },
+  enterprise: { icon: Globe, color: "text-indigo-400", bg: "bg-indigo-500/10" },
   follow_up: { icon: Target, color: "text-amber-400", bg: "bg-amber-500/10" },
-  system: { icon: Bot, color: "text-purple-400", bg: "bg-purple-500/10" },
+  system: { icon: Bot, color: "text-rose-400", bg: "bg-rose-500/10" },
   agent: { icon: Bell, color: "text-slate-400", bg: "bg-slate-500/10" },
-  new_lead: { icon: Target, color: "text-cyan-400", bg: "bg-cyan-500/10" },
+  new_lead: { icon: Target, color: "text-indigo-400", bg: "bg-indigo-500/10" },
 };
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
@@ -47,12 +47,12 @@ const priorityConfig: Record<string, { label: string; className: string }> = {
 const typeBadgeConfig: Record<Notification["type"], string> = {
   high_value: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   urgent: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-  government: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  enterprise: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  government: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+  enterprise: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
   follow_up: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  system: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  system: "bg-rose-500/10 text-rose-400 border-rose-500/20",
   agent: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-  new_lead: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+  new_lead: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
 };
 
 interface NotificationListProps {
@@ -90,7 +90,7 @@ const NotificationList = React.memo(function NotificationList({
       {filter !== "all" && (
         <div className="flex items-center gap-2 text-xs text-slate-500">
           <span>Showing:</span>
-          <Badge variant="outline" className="text-[10px] font-medium border bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+          <Badge variant="outline" className="text-[10px] font-medium border bg-indigo-500/10 text-indigo-400 border-indigo-500/20">
             {filter === "unread" ? "Unread" : filter === "high_value" ? "High Value" : "Urgent"}
           </Badge>
           <Button
@@ -117,7 +117,7 @@ const NotificationList = React.memo(function NotificationList({
                 onClick={() => !notif.read && onToggleRead(notif.id)}
                 className={cn(
                   "group border-slate-800/50 bg-[#12121a] hover:bg-[#16161f] transition-all duration-200 hover:border-slate-700/50 overflow-hidden cursor-pointer",
-                  !notif.read && "border-l-2 border-l-cyan-500/60"
+                  !notif.read && "border-l-2 border-l-indigo-500/60"
                 )}
               >
                 <CardContent className="p-4">
@@ -169,8 +169,8 @@ const NotificationList = React.memo(function NotificationList({
                             {timeAgo(new Date(notif.createdAt))}
                           </span>
                           {!notif.read && (
-                            <span className="flex items-center gap-1 text-cyan-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                            <span className="flex items-center gap-1 text-indigo-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                               Unread
                             </span>
                           )}
@@ -194,7 +194,7 @@ const NotificationList = React.memo(function NotificationList({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 px-3 text-[11px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-md"
+                                className="h-7 px-3 text-[11px] text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-md"
                               >
                                 <Target className="w-3 h-3 mr-1" />
                                 View Lead
@@ -246,7 +246,7 @@ const NotificationList = React.memo(function NotificationList({
                 variant="ghost"
                 size="sm"
                 onClick={onRestoreAll}
-                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 mt-2"
+                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 mt-2"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                 Restore notifications
@@ -256,7 +256,7 @@ const NotificationList = React.memo(function NotificationList({
                 variant="ghost"
                 size="sm"
                 onClick={onClearFilter}
-                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 mt-2"
+                className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 mt-2"
               >
                 View all notifications
               </Button>
