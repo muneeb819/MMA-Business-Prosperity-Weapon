@@ -27,6 +27,18 @@ class ProposalBase(BaseModel):
     call_to_action: str = ""
 
 
+class ProposalUpdate(BaseModel):
+    leadId: Optional[str] = None
+    title: Optional[str] = None
+    cover_letter: Optional[str] = None
+    introduction: Optional[str] = None
+    technical_plan: Optional[str] = None
+    timeline: Optional[str] = None
+    cost_estimate: Optional[str] = None
+    portfolio_suggestions: Optional[List[str]] = None
+    call_to_action: Optional[str] = None
+
+
 class ProposalResponse(BaseModel):
     id: str
     leadId: str
@@ -177,20 +189,29 @@ def create_proposal(proposal: ProposalBase, db: Session = Depends(get_db)):
 
 
 @router.put("/{proposal_id}")
-def update_proposal(proposal_id: str, proposal: ProposalBase, db: Session = Depends(get_db)):
+def update_proposal(proposal_id: str, proposal: ProposalUpdate, db: Session = Depends(get_db)):
     db_prop = db.query(Proposal).filter(Proposal.id == proposal_id).first()
     if not db_prop:
         raise HTTPException(status_code=404, detail="Proposal not found")
 
-    db_prop.lead_id = proposal.leadId
-    db_prop.title = proposal.title
-    db_prop.cover_letter = proposal.cover_letter
-    db_prop.introduction = proposal.introduction
-    db_prop.technical_plan = proposal.technical_plan
-    db_prop.timeline = proposal.timeline
-    db_prop.cost_estimate = proposal.cost_estimate
-    db_prop.portfolio_suggestions = proposal.portfolio_suggestions
-    db_prop.call_to_action = proposal.call_to_action
+    if proposal.leadId is not None:
+        db_prop.lead_id = proposal.leadId
+    if proposal.title is not None:
+        db_prop.title = proposal.title
+    if proposal.cover_letter is not None:
+        db_prop.cover_letter = proposal.cover_letter
+    if proposal.introduction is not None:
+        db_prop.introduction = proposal.introduction
+    if proposal.technical_plan is not None:
+        db_prop.technical_plan = proposal.technical_plan
+    if proposal.timeline is not None:
+        db_prop.timeline = proposal.timeline
+    if proposal.cost_estimate is not None:
+        db_prop.cost_estimate = proposal.cost_estimate
+    if proposal.portfolio_suggestions is not None:
+        db_prop.portfolio_suggestions = proposal.portfolio_suggestions
+    if proposal.call_to_action is not None:
+        db_prop.call_to_action = proposal.call_to_action
 
     db.commit()
     db.refresh(db_prop)

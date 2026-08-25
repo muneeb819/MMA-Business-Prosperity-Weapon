@@ -41,6 +41,36 @@ class LeadBase(BaseModel):
     tags: List[str] = []
 
 
+class LeadUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    clientName: Optional[str] = None
+    company: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    budgetMin: Optional[float] = None
+    budgetMax: Optional[float] = None
+    deadline: Optional[str] = None
+    technologies: Optional[List[str]] = None
+    skills: Optional[List[str]] = None
+    platform: Optional[str] = None
+    jobType: Optional[str] = None
+    status: Optional[str] = None
+    urgency: Optional[str] = None
+    difficulty: Optional[float] = None
+    successProbability: Optional[float] = None
+    riskLevel: Optional[str] = None
+    expectedRevenue: Optional[float] = None
+    competition: Optional[int] = None
+    projectSize: Optional[str] = None
+    paymentMethod: Optional[str] = None
+    clientHistory: Optional[str] = None
+    url: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+
 class LeadResponse(BaseModel):
     id: str
     title: str
@@ -234,38 +264,43 @@ def create_lead(lead: LeadBase, db: Session = Depends(get_db)):
 
 
 @router.put("/{lead_id}")
-def update_lead(lead_id: str, lead: LeadBase, db: Session = Depends(get_db)):
+def update_lead(lead_id: str, lead: LeadUpdate, db: Session = Depends(get_db)):
     db_lead = db.query(Lead).filter(Lead.id == lead_id).first()
     if not db_lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    db_lead.title = lead.title
-    db_lead.description = lead.description
-    db_lead.client_name = lead.clientName
-    db_lead.company = lead.company
-    db_lead.email = lead.email
-    db_lead.phone = lead.phone
-    db_lead.country = lead.country
-    db_lead.budget_min = lead.budgetMin
-    db_lead.budget_max = lead.budgetMax
-    db_lead.deadline = lead.deadline
-    db_lead.technologies = lead.technologies
-    db_lead.skills = lead.skills
-    db_lead.platform = lead.platform
-    db_lead.job_type = lead.jobType
-    db_lead.status = lead.status
-    db_lead.urgency = lead.urgency
-    db_lead.difficulty = lead.difficulty
-    db_lead.success_probability = lead.successProbability
-    db_lead.risk_level = lead.riskLevel
-    db_lead.expected_revenue = lead.expectedRevenue
-    db_lead.competition = lead.competition
-    db_lead.project_size = lead.projectSize
-    db_lead.payment_method = lead.paymentMethod
-    db_lead.client_history = lead.clientHistory
-    db_lead.url = lead.url
-    db_lead.notes = lead.notes
-    db_lead.tags = lead.tags
+    _map = {
+        "title": ("title", lead.title),
+        "description": ("description", lead.description),
+        "client_name": ("clientName", lead.clientName),
+        "company": ("company", lead.company),
+        "email": ("email", lead.email),
+        "phone": ("phone", lead.phone),
+        "country": ("country", lead.country),
+        "budget_min": ("budgetMin", lead.budgetMin),
+        "budget_max": ("budgetMax", lead.budgetMax),
+        "deadline": ("deadline", lead.deadline),
+        "technologies": ("technologies", lead.technologies),
+        "skills": ("skills", lead.skills),
+        "platform": ("platform", lead.platform),
+        "job_type": ("jobType", lead.jobType),
+        "status": ("status", lead.status),
+        "urgency": ("urgency", lead.urgency),
+        "difficulty": ("difficulty", lead.difficulty),
+        "success_probability": ("successProbability", lead.successProbability),
+        "risk_level": ("riskLevel", lead.riskLevel),
+        "expected_revenue": ("expectedRevenue", lead.expectedRevenue),
+        "competition": ("competition", lead.competition),
+        "project_size": ("projectSize", lead.projectSize),
+        "payment_method": ("paymentMethod", lead.paymentMethod),
+        "client_history": ("clientHistory", lead.clientHistory),
+        "url": ("url", lead.url),
+        "notes": ("notes", lead.notes),
+        "tags": ("tags", lead.tags),
+    }
+    for col, (_, val) in _map.items():
+        if val is not None:
+            setattr(db_lead, col, val)
 
     db.commit()
     db.refresh(db_lead)
