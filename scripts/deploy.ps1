@@ -6,7 +6,7 @@ param(
   [string]$Message = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Push-Location $root
 
@@ -15,19 +15,23 @@ function Ensure-Committed {
   if ($status) {
     $msg = if ($Message) { $Message } else { "chore: staged changes via deploy script" }
     git add -A
-    git commit -m $msg
+    git commit -m $msg 2>$null
+  }
+}
+
+function Git-Checkout {
+  param([string]$Branch)
+  $current = (git rev-parse --abbrev-ref HEAD 2>$null).Trim()
+  if ($current -ne $Branch) {
+    git checkout $Branch 2>$null
+    if ($LASTEXITCODE -ne 0) { git checkout -b $Branch 2>$null }
   }
 }
 
 if ($Mode -eq "preview") {
-  # Make sure we are on develop (create it from main if missing)
-  $branch = git rev-parse --abbrev-ref HEAD
-  if ($branch -ne "develop") {
-    git checkout develop 2>$null
-    if ($LASTEXITCODE -ne 0) { git checkout -b develop }
-  }
+  Git-Checkout "develop"
   Ensure-Committed
-  git push -u origin develop
+  git push -u origin develop 2>$null
 
   Write-Host ""
   Write-Host "PREVIEW DEPLOY triggered for branch 'develop'." -ForegroundColor Cyan
@@ -37,12 +41,13 @@ if ($Mode -eq "preview") {
   Write-Host "  .\scripts\deploy.ps1 prod" -ForegroundColor Yellow
 }
 else {
-  # Promote develop -> main (production)
-  git checkout develop
+  Git-Checkout "develop"
   Ensure-Committed
-  git checkout main
-  git merge develop --no-edit
-  git push origin main
+  Git-Checkout "main"
+  git merge develop --no-edit 2>$null
+  if ($LASTEXITCODE -ne 0) { Write-Error "Merge failed"; Pop-Location; exit 1 }
+  git push origin main 2>$null
+  if ($LASTEXITCODE -ne 0) { Write-Error "Push failed"; Pop-Location; exit 1 }
 
   Write-Host ""
   Write-Host "PRODUCTION DEPLOY triggered (main)." -ForegroundColor Green
