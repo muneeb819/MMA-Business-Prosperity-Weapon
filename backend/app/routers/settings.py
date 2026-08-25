@@ -48,12 +48,57 @@ def _resolve_keys(payload: SettingsTest):
 
 @router.post("/test")
 def test_settings(payload: SettingsTest):
+    import urllib.request
+    import urllib.error
+    import json as _json
+
     hunter, apollo = _resolve_keys(payload)
     result = {}
+
     if apollo:
         try:
-            a = _apollo_lookup("Stripe", apollo, "CEO")
-            result["apollo"] = {"ok": bool(a), "email": (a or {}).get("email")}
+            qb = _json.dumps({
+                "api_key": apollo,
+                "organization_name": "Stripe",
+                "person_titles": ["CEO"],
+                "page": 1,
+                "per_page": 5,
+            }).encode()
+            req = urllib.request.Request(
+                "https://api.apollo.io/v1/mixed_people/search",
+                data=qb,
+                headers={"X-Api-Key": apollo, "Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                resp = urllib.request.urlopen(req, timeout=15)
+                data = _json.loads(resp.read())
+                people = data.get("people") or []
+                if people:
+                    p = people[0]
+                    email = p.get("email")
+                    if not email and isinstance(p.get("contact_emails"), list) and p["contact_emails"]:
+                        email = p["contact_emails"][0]
+                    result["apollo"] = {"ok": bool(email), "email": email}
+                else:
+                    result["apollo"] = {"ok": False, "error": "no_people"}
+            except urllib.error.HTTPError as he:
+                msg = he.read().decode("utf-8", "ignore")
+                ec = None
+                try:
+                    ec = _json.loads(msg).get("error_code")
+                except Exception:
+                    pass
+                if ec == "API_INACCESSIBLE" or he.code == 403:
+                    result["apollo"] = {
+                        "ok": False,
+                        "error": "plan_limited",
+                        "message": "Apollo Free plan blocks email lookup. Add a Hunter key or upgrade Apollo.",
+                    }
+                elif he.code == 401:
+                    result["apollo"] = {"ok": False, "error": "invalid_key"}
+                else:
+                    result["apollo"] = {"ok": False, "error": f"http_{he.code}"}
         except Exception as e:  # noqa: BLE001
             result["apollo"] = {"ok": False, "error": str(e)}
     else:
@@ -63,10 +108,18 @@ def test_settings(payload: SettingsTest):
         try:
             h = _hunter_lookup(guess_domain("Stripe"), hunter)
             result["hunter"] = {"ok": bool(h), "email": h}
+        except urllib.error.HTTPError as he:
+            if he.code == 401:
+                result["hunter"] = {"ok": False, "error": "invalid_key"}
+            elif he.code == 429:
+                result["hunter"] = {"ok": False, "error": "quota_exceeded"}
+            else:
+                result["hunter"] = {"ok": False, "error": f"http_{he.code}"}
         except Exception as e:  # noqa: BLE001
             result["hunter"] = {"ok": False, "error": str(e)}
     else:
         result["hunter"] = {"ok": False, "error": "no_key"}
+
     return result
 
 

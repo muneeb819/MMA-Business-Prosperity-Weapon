@@ -219,12 +219,26 @@ export default function SettingsPage() {
                 </div>
                 {testResult && !testResult.error && (
                   <div className="text-xs space-y-1">
-                    <p className={testResult.apollo?.ok ? "text-emerald-400" : "text-zinc-400"}>
-                      Apollo: {testResult.apollo?.ok ? `verified (${testResult.apollo.email})` : (testResult.apollo?.error || "not verified")}
-                    </p>
-                    <p className={testResult.hunter?.ok ? "text-emerald-400" : "text-zinc-400"}>
-                      Hunter: {testResult.hunter?.ok ? `verified (${testResult.hunter.email})` : (testResult.hunter?.error || "not verified")}
-                    </p>
+                    {(() => {
+                      const fmt = (p: any) => {
+                        if (!p) return ""
+                        if (p.ok) return `verified (${p.email})`
+                        if (p.error === "plan_limited") return "Free plan blocks email lookup — add a Hunter key or upgrade Apollo"
+                        if (p.error === "invalid_key") return "invalid key"
+                        if (p.error === "no_key") return "no key set"
+                        if (p.error === "quota_exceeded") return "quota exceeded"
+                        if (p.error === "no_people") return "no matches returned"
+                        return p.error || "not verified"
+                      }
+                      const cls = (p: any) =>
+                        p?.ok ? "text-emerald-400" : p?.error === "plan_limited" ? "text-amber-400" : "text-zinc-400"
+                      return (
+                        <>
+                          <p className={cls(testResult.apollo)}>Apollo: {fmt(testResult.apollo)}</p>
+                          <p className={cls(testResult.hunter)}>Hunter: {fmt(testResult.hunter)}</p>
+                        </>
+                      )
+                    })()}
                   </div>
                 )}
                 {testResult?.error && <p className="text-xs text-red-400">{testResult.error}</p>}
