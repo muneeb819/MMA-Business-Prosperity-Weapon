@@ -7,11 +7,14 @@ from app.models.database import get_db
 from app.models.schema import Lead, Outreach, Notification
 from app.services.email_sender import send_email
 from app.services import outreach_service
+from app.services import enrichment
 
 router = APIRouter()
 
 
 def _lead_to_dict(lead: Lead) -> dict:
+    tags = lead.tags or []
+    src = next((t.split("enriched:")[1] for t in tags if t.startswith("enriched:")), None)
     return {
         "id": lead.id,
         "title": lead.title,
@@ -23,6 +26,8 @@ def _lead_to_dict(lead: Lead) -> dict:
         "technologies": lead.technologies or [],
         "budget_max": lead.budget_max,
         "status": lead.status,
+        "email_source": src,
+        "email_verified": src == "hunter",
     }
 
 
@@ -48,6 +53,38 @@ def outreach_leads(db: Session = Depends(get_db)):
         d["has_email"] = bool(l.email and "@" in l.email)
         result.append(d)
     return result
+
+
+@router.post("/enrich/{lead_id}")
+def enrich_lead(lead_id: str, db: Session = Depends(get_db)):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    company = lead.company or lead.client_name
+    res = enrichment.enrich(company, verify=True)
+    if res["email"]:
+        lead.email = res["email"]
+        tag = f"enriched:{res['source']}"
+        if tag not in (lead.tags or []):
+            lead.tags = (lead.tags or []) + [tag]
+        db.commit()
+    return {"id": lead.id, "company": company, **res}
+
+
+@router.post("/enrich-all")
+def enrich_all(db: Session = Depends(get_db)):
+    leads = db.query(Lead).filter((Lead.email == None) | (Lead.email == "")).all()
+    enriched = 0
+    for l in leads:
+        res = enrichment.enrich(l.company or l.client_name, verify=True)
+        if res["email"]:
+            l.email = res["email"]
+            tag = f"enriched:{res['source']}"
+            if tag not in (l.tags or []):
+                l.tags = (l.tags or []) + [tag]
+            enriched += 1
+    db.commit()
+    return {"enriched": enriched, "checked": len(leads)}
 
 
 @router.post("/preview")

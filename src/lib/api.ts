@@ -168,6 +168,10 @@ export const api = {
     records: () => fetchAPI<any[]>(`/api/outreach/records`),
     reply: (id: string) =>
       fetchAPI<any>(`/api/outreach/${id}/reply`, { method: "POST" }),
+    enrich: (id: string) =>
+      fetchAPI<any>(`/api/outreach/enrich/${id}`, { method: "POST" }),
+    enrichAll: () =>
+      fetchAPI<any>(`/api/outreach/enrich-all`, { method: "POST" }),
     stats: () => fetchAPI<any>(`/api/outreach/stats`),
   },
   aiTeams: {

@@ -39,6 +39,8 @@ type LeadRow = {
   outreach_status: string;
   last_step: number;
   has_email: boolean;
+  email_source?: string | null;
+  email_verified?: boolean;
 };
 
 type CadenceStep = { day: number; channel: string; label: string; goal: string };
@@ -164,6 +166,29 @@ export default function OutreachPage() {
     await loadAll();
   };
 
+  const enrichAll = async () => {
+    setSending(true);
+    try {
+      const r = await api.outreach.enrichAll();
+      showToast(`Enriched ${r.enriched} of ${r.checked} leads with contact emails.`);
+      await loadAll();
+    } catch (e: any) {
+      showToast(e?.message || "Enrich failed");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const enrichOne = async (l: LeadRow) => {
+    try {
+      const r = await api.outreach.enrich(l.id);
+      showToast(r.email ? `Enriched ${l.company} → ${r.email}` : `No email found for ${l.company}`);
+      await loadAll();
+    } catch (e: any) {
+      showToast(e?.message || "Enrich failed");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen bg-background text-foreground">
@@ -194,7 +219,7 @@ export default function OutreachPage() {
 
             {toast && (
               <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl">
-                <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />
                 <span className="text-sm text-white">{toast}</span>
               </div>
             )}
@@ -244,29 +269,55 @@ export default function OutreachPage() {
             {/* Leads to reach */}
             <Card className="bg-zinc-900/60 border-white/[0.06]">
               <CardHeader>
-                <CardTitle className="text-white text-lg">Leads</CardTitle>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-white text-lg">Leads</CardTitle>
+                  <Button
+                    onClick={enrichAll}
+                    disabled={sending}
+                    className="bg-white/[0.04] border border-white/[0.08] text-zinc-300 hover:text-white hover:bg-white/[0.08] text-xs h-8 px-3"
+                  >
+                    <Mail className="w-3.5 h-3.5 mr-1.5" /> Enrich all emails
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {leads.length === 0 && <div className="text-sm text-zinc-500">No leads yet. Sync a connector first.</div>}
                 {leads.map((l) => (
                   <div key={l.id} className="flex items-center gap-4 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-white truncate">{l.company || l.client_name}</span>
                         {statusBadge(l.outreach_status)}
+                        {l.email_source === "hunter" && (
+                          <Badge className="bg-violet-500/15 text-violet-400 border-violet-500/30">verified</Badge>
+                        )}
+                        {l.email_source === "heuristic" && (
+                          <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">heuristic</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500 truncate">{l.title}</div>
                       <div className="text-[11px] text-zinc-600 mt-0.5">
-                        {l.email ? l.email : <span className="text-amber-500">no email — add one to send</span>}
+                        {l.email ? l.email : <span className="text-amber-500">no email — enrich to send</span>}
                         {l.technologies?.length ? ` · ${l.technologies.slice(0, 3).join(", ")}` : ""}
                       </div>
                     </div>
-                    <Button
-                      onClick={() => openLead(l)}
-                      className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white text-xs h-9 px-3 shrink-0"
-                    >
-                      <Send className="w-3.5 h-3.5 mr-1.5" /> Reach out
-                    </Button>
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <Button
+                        onClick={() => openLead(l)}
+                        className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white text-xs h-9 px-3"
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1.5" /> Reach out
+                      </Button>
+                      {!l.email && (
+                        <Button
+                          onClick={() => enrichOne(l)}
+                          variant="ghost"
+                          className="text-zinc-400 hover:text-white hover:bg-white/[0.06] text-xs h-8 px-3"
+                        >
+                          <Mail className="w-3.5 h-3.5 mr-1.5" /> Enrich
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </CardContent>

@@ -76,7 +76,7 @@ def _guess_project_size(job: NormalizedJob) -> str:
 
 
 def job_to_lead(job: NormalizedJob) -> dict:
-    return {
+    lead_data = {
         "id": f"live-{_make_id(job)}",
         "title": job.title,
         "description": job.description,
@@ -108,6 +108,18 @@ def job_to_lead(job: NormalizedJob) -> dict:
         "found_at": job.published_at or datetime.utcnow(),
         "analyzed_at": None,
     }
+
+    try:
+        from app.services import enrichment
+
+        _enr = enrichment.enrich(job.company, verify=False)
+        if _enr.get("email"):
+            lead_data["email"] = _enr["email"]
+            lead_data["tags"] = lead_data["tags"] + [f"enriched:{_enr['source']}"]
+    except Exception:  # noqa: BLE001
+        pass
+
+    return lead_data
 
 
 async def sync_source(source_name: str, db: Session, limit: int = 50) -> dict:
