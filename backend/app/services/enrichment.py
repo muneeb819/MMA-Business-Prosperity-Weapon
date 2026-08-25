@@ -112,6 +112,26 @@ _GENERIC = {
     "aol.com", "proton.me", "protonmail.com", "gmx.com", "mail.com",
 }
 
+_BAD_DOMAIN = {"png", "jpg", "jpeg", "gif", "svg", "webp", "ico", "css", "js", "2x", "3x", "bmp", "tif", "tiff"}
+_BAD_LOCAL = ("logo", "icon", "sprite", "avatar", "image", "thumb", "banner", "placeholder", "screenshot")
+
+
+def _looks_like_email(e: str) -> bool:
+    if e.count("@") != 1:
+        return False
+    local, dom = e.split("@")
+    if not local or not dom or "." not in dom:
+        return False
+    tld = dom.rsplit(".", 1)[1]
+    if not tld.isalpha() or not (2 <= len(tld) <= 24):
+        return False
+    if tld.lower() in _BAD_DOMAIN:
+        return False
+    low = e.lower()
+    if any(b in low for b in _BAD_LOCAL):
+        return False
+    return True
+
 
 def _scrape_email(company: str, timeout: int = 6):
     """Find a real, published email on the company's own website (keyless, free).
@@ -135,16 +155,14 @@ def _scrape_email(company: str, timeout: int = 6):
                 html = r.read().decode("utf-8", "ignore")
             found = [m.strip().lower() for m in _MAILTO_RE.findall(html)]
             found += [e.strip().lower() for e in _EMAIL_RE.findall(html)]
+            found = [e for e in dict.fromkeys(found) if _looks_like_email(e)]
             if found:
                 cands = [e for e in found if e.endswith(domain) and e.split("@")[1] not in _GENERIC]
                 if not cands:
                     cands = [e for e in found if e.split("@")[1] not in _GENERIC]
                 if not cands:
                     cands = found
-                for e in cands:
-                    dom = e.split("@", 1)[1]
-                    if "." in dom:
-                        return e
+                return cands[0]
         except Exception:  # noqa: BLE001
             continue
     return None
