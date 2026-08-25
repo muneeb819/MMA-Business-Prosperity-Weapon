@@ -29,6 +29,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#07080F" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-[#07080F] text-foreground overflow-x-hidden`}>
+        <div
+          aria-hidden
+          className="fixed inset-0 -z-10 pointer-events-none opacity-[0.06] bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/logo.jpg')", backgroundSize: "40%" }}
+        />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

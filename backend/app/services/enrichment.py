@@ -2,8 +2,14 @@ import os
 import re
 import json
 import socket
+import smtplib
+import random
+import string
 import urllib.request
 from typing import Optional
+
+# Cache: if Apollo returns a plan-limit (403), stop hammering it for this process.
+_apollo_blocked = False
 
 
 def guess_domain(company: str) -> Optional[str]:
@@ -81,8 +87,77 @@ def _apollo_lookup(company: str, api_key: str, title: Optional[str] = None):
             email = p.get("email")
             if email:
                 return {"email": email, "name": p.get("name") or p.get("first_name")}
+    except urllib.error.HTTPError as he:
+        global _apollo_blocked
+        msg = he.read().decode("utf-8", "ignore")
+        ec = None
+        try:
+            ec = json.loads(msg).get("error_code")
+        except Exception:
+            pass
+        if he.code == 403 or ec == "API_INACCESSIBLE":
+            _apollo_blocked = True
+        return None
     except Exception:  # noqa: BLE001
         return None
+    return None
+
+
+_ROLE_PREFIXES = ["info", "contact", "sales", "hello", "admin", "office", "support", "careers"]
+
+
+def _mx_hosts(domain: str):
+    hosts = []
+    try:
+        import dns.resolver
+
+        try:
+            answers = dns.resolver.resolve(domain, "MX")
+            hosts = [str(r.exchange).rstrip(".") for r in answers]
+        except Exception:
+            hosts = []
+    except Exception:
+        hosts = []
+    if not hosts:
+        try:
+            socket.getaddrinfo(domain, None)
+            hosts = [domain]
+        except Exception:
+            hosts = []
+    return hosts
+
+
+def _smtp_verify(domain: str, timeout: int = 5):
+    """Verify common role inboxes via SMTP RCPT TO (keyless, free).
+
+    Returns the first verified role email, or None if none confirmed / SMTP
+    unavailable (e.g. outbound port 25 blocked in the runtime).
+    """
+    hosts = _mx_hosts(domain)
+    if not hosts:
+        return None
+    tried = 0
+    for host in hosts[:2]:
+        try:
+            with smtplib.SMTP(host, 25, timeout=timeout) as s:
+                s.ehlo()
+                s.mail("verify@mbpw.com")
+                for prefix in _ROLE_PREFIXES:
+                    if tried >= 5:
+                        break
+                    cand = f"{prefix}@{domain}"
+                    try:
+                        code, _ = s.rcpt(cand)
+                    except Exception:
+                        code = 0
+                    tried += 1
+                    if code == 250:
+                        return cand
+                    if code in (550, 551, 552, 553, 554):
+                        continue
+                return None
+        except Exception:  # noqa: BLE001
+            continue
     return None
 
 
@@ -108,20 +183,23 @@ def provider_enabled() -> bool:
     return bool(h or a)
 
 
-def enrich(company: str, verify: bool = False, title: Optional[str] = None) -> dict:
+def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp: bool = True) -> dict:
     """Return a best-effort contact email for a company.
 
     Priority when verify=True (explicit enrich action):
       1. Apollo  -> real decision-maker email (source 'apollo', verified)
       2. Hunter  -> verified company email      (source 'hunter', verified)
-      3. Heuristic role inbox on a domain that resolves (source 'heuristic')
+      3. SMTP-verified role inbox (info@/contact@/sales@…) — keyless, free
+         (source 'smtp', verified)  [only when smtp=True]
+      4. Heuristic role inbox on a domain that resolves (source 'heuristic')
     When verify=False (fast sync path) only the heuristic is used.
     """
+    global _apollo_blocked
     domain = guess_domain(company)
 
     if verify:
         hunter_key, apollo_key = _get_keys()
-        if apollo_key and company:
+        if apollo_key and company and not _apollo_blocked:
             ap = _apollo_lookup(company, apollo_key, title)
             if ap:
                 return {"email": ap["email"], "source": "apollo", "verified": True, "name": ap.get("name")}
@@ -129,6 +207,10 @@ def enrich(company: str, verify: bool = False, title: Optional[str] = None) -> d
             h = _hunter_lookup(domain, hunter_key)
             if h:
                 return {"email": h, "source": "hunter", "verified": True}
+        if smtp and domain and _domain_resolves(domain):
+            v = _smtp_verify(domain)
+            if v:
+                return {"email": v, "source": "smtp", "verified": True}
 
     resolved = _domain_resolves(domain) if verify else True
     if resolved and domain:
