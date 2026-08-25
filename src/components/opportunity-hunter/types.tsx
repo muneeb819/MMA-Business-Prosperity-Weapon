@@ -35,6 +35,7 @@ export interface Discovery {
   contactFacebook: string
   contactLinkedIn: string
   contactTwitter: string
+  contactInstagram: string
   contactAllMethods: string[]
 }
 
@@ -87,7 +88,7 @@ export function storeSourceStats(s: Record<string, { leadsFound: number; lastSca
 
 export function liveLeadToDiscovery(ll: any): Discovery {
   const salary = (ll.salaryMax || ll.salaryMin || 0)
-  const budget = salary > 0 ? salary * 12 : Math.floor(Math.random() * 80000 + 20000)
+  const budget = salary
   const techs = ll.technologies || ll.tags || []
   const company = ll.company || "Unknown Company"
   const companySlug = company.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -105,6 +106,8 @@ export function liveLeadToDiscovery(ll: any): Discovery {
   const linkedInMatch = desc.match(/linkedin\.com\/company\/[\w-]+/i)
   const twitterMatch = desc.match(/(?:twitter|x)\.com\/@?([\w]+)/i)
   const fbMatch = desc.match(/facebook\.com\/[\w.]+/i)
+  const igMatch = desc.match(/instagram\.com\/[\w.]+/i)
+  const igHandle = /\binstagram\b/i.test(desc) ? desc.match(/@([a-zA-Z0-9_.]+)/) : null
 
   const website = ll.url || ""
 
@@ -118,6 +121,9 @@ export function liveLeadToDiscovery(ll: any): Discovery {
   if (twitterMatch) contactAllMethods.push(`Twitter: https://x.com/${twitterMatch[1]}`)
   if (fbMatch) contactAllMethods.push(`Facebook: https://${fbMatch[0]}`)
   else contactAllMethods.push(`Facebook: https://facebook.com/${companySlug}`)
+  if (igMatch) contactAllMethods.push(`Instagram: https://${igMatch[0]}`)
+  else if (igHandle) contactAllMethods.push(`Instagram: https://instagram.com/${igHandle[1]}`)
+  else contactAllMethods.push(`Instagram: https://instagram.com/${companySlug}`)
   contactAllMethods.push(`WhatsApp: https://wa.me/${contactPhone ? contactPhone.replace(/[^0-9]/g, "") : ""}`)
 
   return {
@@ -141,6 +147,11 @@ export function liveLeadToDiscovery(ll: any): Discovery {
     contactFacebook: `https://facebook.com/${companySlug}`,
     contactLinkedIn: linkedInMatch ? `https://${linkedInMatch[0]}` : `https://linkedin.com/company/${companySlug}`,
     contactTwitter: twitterMatch ? `https://x.com/${twitterMatch[1]}` : "",
+    contactInstagram: igMatch
+      ? `https://${igMatch[0]}`
+      : igHandle
+        ? `https://instagram.com/${igHandle[1]}`
+        : `https://instagram.com/${companySlug}`,
     contactAllMethods,
   }
 }

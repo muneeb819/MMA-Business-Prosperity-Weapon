@@ -15,6 +15,7 @@ import {
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
 import { fetchAllSources, getStoredLeads } from "@/lib/live-sources"
+import { addNotification } from "@/lib/pipeline"
 import { HunterStats } from "@/components/opportunity-hunter/HunterStats"
 import { SourceCards } from "@/components/opportunity-hunter/SourceCards"
 import { FilterBar } from "@/components/opportunity-hunter/FilterBar"
@@ -280,6 +281,34 @@ export default function OpportunityHunterPage() {
       const nextDiscoveries = fresh.length > 0 ? [...fresh, ...discoveries] : discoveries
       setDiscoveries(nextDiscoveries)
       storeDiscoveries(nextDiscoveries)
+
+      // Generate notifications for newly discovered opportunities
+      try {
+        for (const d of fresh) {
+          const isHigh = (d.dealSize || 0) >= 50000
+          addNotification({
+            id: `disc-${d.id}-${Date.now()}`,
+            type: isHigh ? "high_value" : "new_lead",
+            title: isHigh ? "High-value opportunity found" : "New opportunity found",
+            message: `${d.company} — ${d.title} (${d.source})`,
+            priority: isHigh ? "high" : "medium",
+            read: false,
+            createdAt: new Date().toISOString(),
+            leadId: d.id,
+          })
+        }
+        if (fresh.length > 0) {
+          addNotification({
+            id: `scan-${Date.now()}`,
+            type: "system",
+            title: "Hunter scan complete",
+            message: `${fresh.length} new opportunities discovered across ${SOURCE_KEYS.length} sources`,
+            priority: "low",
+            read: false,
+            createdAt: new Date().toISOString(),
+          })
+        }
+      } catch {}
 
       const now = new Date().toISOString()
       const nextStats = { ...sourceStats }

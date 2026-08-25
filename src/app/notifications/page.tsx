@@ -14,6 +14,7 @@ import { TopBar } from "@/components/top-bar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { getStoredNotifications } from "@/lib/pipeline";
 import type { Notification } from "@/lib/types";
 import { NotificationStats } from "@/components/notifications/NotificationStats";
 import { NotificationList } from "@/components/notifications/NotificationList";
@@ -43,17 +44,24 @@ export default function NotificationsPage() {
     let cancelled = false;
     async function fetchNotifications() {
       setLoading(true);
+      let local: any[] = [];
+      try { local = getStoredNotifications(); } catch { local = []; }
       try {
         const data = await api.notifications.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
-          setNotifications(data.map((n: any) => ({
+          const apiItems = data.map((n: any) => ({
             ...n,
             leadId: n.leadId || n.lead_id || undefined,
             createdAt: n.createdAt || n.created_at || new Date().toISOString(),
-          })));
+          }));
+          const byId = new Map<string, any>();
+          for (const n of [...local, ...apiItems]) byId.set(n.id, n);
+          setNotifications(Array.from(byId.values()));
+        } else if (!cancelled) {
+          setNotifications(local);
         }
       } catch {
-        // API unavailable
+        if (!cancelled) setNotifications(local);
       } finally {
         if (!cancelled) setLoading(false);
       }

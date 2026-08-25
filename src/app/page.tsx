@@ -87,7 +87,7 @@ export default function DashboardPage() {
           deadline: "", technologies: ll.technologies, skills: [], platform: ll.platform,
           jobType: "full_time", status: "new" as const, urgency: "medium" as const,
           difficulty: 50, successProbability: 60, riskLevel: "medium",
-          expectedRevenue: (ll.salaryMax || 20000) * 0.3, competition: 0,
+          expectedRevenue: (ll.salaryMax || 0) * 0.3, competition: 0,
           projectSize: "medium", paymentMethod: "Escrow",
           clientHistory: `Sourced from ${ll.source}`, url: ll.url,
           notes: `Live lead from ${ll.source}`, tags: ll.tags,

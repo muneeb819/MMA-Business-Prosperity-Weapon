@@ -216,7 +216,7 @@ export function TopBar() {
     : searchHints
 
   return (
-    <header className="h-16 border-b border-border/50 bg-card/60 backdrop-blur-xl flex items-center justify-between px-6 sticky top-0 z-30">
+    <header className="h-16 border-b border-border/50 bg-card/60 backdrop-blur-xl flex items-center justify-between pl-14 pr-4 md:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-1" ref={searchRef}>
         <div className="relative max-w-lg w-full group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />

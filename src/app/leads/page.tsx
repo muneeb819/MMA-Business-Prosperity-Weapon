@@ -58,7 +58,7 @@ export default function LeadsPage() {
         difficulty: 50,
         successProbability: 60,
         riskLevel: "medium",
-        expectedRevenue: (ll.salaryMax || 20000) * 0.3,
+        expectedRevenue: (ll.salaryMax || 0) * 0.3,
         competition: 0,
         projectSize: "medium",
         paymentMethod: "Escrow",

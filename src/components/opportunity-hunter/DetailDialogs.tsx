@@ -166,6 +166,12 @@ function DetailDialogsInner({
                         <a href={selectedDiscovery.contactTwitter} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Profile</a>
                       </div>
                     )}
+                    {selectedDiscovery.contactInstagram && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-zinc-500 w-16 text-xs">Instagram</span>
+                        <a href={selectedDiscovery.contactInstagram} target="_blank" rel="noopener" className="text-cyan-400 hover:underline">Profile</a>
+                      </div>
+                    )}
                     {selectedDiscovery.contactWhatsApp && selectedDiscovery.contactPhone && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-zinc-500 w-16 text-xs">WhatsApp</span>
