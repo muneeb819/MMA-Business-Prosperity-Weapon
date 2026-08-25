@@ -1,13 +1,9 @@
 import os
 import re
-import socket
 import json
+import socket
 import urllib.request
 from typing import Optional
-
-# Role inboxes are real company mailboxes and the safe, legitimate target for
-# first-touch outreach (as opposed to guessing a person's personal address).
-ROLE_PREFIXES = ["info", "careers", "hello", "contact", "sales", "team", "support"]
 
 
 def guess_domain(company: str) -> Optional[str]:
@@ -37,42 +33,98 @@ def _domain_resolves(domain: str) -> bool:
         return False
 
 
-def _provider_lookup(domain: str) -> Optional[str]:
-    """Verified email via a configured provider. Hunter.io supported out of the box."""
-    key = os.getenv("HUNTER_API_KEY", "")
-    if not key:
-        return None
-    url = f"https://api.hunter.io/v2/domain-search?domain={domain}&api_key={key}&limit=1"
+def _get_keys():
+    """Provider API keys: env vars win, otherwise the DB-backed config (set via Settings UI)."""
+    hunter = os.getenv("HUNTER_API_KEY", "")
+    apollo = os.getenv("APOLLO_API_KEY", "")
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "MBPW"})
-        with urllib.request.urlopen(req, timeout=8) as r:
+        from app.models.database import SessionLocal
+        from app.models.schema import AppConfig
+
+        db = SessionLocal()
+        try:
+            for key in ("hunter_api_key", "apollo_api_key"):
+                row = db.query(AppConfig).filter(AppConfig.key == key).first()
+                if row and row.value:
+                    if key == "hunter_api_key" and not hunter:
+                        hunter = row.value
+                    if key == "apollo_api_key" and not apollo:
+                        apollo = row.value
+        finally:
+            db.close()
+    except Exception:  # noqa: BLE001
+        pass
+    return hunter, apollo
+
+
+def _apollo_lookup(company: str, api_key: str, title: Optional[str] = None):
+    """Verified decision-maker email via Apollo.io people search."""
+    url = "https://api.apollo.io/v1/mixed_people/search"
+    titles = [
+        "CEO", "CTO", "Founder", "Owner", "Co-Founder",
+        "Head of Engineering", "VP Engineering", "Engineering Manager",
+        "Director of Engineering", "Product Manager", "Operations Manager",
+    ]
+    body = {"organization_name": company, "person_titles": titles, "page": 1, "per_page": 10}
+    if title:
+        body["q_keywords"] = title
+    try:
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(body).encode(),
+            headers={"X-Api-Key": api_key, "Content-Type": "application/json", "User-Agent": "MBPW"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read().decode())
-        emails = data.get("data", {}).get("emails", [])
-        if emails:
-            return emails[0].get("value")
+        for p in data.get("people") or []:
+            email = p.get("email")
+            if email:
+                return {"email": email, "name": p.get("name") or p.get("first_name")}
     except Exception:  # noqa: BLE001
         return None
     return None
 
 
-def enrich(company: str, verify: bool = False) -> dict:
+def _hunter_lookup(domain: str, api_key: str):
+    """Verified company email via Hunter.io domain search."""
+    url = f"https://api.hunter.io/v2/domain-search?domain={domain}&api_key={api_key}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "MBPW"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read().decode())
+        for e in (data.get("data") or {}).get("emails") or []:
+            val = e.get("value")
+            if val:
+                return val
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def enrich(company: str, verify: bool = False, title: Optional[str] = None) -> dict:
     """Return a best-effort contact email for a company.
 
-    source: 'hunter' (verified via provider API) | 'heuristic'
-            (role inbox on a resolved domain) | 'none'
-    Set HUNTER_API_KEY (or swap _provider_lookup for Apollo/Clearbit) for
-    genuinely verified emails. Without a provider, a role inbox is built on a
-    domain that resolves, so outreach can still fire.
+    Priority when verify=True (explicit enrich action):
+      1. Apollo  -> real decision-maker email (source 'apollo', verified)
+      2. Hunter  -> verified company email      (source 'hunter', verified)
+      3. Heuristic role inbox on a domain that resolves (source 'heuristic')
+    When verify=False (fast sync path) only the heuristic is used.
     """
     domain = guess_domain(company)
-    if not domain:
-        return {"email": "", "source": "none", "verified": False}
 
-    provider = _provider_lookup(domain)
-    if provider:
-        return {"email": provider, "source": "hunter", "verified": True}
+    if verify:
+        hunter_key, apollo_key = _get_keys()
+        if apollo_key and company:
+            ap = _apollo_lookup(company, apollo_key, title)
+            if ap:
+                return {"email": ap["email"], "source": "apollo", "verified": True, "name": ap.get("name")}
+        if hunter_key and domain:
+            h = _hunter_lookup(domain, hunter_key)
+            if h:
+                return {"email": h, "source": "hunter", "verified": True}
 
     resolved = _domain_resolves(domain) if verify else True
-    if resolved:
+    if resolved and domain:
         return {"email": f"info@{domain}", "source": "heuristic", "verified": bool(verify)}
     return {"email": "", "source": "none", "verified": False}

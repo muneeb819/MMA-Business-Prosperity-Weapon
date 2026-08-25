@@ -27,7 +27,7 @@ def _lead_to_dict(lead: Lead) -> dict:
         "budget_max": lead.budget_max,
         "status": lead.status,
         "email_source": src,
-        "email_verified": src == "hunter",
+        "email_verified": src in ("hunter", "apollo"),
     }
 
 

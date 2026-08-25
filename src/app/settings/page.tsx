@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { TopBar } from "@/components/top-bar"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTheme, THEMES, type ThemeId } from "@/lib/theme-context"
 import { useAuth } from "@/lib/auth-context"
+import { api } from "@/lib/api"
 import { Sun, Moon, Shield, Bell, User, Database, Globe, Palette, Users, Key, Save, CheckCircle, LogOut, Trash2, Check } from "lucide-react"
 
 export default function SettingsPage() {
@@ -19,6 +20,11 @@ export default function SettingsPage() {
   const [showDanger, setShowDanger] = useState(false)
   const [name, setName] = useState(user?.name || "Admin")
   const [email, setEmail] = useState(user?.email || "admin@mbpw.com")
+  const [prov, setProv] = useState<{ hunter_api_key?: { set: boolean; masked: string }; apollo_api_key?: { set: boolean; masked: string } }>({})
+  const [hunterKey, setHunterKey] = useState("")
+  const [apolloKey, setApolloKey] = useState("")
+  const [provLoading, setProvLoading] = useState(false)
+  const [provSaved, setProvSaved] = useState(false)
 
   const handleSave = () => {
     setSaved(true)
@@ -28,6 +34,27 @@ export default function SettingsPage() {
   const handleLogout = () => {
     logout()
     router.push("/login")
+  }
+
+  useEffect(() => {
+    api.settings.get().then((d) => setProv(d || {})).catch(() => {})
+  }, [])
+
+  const saveProvider = async () => {
+    setProvLoading(true)
+    try {
+      await api.settings.update({
+        hunter_api_key: hunterKey || undefined,
+        apollo_api_key: apolloKey || undefined,
+      })
+      setProvSaved(true)
+      setTimeout(() => setProvSaved(false), 2000)
+      const d = await api.settings.get()
+      setProv(d || {})
+      setHunterKey("")
+      setApolloKey("")
+    } catch {}
+    setProvLoading(false)
   }
 
   return (
@@ -139,6 +166,36 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Verified Email Provider */}
+            <div className="space-y-4 animate-fade-in-up" style={{ animationDelay: "125ms" }}>
+              <h2 className="text-sm font-semibold flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Verified Email Provider</h2>
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Connect a provider to enrich leads with <span className="text-foreground font-medium">real, verified decision-maker emails</span> (instead of guessed role inboxes). Apollo finds a person; Hunter finds a company address.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      Hunter API Key {prov.hunter_api_key?.set ? <span className="text-emerald-400 ml-1">● Active (…{prov.hunter_api_key.masked})</span> : <span className="text-zinc-500 ml-1">— not set</span>}
+                    </label>
+                    <Input type="password" value={hunterKey} onChange={(e) => setHunterKey(e.target.value)} placeholder={prov.hunter_api_key?.set ? "Enter new key to replace" : "HUNTER_API_KEY"} className="bg-muted/30 border-border h-10 rounded-xl" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      Apollo API Key {prov.apollo_api_key?.set ? <span className="text-emerald-400 ml-1">● Active (…{prov.apollo_api_key.masked})</span> : <span className="text-zinc-500 ml-1">— not set</span>}
+                    </label>
+                    <Input type="password" value={apolloKey} onChange={(e) => setApolloKey(e.target.value)} placeholder={prov.apollo_api_key?.set ? "Enter new key to replace" : "APOLLO_API_KEY"} className="bg-muted/30 border-border h-10 rounded-xl" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button onClick={saveProvider} size="sm" disabled={provLoading} className="bg-gradient-to-r from-primary to-rose-600 hover:from-primary/90 hover:to-rose-500 text-white shadow-lg shadow-primary/20">
+                    {provSaved ? <><CheckCircle className="w-4 h-4 mr-2 text-emerald-300" /> Saved</> : <><Save className="w-4 h-4 mr-2" /> {provLoading ? "Saving…" : "Save Provider Keys"}</>}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">Keys are stored server-side and never shown in full.</span>
+                </div>
               </div>
             </div>
 

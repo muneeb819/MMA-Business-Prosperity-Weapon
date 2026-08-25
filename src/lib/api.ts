@@ -174,6 +174,11 @@ export const api = {
       fetchAPI<any>(`/api/outreach/enrich-all`, { method: "POST" }),
     stats: () => fetchAPI<any>(`/api/outreach/stats`),
   },
+  settings: {
+    get: () => fetchAPI<any>(`/api/settings`),
+    update: (data: any) =>
+      fetchAPI<any>(`/api/settings`, { method: "PUT", body: JSON.stringify(data) }),
+  },
   aiTeams: {
     list: () => fetchAPI<any>("/api/ai-teams"),
     get: (id: string) => fetchAPI<any>(`/api/ai-teams/${id}`),

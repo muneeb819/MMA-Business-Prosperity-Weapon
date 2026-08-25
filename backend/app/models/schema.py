@@ -153,3 +153,11 @@ class KnowledgeEntry(Base):
     source_url = Column(String, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AppConfig(Base):
+    __tablename__ = "app_config"
+
+    key = Column(String, primary_key=True)
+    value = Column(Text)
+    updated_at = Column(DateTime, default=datetime.utcnow)
