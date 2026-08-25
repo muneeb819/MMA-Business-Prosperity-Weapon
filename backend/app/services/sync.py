@@ -112,7 +112,7 @@ def job_to_lead(job: NormalizedJob, verify: bool = False) -> dict:
     try:
         from app.services import enrichment
 
-        _enr = enrichment.enrich(job.company, verify=verify, title=job.title, smtp=False)
+        _enr = enrichment.enrich(job.company, verify=verify, title=job.title, smtp=False, web=False)
         if _enr.get("email"):
             lead_data["email"] = _enr["email"]
             lead_data["tags"] = lead_data["tags"] + [f"enriched:{_enr['source']}"]

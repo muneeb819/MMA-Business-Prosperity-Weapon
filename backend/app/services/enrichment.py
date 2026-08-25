@@ -105,6 +105,50 @@ def _apollo_lookup(company: str, api_key: str, title: Optional[str] = None):
 
 _ROLE_PREFIXES = ["info", "contact", "sales", "hello", "admin", "office", "support", "careers"]
 
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+_MAILTO_RE = re.compile(r"mailto:([^?\"'<>#\s]+)", re.I)
+_GENERIC = {
+    "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com",
+    "aol.com", "proton.me", "protonmail.com", "gmx.com", "mail.com",
+}
+
+
+def _scrape_email(company: str, timeout: int = 6):
+    """Find a real, published email on the company's own website (keyless, free).
+
+    Many businesses publish contact/sales emails in `mailto:` links or page
+    text. We fetch the homepage / contact pages over HTTPS (allowed on
+    serverless) and return the first company-domain, non-generic address.
+    """
+    domain = guess_domain(company)
+    if not domain or not _domain_resolves(domain):
+        return None
+    for path in ("", "/contact", "/contact-us", "/about"):
+        url = f"https://{domain}{path}"
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; MBPW/1.0)"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                html = r.read().decode("utf-8", "ignore")
+            found = [m.strip().lower() for m in _MAILTO_RE.findall(html)]
+            found += [e.strip().lower() for e in _EMAIL_RE.findall(html)]
+            if found:
+                cands = [e for e in found if e.endswith(domain) and e.split("@")[1] not in _GENERIC]
+                if not cands:
+                    cands = [e for e in found if e.split("@")[1] not in _GENERIC]
+                if not cands:
+                    cands = found
+                for e in cands:
+                    dom = e.split("@", 1)[1]
+                    if "." in dom:
+                        return e
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
 
 def _mx_hosts(domain: str):
     hosts = []
@@ -189,7 +233,7 @@ def provider_enabled() -> bool:
     return bool(h or a)
 
 
-def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp: bool = True) -> dict:
+def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp: bool = True, web: bool = True) -> dict:
     """Return a best-effort contact email for a company.
 
     Priority when verify=True (explicit enrich action):
@@ -213,6 +257,13 @@ def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp
             h = _hunter_lookup(domain, hunter_key)
             if h:
                 return {"email": h, "source": "hunter", "verified": True}
+        if web and domain:
+            w = _scrape_email(company)
+            if w:
+                wdom = w.split("@", 1)[1]
+                if _mx_hosts(wdom):
+                    return {"email": w, "source": "web", "verified": True}
+                return {"email": w, "source": "web", "verified": False}
         if smtp and domain and _domain_resolves(domain):
             v = _smtp_verify(domain)
             if v:
