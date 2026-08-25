@@ -157,11 +157,19 @@ def _scrape_email(company: str, timeout: int = 6):
             found += [e.strip().lower() for e in _EMAIL_RE.findall(html)]
             found = [e for e in dict.fromkeys(found) if _looks_like_email(e)]
             if found:
-                cands = [e for e in found if e.endswith(domain) and e.split("@")[1] not in _GENERIC]
-                if not cands:
-                    cands = [e for e in found if e.split("@")[1] not in _GENERIC]
-                if not cands:
-                    cands = found
+                tokens = [w for w in re.sub(r"[^a-z0-9 ]", " ", company.lower()).split() if len(w) >= 3]
+
+                def _score(e):
+                    d = e.split("@", 1)[1]
+                    s = 0
+                    if d.endswith(domain):
+                        s += 2
+                    if any(t in d for t in tokens):
+                        s += 1
+                    return s
+
+                cands = [e for e in found if e.split("@", 1)[1] not in _GENERIC]
+                cands.sort(key=_score, reverse=True)
                 return cands[0]
         except Exception:  # noqa: BLE001
             continue
