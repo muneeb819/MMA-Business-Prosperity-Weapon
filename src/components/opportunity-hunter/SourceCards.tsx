@@ -109,7 +109,7 @@ function SourceCardsInner({
               </div>
               <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-700"
+                  className="h-full bg-gradient-to-r from-emerald-500 to-rose-400 rounded-full transition-all duration-700"
                   style={{ width: `${source.metrics.accuracy}%` }}
                 />
               </div>

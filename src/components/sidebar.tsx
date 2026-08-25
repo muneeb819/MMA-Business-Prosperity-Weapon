@@ -22,12 +22,12 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard, color: "from-blue-500 to-cyan-400" },
   { name: "Opportunity Hunter", href: "/opportunity-hunter", icon: Globe, color: "from-cyan-500 to-blue-500" },
   { name: "AI Teams", href: "/ai-teams", icon: Bot, color: "from-violet-500 to-purple-500" },
-  { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-teal-400" },
+  { name: "Leads", href: "/leads", icon: Target, color: "from-emerald-500 to-rose-400" },
   { name: "Proposals", href: "/proposals", icon: FileText, color: "from-violet-500 to-purple-400" },
-  { name: "Connectors", href: "/connectors", icon: Cable, color: "from-teal-500 to-cyan-400" },
+  { name: "Connectors", href: "/connectors", icon: Cable, color: "from-indigo-500 to-rose-500" },
   { name: "CRM", href: "/crm", icon: Users, color: "from-indigo-500 to-blue-400" },
   { name: "Analytics", href: "/analytics", icon: BarChart3, color: "from-purple-500 to-violet-400" },
-  { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-teal-400" },
+  { name: "Reports", href: "/reports", icon: LineChart, color: "from-emerald-500 to-rose-400" },
 ]
 
 export function Sidebar() {
@@ -97,8 +97,8 @@ export function Sidebar() {
         )}
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50 shrink-0">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white font-bold text-lg shrink-0 shadow-lg shadow-blue-500/20">
-            M
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-lg shadow-indigo-500/20">
+            <img src="/logo.jpg" alt="MBPW" className="w-full h-full object-cover" />
             <div className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
           </div>
           {expanded && (

@@ -36,7 +36,7 @@ const LIVE_SOURCE_MAP: Record<string, SourceMeta> = {
     name: "Himalayas",
     icon: Mountain,
     description: "Remote-first job board with verified companies, salary ranges and tech stacks",
-    gradient: "from-emerald-500 to-teal-600",
+    gradient: "from-emerald-500 to-rose-600",
     metrics: { accuracy: 96, speed: 92 },
   },
   remoteok: {
@@ -529,7 +529,7 @@ export default function OpportunityHunterPage() {
                     disabled={hunterFetching}
                     className={cn(isRunning
                       ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
-                      : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20")}>
+                      : "bg-gradient-to-r from-emerald-600 to-rose-600 hover:from-emerald-500 hover:to-rose-500 text-white shadow-lg shadow-emerald-500/20")}>
                     {hunterFetching ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Scanning...</>
                       : isRunning ? <><Pause className="w-4 h-4 mr-2" />Pause Hunter</>
                         : <><Play className="w-4 h-4 mr-2" />Start Hunter</>}

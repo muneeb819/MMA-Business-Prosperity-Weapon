@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "MMA Business Prosperity Weapon | AI-Powered Business Development",
   description: "AI-powered platform that discovers global opportunities, analyzes leads, and generates winning proposals automatically.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.jpg",
   },
 };
 

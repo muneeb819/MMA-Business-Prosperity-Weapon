@@ -38,7 +38,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [onClose]);
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-700 shadow-2xl shadow-black/50 animate-in slide-in-from-bottom-5">
-      <Check className="w-4 h-4 text-teal-400 shrink-0" />
+      <Check className="w-4 h-4 text-indigo-400 shrink-0" />
       <span className="text-sm text-white">{message}</span>
       <button onClick={onClose} className="ml-2 text-zinc-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
     </div>
@@ -178,14 +178,14 @@ export default function ConnectorsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-500/20">
-                    <Cable className="w-6 h-6 text-teal-400" />
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20">
+                    <Cable className="w-6 h-6 text-indigo-400" />
                   </div>
                   Connectors
                 </h1>
                 <p className="text-sm text-zinc-500 mt-1">Manage data sources and integrations</p>
               </div>
-              <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white font-semibold">
+              <Button onClick={() => setShowAdd(true)} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white font-semibold">
                 <Plus className="w-4 h-4 mr-2" /> Add Connector
               </Button>
             </div>
@@ -195,7 +195,7 @@ export default function ConnectorsPage() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Total Sources</span>
-                    <Cable className="w-4 h-4 text-teal-400" />
+                    <Cable className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div className="text-3xl font-bold text-white">{connectors.length}</div>
                   <div className="text-xs text-zinc-500 mt-1">{activeCount} active</div>
@@ -384,8 +384,8 @@ export default function ConnectorsPage() {
               <DialogContent className="bg-[#0D0E18] border-white/[0.08] max-w-md">
                 <DialogHeader>
                   <DialogTitle className="text-white text-lg font-bold flex items-center gap-2">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500/20 to-cyan-500/20 border border-teal-500/20">
-                      <Plus className="w-5 h-5 text-teal-400" />
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-rose-500/20 border border-indigo-500/20">
+                      <Plus className="w-5 h-5 text-indigo-400" />
                     </div>
                     Add Connector
                   </DialogTitle>
@@ -428,7 +428,7 @@ export default function ConnectorsPage() {
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button onClick={handleAdd} disabled={!newName.trim() || !newPlatform} className="flex-1 bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-500 hover:to-cyan-400 text-white font-semibold h-11">
+                  <Button onClick={handleAdd} disabled={!newName.trim() || !newPlatform} className="flex-1 bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white font-semibold h-11">
                     <Plus className="w-4 h-4 mr-2" /> Create Connector
                   </Button>
                   <Button variant="ghost" onClick={() => setShowAdd(false)} className="text-zinc-500 hover:text-white h-11 px-4">Cancel</Button>

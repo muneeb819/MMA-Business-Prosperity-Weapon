@@ -16,11 +16,11 @@ body {
 
 @layer base {
   :root {
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --chart-1: 243 75% 59%;
+    --chart-2: 349 89% 60%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 217 91% 60%;
+    --chart-5: 25 95% 53%;
   }
 }
 
@@ -56,21 +56,21 @@ body {
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+    background: linear-gradient(135deg, #6366f1, #a855f7, #f43f5e);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-gradient-blue {
-    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    background: linear-gradient(135deg, #818cf8, #6366f1);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .glow-blue {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 60px rgba(59, 130, 246, 0.05);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 60px rgba(99, 102, 241, 0.05);
   }
 
   .glow-purple {

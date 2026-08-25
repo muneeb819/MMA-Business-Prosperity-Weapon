@@ -33,15 +33,15 @@ import {
 
 const features = [
   { icon: Bot, label: "AI Agents", desc: "3 autonomous agents hunting opportunities 24/7", color: "from-blue-500 to-cyan-400" },
-  { icon: Globe, label: "Opportunity Hunter", desc: "Scan global platforms for the best contracts", color: "from-cyan-500 to-teal-400" },
-  { icon: Target, label: "Lead Scoring", desc: "AI-ranked leads with revenue projections", color: "from-emerald-500 to-teal-400" },
+  { icon: Globe, label: "Opportunity Hunter", desc: "Scan global platforms for the best contracts", color: "from-indigo-500 to-rose-400" },
+  { icon: Target, label: "Lead Scoring", desc: "AI-ranked leads with revenue projections", color: "from-emerald-500 to-rose-400" },
   { icon: FileText, label: "Proposal Studio", desc: "Generate winning proposals in seconds", color: "from-violet-500 to-purple-400" },
   { icon: Search, label: "AI Search", desc: "Natural language search across all data", color: "from-amber-500 to-orange-400" },
   { icon: Bell, label: "Smart Alerts", desc: "Never miss a high-value opportunity", color: "from-rose-500 to-pink-400" },
   { icon: Users, label: "CRM", desc: "Manage companies, contacts & relationships", color: "from-indigo-500 to-blue-400" },
   { icon: BarChart3, label: "Analytics", desc: "Revenue, pipeline & performance insights", color: "from-purple-500 to-violet-400" },
-  { icon: BookOpen, label: "Knowledge Base", desc: "Playbooks, retrospectives & best practices", color: "from-emerald-500 to-teal-400" },
-  { icon: Cable, label: "Connectors", desc: "Upwork, LinkedIn, Indeed & more", color: "from-teal-500 to-cyan-400" },
+  { icon: BookOpen, label: "Knowledge Base", desc: "Playbooks, retrospectives & best practices", color: "from-emerald-500 to-rose-400" },
+  { icon: Cable, label: "Connectors", desc: "Upwork, LinkedIn, Indeed & more", color: "from-indigo-500 to-rose-500" },
 ]
 
 const stats = [
@@ -175,16 +175,9 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-center mb-8"
           >
-            <div className="relative inline-flex items-center justify-center mb-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-2xl shadow-blue-500/30 relative">
-                <span className="text-white font-black text-xl tracking-tight">MBPW</span>
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500"
-                />
+              <div className="relative inline-flex items-center justify-center mb-5">
+                <img src="/logo.jpg" alt="MMA Business Prosperity Weapon" className="w-20 h-20 rounded-2xl object-contain shadow-2xl shadow-indigo-500/30" />
               </div>
-            </div>
             <h1 className="text-3xl font-bold text-white tracking-tight">
               {isRegister ? "Create Account" : "Welcome Back"}
             </h1>

@@ -37,7 +37,7 @@ const sourceColors: Record<string, string> = {
   lever: "text-blue-400 bg-blue-500/10 border-blue-500/30",
   ashby: "text-violet-400 bg-violet-500/10 border-violet-500/30",
   hn_hiring: "text-amber-400 bg-amber-500/10 border-amber-500/30",
-  arbeitnow: "text-teal-400 bg-teal-500/10 border-teal-500/30",
+  arbeitnow: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
   findwork: "text-cyan-400 bg-cyan-500/10 border-cyan-500/30",
   weworkremotely: "text-purple-400 bg-purple-500/10 border-purple-500/30",
   adzuna: "text-rose-400 bg-rose-500/10 border-rose-500/30",

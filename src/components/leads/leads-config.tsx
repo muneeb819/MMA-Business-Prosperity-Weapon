@@ -23,7 +23,7 @@ export const statusSummaryCards = [
   { key: "analyzing", icon: <Brain className="w-5 h-5" />, color: "from-amber-500 to-orange-600", glow: "shadow-amber-500/25" },
   { key: "qualified", icon: <CheckCircle2 className="w-5 h-5" />, color: "from-emerald-500 to-green-600", glow: "shadow-emerald-500/25" },
   { key: "proposal_sent", icon: <Send className="w-5 h-5" />, color: "from-violet-500 to-purple-600", glow: "shadow-violet-500/25" },
-  { key: "won", icon: <Target className="w-5 h-5" />, color: "from-cyan-500 to-teal-600", glow: "shadow-cyan-500/25" },
+  { key: "won", icon: <Target className="w-5 h-5" />, color: "from-indigo-500 to-rose-600", glow: "shadow-cyan-500/25" },
 ];
 
 export const PAGE_SIZE = 9;

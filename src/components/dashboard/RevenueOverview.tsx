@@ -34,7 +34,7 @@ const RevenueOverview = React.memo(function RevenueOverview({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/20 shrink-0">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-rose-600 shadow-lg shadow-emerald-500/20 shrink-0">
               <BarChart3 className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
@@ -72,7 +72,7 @@ const RevenueOverview = React.memo(function RevenueOverview({
               </div>
               <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 transition-all duration-1000 ease-out"
+                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 via-rose-500 to-indigo-500 transition-all duration-1000 ease-out"
                   style={{
                     width: `${(item.value / item.max) * 100}%`,
                     animationDelay: `${800 + index * 200}ms`,
