@@ -194,8 +194,17 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
             ))
     db.commit()
 
-    # De-duplicate OutreachState rows per lead (keep the most-progressed one).
+    # De-duplicate OutreachState rows per lead (keep the most-progressed one)
+    # and drop orphaned rows whose lead no longer exists.
     all_states = db.query(OutreachState).all()
+    valid_lead_ids = {l.id for l in db.query(Lead.id).all()}
+    orphan_ids = [s.id for s in all_states if s.lead_id not in valid_lead_ids]
+    if orphan_ids:
+        db.query(OutreachState).filter(OutreachState.id.in_(orphan_ids)).delete(
+            synchronize_session=False
+        )
+        db.commit()
+        all_states = [s for s in all_states if s.lead_id in valid_lead_ids]
     by_lead = {}
     dup_ids = []
     for s in all_states:
