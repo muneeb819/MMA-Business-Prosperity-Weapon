@@ -4,6 +4,8 @@ import json
 import asyncio
 from typing import Optional
 
+import httpx
+
 from app.services.ai_service import AIService
 
 try:
@@ -14,31 +16,92 @@ except Exception:
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+# Reserved / placeholder / disposable domains we must never email.
+RESERVED_DOMAINS = {
+    "example.com", "example.net", "example.org", "test.com", "localhost",
+    "invalid", "domain.com", "email.com", "yourdomain.com", "example",
+    "test", "localhost.localdomain", "mailinator.com", "10minutemail.com",
+    "guerrillamail.com", "tempmail.com", "trashmail.com",
+}
+
+# Local-parts that are almost always placeholders, never real mailboxes.
+RESERVED_LOCAL = {"name", "test", "user", "email", "yourname", "anonymous", "sample"}
+
 
 def is_email_format_valid(email: str) -> bool:
     return bool(email) and bool(EMAIL_RE.match(str(email).strip()))
 
 
-def _domain_has_mx(email: str):
-    """Return True if the domain has MX records, False if none, None if DNS unavailable."""
-    if not _HAS_DNS:
-        return None
+def _domain_mx_doh(domain: str):
+    """DNS-over-HTTPS MX lookup (works on Vercel, port 443). Returns bool or None if unknown."""
     try:
-        domain = str(email).split("@")[-1].strip().lower()
-        answers = dns.resolver.resolve(domain, "MX", lifetime=6)
-        return len(answers) > 0
+        r = httpx.get(
+            "https://cloudflare-dns.com/dns-query",
+            params={"name": domain, "type": "MX"},
+            headers={"Accept": "application/dns-json"},
+            timeout=6,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            answers = data.get("Answer") or []
+            return any(a.get("type") == 15 for a in answers)
     except Exception:
-        return False
+        pass
+    return None
+
+
+def _domain_has_mx(email: str):
+    """Return True if domain has MX, False if confidently none, None if DNS unavailable."""
+    domain = str(email).split("@")[-1].strip().lower()
+    mx = _domain_mx_doh(domain)
+    if mx is not None:
+        return mx
+    if _HAS_DNS:
+        try:
+            answers = dns.resolver.resolve(domain, "MX", lifetime=6)
+            return len(answers) > 0
+        except Exception:
+            return None
+    return None
 
 
 def is_email_deliverable(email: str) -> bool:
-    """Format-valid AND (has MX, or DNS unavailable so we don't block on it)."""
+    """Format-valid AND not reserved/placeholder AND domain has MX (when checkable)."""
     if not is_email_format_valid(email):
+        return False
+    email = str(email).strip().lower()
+    local = email.split("@")[0]
+    domain = email.split("@")[-1]
+    if domain in RESERVED_DOMAINS:
+        return False
+    if local in RESERVED_LOCAL:
         return False
     mx = _domain_has_mx(email)
     if mx is None:
         return True
     return mx
+
+
+def lead_email_source(lead) -> Optional[str]:
+    tags = lead.tags or [] if not isinstance(lead, dict) else lead.get("tags") or []
+    for t in tags:
+        if isinstance(t, str) and t.startswith("enriched:"):
+            return t.split("enriched:")[1]
+    return None
+
+
+def is_lead_email_verified(lead) -> bool:
+    return lead_email_source(lead) in ("hunter", "apollo", "smtp", "web")
+
+
+def is_sendable_email(email: str, lead=None) -> bool:
+    """Deliverable AND not a heuristic guess (we only trust verified/discovery sources)."""
+    if not is_email_deliverable(email):
+        return False
+    if lead is not None:
+        if lead_email_source(lead) == "heuristic":
+            return False
+    return True
 
 # Progressive, multi-touch cadence. Each step targets a different goal so outreach
 # feels human and earned rather than a single blast.

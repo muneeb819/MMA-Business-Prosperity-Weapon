@@ -120,20 +120,21 @@ def send_step(db: Session, lead: Lead, step_index: int, custom_note: str = ""):
     now = datetime.utcnow()
 
     if channel == "email":
-        # Only send to a format-valid, deliverable (MX-backed) address.
-        # Try to enrich a real, deliverable address first.
-        if not outreach_service.is_email_deliverable(lead.email):
+        # Only send to a deliverable address from a verified/discovery source
+        # (never heuristic guesses or reserved/placeholder domains).
+        if not outreach_service.is_sendable_email(lead.email, lead):
             res = enrichment.enrich(
                 lead.company or lead.client_name, verify=True, smtp=False, web=True
             )
             ne = res.get("email")
-            if ne and outreach_service.is_email_deliverable(ne):
+            ns = res.get("source")
+            if ne and ns != "heuristic" and outreach_service.is_email_deliverable(ne):
                 lead.email = ne
-                tag = f"enriched:{res['source']}"
+                tag = f"enriched:{ns}"
                 if tag not in (lead.tags or []):
                     lead.tags = (lead.tags or []) + [tag]
                 db.commit()
-        if not outreach_service.is_email_deliverable(lead.email):
+        if not outreach_service.is_sendable_email(lead.email, lead):
             return {"ok": False, "reason": "no_valid_email", "channel": channel}
 
         res = send_email(lead.email, msg["subject"], msg["body_text"], msg["body_html"])
