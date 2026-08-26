@@ -105,10 +105,11 @@ def send(data: dict, db: Session = Depends(get_db)):
     reason = ""
 
     if channel == "email":
-        if not (lead.email and "@" in lead.email):
+        if not outreach_service.is_email_deliverable(lead.email):
             raise HTTPException(
                 status_code=400,
-                detail="No verified email for this lead. Add a contact email before sending.",
+                detail="Cannot send: the lead's email address is not valid or not deliverable "
+                       "(no MX record). Enrich the lead to find a real contact email first.",
             )
         res = send_email(lead.email, msg["subject"], msg["body_text"], msg["body_html"])
         status = "sent" if res["sent"] else ("simulated" if res["simulated"] else "failed")

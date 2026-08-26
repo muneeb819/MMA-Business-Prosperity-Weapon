@@ -1,9 +1,44 @@
 import os
+import re
 import json
 import asyncio
 from typing import Optional
 
 from app.services.ai_service import AIService
+
+try:
+    import dns.resolver
+    _HAS_DNS = True
+except Exception:
+    _HAS_DNS = False
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def is_email_format_valid(email: str) -> bool:
+    return bool(email) and bool(EMAIL_RE.match(str(email).strip()))
+
+
+def _domain_has_mx(email: str):
+    """Return True if the domain has MX records, False if none, None if DNS unavailable."""
+    if not _HAS_DNS:
+        return None
+    try:
+        domain = str(email).split("@")[-1].strip().lower()
+        answers = dns.resolver.resolve(domain, "MX", lifetime=6)
+        return len(answers) > 0
+    except Exception:
+        return False
+
+
+def is_email_deliverable(email: str) -> bool:
+    """Format-valid AND (has MX, or DNS unavailable so we don't block on it)."""
+    if not is_email_format_valid(email):
+        return False
+    mx = _domain_has_mx(email)
+    if mx is None:
+        return True
+    return mx
 
 # Progressive, multi-touch cadence. Each step targets a different goal so outreach
 # feels human and earned rather than a single blast.

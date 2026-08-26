@@ -120,18 +120,21 @@ def send_step(db: Session, lead: Lead, step_index: int, custom_note: str = ""):
     now = datetime.utcnow()
 
     if channel == "email":
-        if not (lead.email and "@" in lead.email):
+        # Only send to a format-valid, deliverable (MX-backed) address.
+        # Try to enrich a real, deliverable address first.
+        if not outreach_service.is_email_deliverable(lead.email):
             res = enrichment.enrich(
                 lead.company or lead.client_name, verify=True, smtp=False, web=True
             )
-            if res.get("email"):
-                lead.email = res["email"]
+            ne = res.get("email")
+            if ne and outreach_service.is_email_deliverable(ne):
+                lead.email = ne
                 tag = f"enriched:{res['source']}"
                 if tag not in (lead.tags or []):
                     lead.tags = (lead.tags or []) + [tag]
                 db.commit()
-        if not (lead.email and "@" in lead.email):
-            return {"ok": False, "reason": "no_email", "channel": channel}
+        if not outreach_service.is_email_deliverable(lead.email):
+            return {"ok": False, "reason": "no_valid_email", "channel": channel}
 
         res = send_email(lead.email, msg["subject"], msg["body_text"], msg["body_html"])
         status = "sent" if res["sent"] else ("simulated" if res["simulated"] else "failed")
@@ -234,7 +237,7 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
             continue
 
         if not result.get("ok"):
-            if result.get("reason") == "no_email":
+            if result.get("reason") in ("no_email", "no_valid_email"):
                 summary["skipped_noemail"] += 1
                 st.next_due_at = now + timedelta(days=1)
                 db.commit()
