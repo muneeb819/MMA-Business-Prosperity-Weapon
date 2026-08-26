@@ -44,3 +44,8 @@ next-env.d.ts
 __pycache__/
 *.pyc
 *.pyo
+
+# local databases
+mbpw.db
+*.db
+
