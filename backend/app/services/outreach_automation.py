@@ -12,6 +12,23 @@ AUTOMATION_FLAG = "outreach_automation_enabled"
 
 
 # --------------------------------------------------------------------------- #
+# Maintenance
+# --------------------------------------------------------------------------- #
+def _cleanup_orphans(db: Session):
+    """Delete OutreachState rows whose lead no longer exists."""
+    valid_lead_ids = {l.id for l in db.query(Lead.id).all()}
+    orphans = [
+        s.lead_id for s in db.query(OutreachState).all()
+        if s.lead_id not in valid_lead_ids
+    ]
+    if orphans:
+        db.query(OutreachState).filter(OutreachState.lead_id.in_(orphans)).delete(
+            synchronize_session=False
+        )
+        db.commit()
+
+
+# --------------------------------------------------------------------------- #
 # Config helpers
 # --------------------------------------------------------------------------- #
 def _get_config(db: Session, key: str, default: str) -> str:
@@ -194,33 +211,13 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
             ))
     db.commit()
 
-    # De-duplicate OutreachState rows per lead (keep the most-progressed one)
-    # and drop orphaned rows whose lead no longer exists.
-    all_states = db.query(OutreachState).all()
-    valid_lead_ids = {l.id for l in db.query(Lead.id).all()}
-    orphan_ids = [s.id for s in all_states if s.lead_id not in valid_lead_ids]
-    if orphan_ids:
-        db.query(OutreachState).filter(OutreachState.id.in_(orphan_ids)).delete(
-            synchronize_session=False
-        )
-        db.commit()
-        all_states = [s for s in all_states if s.lead_id in valid_lead_ids]
-    by_lead = {}
-    dup_ids = []
-    for s in all_states:
-        prev = by_lead.get(s.lead_id)
-        if prev is None or s.current_step > prev.current_step:
-            if prev is not None:
-                dup_ids.append(prev.id)
-            by_lead[s.lead_id] = s
-        else:
-            dup_ids.append(s.id)
-    if dup_ids:
-        db.query(OutreachState).filter(OutreachState.id.in_(dup_ids)).delete(
-            synchronize_session=False
-        )
-        db.commit()
-    states = list(by_lead.values())
+    # Drop orphaned OutreachState rows whose lead no longer exists.
+    _cleanup_orphans(db)
+    states = (
+        db.query(OutreachState)
+        .filter(OutreachState.enrolled == True)
+        .all()
+    )
 
     summary = {
         "processed": 0, "sent": 0, "simulated": 0, "logged": 0,
@@ -328,6 +325,7 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
 # Status
 # --------------------------------------------------------------------------- #
 def status(db: Session) -> dict:
+    _cleanup_orphans(db)
     states = db.query(OutreachState).all()
     by_status: dict[str, int] = {}
     for s in states:
