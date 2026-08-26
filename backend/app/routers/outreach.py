@@ -1,34 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
 import uuid
+import os
 
 from app.models.database import get_db
-from app.models.schema import Lead, Outreach, Notification
+from app.models.schema import Lead, Outreach, Notification, OutreachState
 from app.services.email_sender import send_email
 from app.services import outreach_service
 from app.services import enrichment
+from app.services import outreach_automation
+from app.services.outreach_service import _lead_to_dict, build_dynamic_message
 
 router = APIRouter()
-
-
-def _lead_to_dict(lead: Lead) -> dict:
-    tags = lead.tags or []
-    src = next((t.split("enriched:")[1] for t in tags if t.startswith("enriched:")), None)
-    return {
-        "id": lead.id,
-        "title": lead.title,
-        "client_name": lead.client_name,
-        "company": lead.company,
-        "email": lead.email,
-        "phone": lead.phone,
-        "country": lead.country,
-        "technologies": lead.technologies or [],
-        "budget_max": lead.budget_max,
-        "status": lead.status,
-        "email_source": src,
-        "email_verified": src in ("hunter", "apollo", "smtp", "web"),
-    }
 
 
 @router.get("/cadence")
@@ -51,6 +35,13 @@ def outreach_leads(db: Session = Depends(get_db)):
         d["outreach_status"] = rec.status if rec else "not_contacted"
         d["last_step"] = rec.step if rec else -1
         d["has_email"] = bool(l.email and "@" in l.email)
+        st = db.query(OutreachState).filter(OutreachState.lead_id == l.id).first()
+        d["automation"] = {
+            "enrolled": st.enrolled if st else True,
+            "current_step": st.current_step if st else -1,
+            "status": st.status if st else "active",
+            "next_due_at": st.next_due_at.isoformat() if st and st.next_due_at else None,
+        }
         result.append(d)
     return result
 
@@ -105,7 +96,7 @@ def send(data: dict, db: Session = Depends(get_db)):
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    msg = outreach_service.build_message(_lead_to_dict(lead), step, data.get("custom_note", ""))
+    msg = build_dynamic_message(lead, step, data.get("custom_note", ""))
     channel = msg["channel"]
     company = lead.company or lead.client_name or "client"
 
@@ -160,6 +151,58 @@ def send(data: dict, db: Session = Depends(get_db)):
     )
     db.commit()
     return {"id": rec.id, "status": status, "simulated": simulated, "reason": reason, "message": msg}
+
+
+# --------------------------------------------------------------------------- #
+# Automated outreach engine
+# --------------------------------------------------------------------------- #
+@router.get("/cron")
+def cron_run(request: Request, db: Session = Depends(get_db)):
+    """Vercel Cron target (GET). Processes all due cadence steps. Optionally guarded
+    by CRON_SECRET (set in env) via ?secret= or Authorization: Bearer <secret>."""
+    secret = os.getenv("CRON_SECRET", "")
+    if secret:
+        provided = request.query_params.get("secret") or request.headers.get(
+            "authorization", ""
+        ).replace("Bearer ", "")
+        if provided != secret:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    summary = outreach_automation.process_due_outreach(db)
+    return {"ok": True, "summary": summary}
+
+
+@router.post("/automation/run")
+def automation_run(data: dict = None, db: Session = Depends(get_db)):
+    limit = int((data or {}).get("limit", 25))
+    summary = outreach_automation.process_due_outreach(db, limit=limit)
+    return {"summary": summary}
+
+
+@router.get("/automation/status")
+def automation_status(db: Session = Depends(get_db)):
+    return outreach_automation.status(db)
+
+
+@router.post("/automation/enroll")
+def automation_enroll(data: dict, db: Session = Depends(get_db)):
+    return outreach_automation.enroll(db, data.get("lead_id"))
+
+
+@router.post("/automation/pause")
+def automation_pause(data: dict, db: Session = Depends(get_db)):
+    return outreach_automation.set_paused(db, data.get("lead_id"), True)
+
+
+@router.post("/automation/resume")
+def automation_resume(data: dict, db: Session = Depends(get_db)):
+    return outreach_automation.set_paused(db, data.get("lead_id"), False)
+
+
+@router.post("/automation/settings")
+def automation_settings(data: dict, db: Session = Depends(get_db)):
+    enabled = bool(data.get("enabled", True))
+    outreach_automation.set_enabled(db, enabled)
+    return {"enabled": enabled}
 
 
 @router.get("/records")

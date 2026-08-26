@@ -173,6 +173,32 @@ export const api = {
     enrichAll: () =>
       fetchAPI<any>(`/api/outreach/enrich-all`, { method: "POST" }),
     stats: () => fetchAPI<any>(`/api/outreach/stats`),
+    automationStatus: () => fetchAPI<any>(`/api/outreach/automation/status`),
+    automationRun: (limit?: number) =>
+      fetchAPI<any>(`/api/outreach/automation/run`, {
+        method: "POST",
+        body: JSON.stringify({ limit: limit ?? 25 }),
+      }),
+    automationEnroll: (lead_id?: string) =>
+      fetchAPI<any>(`/api/outreach/automation/enroll`, {
+        method: "POST",
+        body: JSON.stringify({ lead_id }),
+      }),
+    automationPause: (lead_id: string) =>
+      fetchAPI<any>(`/api/outreach/automation/pause`, {
+        method: "POST",
+        body: JSON.stringify({ lead_id }),
+      }),
+    automationResume: (lead_id: string) =>
+      fetchAPI<any>(`/api/outreach/automation/resume`, {
+        method: "POST",
+        body: JSON.stringify({ lead_id }),
+      }),
+    automationSettings: (enabled: boolean) =>
+      fetchAPI<any>(`/api/outreach/automation/settings`, {
+        method: "POST",
+        body: JSON.stringify({ enabled }),
+      }),
   },
   settings: {
     get: () => fetchAPI<any>(`/api/settings`),

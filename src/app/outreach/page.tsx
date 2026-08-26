@@ -41,6 +41,12 @@ type LeadRow = {
   has_email: boolean;
   email_source?: string | null;
   email_verified?: boolean;
+  automation?: {
+    enrolled: boolean;
+    current_step: number;
+    status: string;
+    next_due_at: string | null;
+  };
 };
 
 type CadenceStep = { day: number; channel: string; label: string; goal: string };
@@ -81,6 +87,8 @@ export default function OutreachPage() {
   const [cadence, setCadence] = useState<CadenceStep[]>([]);
   const [records, setRecords] = useState<RecordRow[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [autoStatus, setAutoStatus] = useState<any>(null);
+  const [autoRunning, setAutoRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<LeadRow | null>(null);
   const [step, setStep] = useState(0);
@@ -95,17 +103,27 @@ export default function OutreachPage() {
     setTimeout(() => setToast(""), 3000);
   };
 
+  const loadAuto = useCallback(async () => {
+    try {
+      setAutoStatus(await api.outreach.automationStatus());
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const loadAll = useCallback(async () => {
-    const [l, c, r, s] = await Promise.all([
+    const [l, c, r, s, a] = await Promise.all([
       api.outreach.leads(),
       api.outreach.cadence(),
       api.outreach.records(),
       api.outreach.stats(),
+      api.outreach.automationStatus(),
     ]);
     setLeads(l);
     setCadence(c.cadence || []);
     setRecords(r);
     setStats(s);
+    setAutoStatus(a);
     setLoading(false);
   }, []);
 
@@ -189,6 +207,54 @@ export default function OutreachPage() {
     }
   };
 
+  const toggleAuto = async () => {
+    const next = !(autoStatus?.enabled ?? true);
+    try {
+      await api.outreach.automationSettings(next);
+      showToast(next ? "Automation engine enabled." : "Automation engine paused (global).");
+      await loadAuto();
+    } catch (e: any) {
+      showToast(e?.message || "Update failed");
+    }
+  };
+
+  const runAuto = async () => {
+    setAutoRunning(true);
+    try {
+      const r = await api.outreach.automationRun();
+      const s = r.summary || {};
+      showToast(
+        `Ran: ${s.processed ?? 0} sent · ${s.skipped_noemail ?? 0} no-email · ${s.completed ?? 0} completed` +
+          (s.due_later ? ` · ${s.due_later} due later` : "")
+      );
+      await loadAll();
+    } catch (e: any) {
+      showToast(e?.message || "Run failed");
+    } finally {
+      setAutoRunning(false);
+    }
+  };
+
+  const pauseLead = async (id: string) => {
+    try {
+      await api.outreach.automationPause(id);
+      showToast("Lead paused from automation.");
+      await loadAll();
+    } catch (e: any) {
+      showToast(e?.message || "Pause failed");
+    }
+  };
+
+  const resumeLead = async (id: string) => {
+    try {
+      await api.outreach.automationResume(id);
+      showToast("Lead resumed in automation.");
+      await loadAll();
+    } catch (e: any) {
+      showToast(e?.message || "Resume failed");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen bg-background text-foreground">
@@ -240,6 +306,56 @@ export default function OutreachPage() {
                 </Card>
               ))}
             </div>
+
+            {/* Automation engine */}
+            <Card className="bg-zinc-900/60 border-white/[0.06]">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-white text-lg flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-indigo-400" /> Automation Engine
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={runAuto}
+                      disabled={autoRunning}
+                      className="bg-white/[0.04] border border-white/[0.08] text-zinc-300 hover:text-white hover:bg-white/[0.08] text-xs h-8 px-3"
+                    >
+                      {autoRunning ? "Running…" : "Run automation now"}
+                    </Button>
+                    <Button
+                      onClick={toggleAuto}
+                      className={
+                        autoStatus?.enabled
+                          ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs h-8 px-3"
+                          : "bg-zinc-500/15 border border-zinc-500/30 text-zinc-400 text-xs h-8 px-3"
+                      }
+                    >
+                      {autoStatus?.enabled ? "ON" : "OFF"}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  {[
+                    { k: "Leads", v: autoStatus?.total_leads ?? 0, c: "text-indigo-400" },
+                    { k: "Enrolled", v: autoStatus?.enrolled ?? 0, c: "text-emerald-400" },
+                    { k: "Due now", v: autoStatus?.due_now ?? 0, c: "text-amber-400" },
+                    { k: "Completed", v: autoStatus?.by_status?.completed ?? 0, c: "text-rose-400" },
+                  ].map((s) => (
+                    <div key={s.k} className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                      <div className="text-2xl font-bold text-white">{s.v}</div>
+                      <div className="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">{s.k}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-zinc-500">
+                  Fully automated progressive outreach. New leads are auto-enrolled; the engine sends the Day 0 / 3 / 7 / 14
+                  cadence and enriches missing emails automatically. Runs daily at <span className="text-zinc-300">09:00 UTC</span> via
+                  Vercel Cron (and on demand with “Run automation now”).
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Cadence */}
             <Card className="bg-zinc-900/60 border-white/[0.06]">
@@ -294,6 +410,17 @@ export default function OutreachPage() {
                         {l.email_source === "heuristic" && (
                           <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">heuristic</Badge>
                         )}
+                        {l.automation?.status === "paused" ? (
+                          <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">auto paused</Badge>
+                        ) : l.automation?.status === "completed" ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">auto done</Badge>
+                        ) : l.automation && l.automation.current_step >= 0 ? (
+                          <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30">
+                            auto · step {l.automation.current_step + 1}/{cadence.length}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">auto · queued</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-zinc-500 truncate">{l.title}</div>
                       <div className="text-[11px] text-zinc-600 mt-0.5">
@@ -317,6 +444,17 @@ export default function OutreachPage() {
                           <Mail className="w-3.5 h-3.5 mr-1.5" /> Enrich
                         </Button>
                       )}
+                      <Button
+                        onClick={() =>
+                          l.automation?.status === "paused"
+                            ? resumeLead(l.id)
+                            : pauseLead(l.id)
+                        }
+                        variant="ghost"
+                        className="text-zinc-500 hover:text-white hover:bg-white/[0.06] text-[11px] h-7 px-2"
+                      >
+                        {l.automation?.status === "paused" ? "Resume auto" : "Pause auto"}
+                      </Button>
                     </div>
                   </div>
                 ))}

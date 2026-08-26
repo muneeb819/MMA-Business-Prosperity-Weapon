@@ -1,4 +1,9 @@
+import os
+import json
+import asyncio
 from typing import Optional
+
+from app.services.ai_service import AIService
 
 # Progressive, multi-touch cadence. Each step targets a different goal so outreach
 # feels human and earned rather than a single blast.
@@ -110,3 +115,127 @@ def build_message(lead: dict, step_index: int = 0, custom_note: str = "") -> dic
         "company": company,
         "client_name": client,
     }
+
+
+def _lead_to_dict(lead) -> dict:
+    """Convert a Lead ORM object (or dict) into the flat dict used by message builders."""
+    if isinstance(lead, dict):
+        return lead
+    tags = lead.tags or []
+    src = next((t.split("enriched:")[1] for t in tags if t.startswith("enriched:")), None)
+    return {
+        "id": lead.id,
+        "title": lead.title,
+        "description": getattr(lead, "description", None) or "",
+        "client_name": lead.client_name,
+        "company": lead.company,
+        "email": lead.email,
+        "phone": getattr(lead, "phone", None),
+        "country": lead.country,
+        "technologies": lead.technologies or [],
+        "skills": getattr(lead, "skills", None) or [],
+        "budget_min": getattr(lead, "budget_min", None),
+        "budget_max": lead.budget_max,
+        "deadline": getattr(lead, "deadline", None),
+        "job_type": getattr(lead, "job_type", None),
+        "project_size": getattr(lead, "project_size", None),
+        "platform": getattr(lead, "platform", None),
+        "status": lead.status,
+        "email_source": src,
+        "email_verified": src in ("hunter", "apollo", "smtp", "web"),
+    }
+
+
+def _extract_json(raw: str) -> dict:
+    cleaned = raw.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        cleaned = "\n".join(lines)
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        # Fallback: grab the first {...} block.
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end != -1:
+            try:
+                return json.loads(cleaned[start : end + 1])
+            except Exception:
+                return {}
+    return {}
+
+
+def _build_with_ai(lead: dict, step_index: int, custom_note: str) -> dict:
+    step_index = max(0, min(step_index, len(CADENCE) - 1))
+    step = CADENCE[step_index]
+    svc = AIService()
+    if not svc._is_available():
+        return build_message(lead, step_index, custom_note)
+
+    ctx = {
+        k: lead.get(k)
+        for k in (
+            "title", "company", "client_name", "description", "technologies",
+            "skills", "budget_min", "budget_max", "country", "job_type",
+            "deadline", "project_size", "platform",
+        )
+    }
+    system = (
+        "You are a senior B2B outreach copywriter for an IT services firm "
+        "(MMA Business Prosperity Weapon). Write authentic, human, non-spammy outreach. "
+        "Lead with value, never with a hard pitch. Use a single clear call to action. "
+        "Respond ONLY with a JSON object: {\"subject\": string, \"body_text\": string}."
+    )
+    user = (
+        f"Lead context (JSON): {json.dumps(ctx, default=str)}\n"
+        f"Cadence step: Day {step['day']} via {step['channel']}.\n"
+        f"Goal: {step['goal']}\n\n"
+        f"Write the '{step['label']}' message. Offer what this lead is specifically seeking, "
+        f"based on their description, technologies and skills. Sign off as the sender. "
+        f"Return JSON only."
+    )
+    try:
+        raw = asyncio.run(svc._chat(system, user, temperature=0.7))
+    except Exception:
+        return build_message(lead, step_index, custom_note)
+    data = _extract_json(raw)
+    subject = (data.get("subject") or "").strip()
+    body = (data.get("body_text") or "").strip()
+    if not subject or not body:
+        return build_message(lead, step_index, custom_note)
+    if custom_note:
+        body += f"\n\n{custom_note}"
+    sender = os.getenv("OUTREACH_SENDER_NAME", "Muhammad Muneeb Akram")
+    body += f"\n\nBest,\n{sender}\nMMA Business Prosperity Weapon"
+    html = "<p>" + body.replace("\n", "<br/>") + "</p>"
+    return {
+        "step_index": step_index,
+        "step_label": step["label"],
+        "channel": step["channel"],
+        "day": step["day"],
+        "subject": subject,
+        "body_text": body,
+        "body_html": html,
+        "recipient_email": lead.get("email") or "",
+        "company": lead.get("company"),
+        "client_name": lead.get("client_name"),
+    }
+
+
+def build_dynamic_message(lead, step_index: int = 0, custom_note: str = "") -> dict:
+    """Build a personalized outreach message, using AI when configured, else the template.
+
+    Always references what the lead is seeking (description/tech/skills/budget) so the
+    offer is dynamic per lead.
+    """
+    lead_dict = _lead_to_dict(lead)
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            return _build_with_ai(lead_dict, step_index, custom_note)
+        except Exception:
+            pass
+    return build_message(lead_dict, step_index, custom_note)

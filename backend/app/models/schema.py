@@ -141,6 +141,21 @@ class Outreach(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class OutreachState(Base):
+    """Per-lead automation state for the progressive outreach engine."""
+
+    __tablename__ = "outreach_states"
+
+    lead_id = Column(String, primary_key=True)
+    enrolled = Column(Boolean, default=True)
+    current_step = Column(Integer, default=-1)  # last cadence step sent (-1 = none yet)
+    status = Column(String, default="active")  # active | paused | completed | opted_out
+    last_sent_at = Column(DateTime, nullable=True)
+    next_due_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class KnowledgeEntry(Base):
     __tablename__ = "knowledge_base"
 
