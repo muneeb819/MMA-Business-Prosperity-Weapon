@@ -95,7 +95,7 @@ def is_lead_email_verified(lead) -> bool:
 
 
 def is_sendable_email(email: str, lead=None) -> bool:
-    """Deliverable AND not a heuristic guess (we only trust verified/discovery sources)."""
+    """Deliverable AND not a heuristic guess (we only trust real, resolvable addresses)."""
     if not is_email_deliverable(email):
         return False
     if lead is not None:

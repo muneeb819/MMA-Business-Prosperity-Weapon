@@ -224,7 +224,7 @@ export default function OutreachPage() {
       const r = await api.outreach.automationRun();
       const s = r.summary || {};
       showToast(
-        `Ran: ${s.processed ?? 0} sent · ${s.skipped_noemail ?? 0} no-email · ${s.completed ?? 0} completed` +
+        `Ran: ${s.processed ?? 0} sent · ${s.skipped_invalid ?? 0} invalid/parked · ${s.completed ?? 0} completed` +
           (s.due_later ? ` · ${s.due_later} due later` : "")
       );
       await loadAll();
@@ -410,7 +410,9 @@ export default function OutreachPage() {
                         {l.email_source === "heuristic" && (
                           <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">heuristic</Badge>
                         )}
-                        {l.automation?.status === "paused" ? (
+                        {l.automation?.status === "needs_email" ? (
+                          <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30">needs valid email</Badge>
+                        ) : l.automation?.status === "paused" ? (
                           <Badge className="bg-zinc-500/15 text-zinc-400 border-zinc-500/30">auto paused</Badge>
                         ) : l.automation?.status === "completed" ? (
                           <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">auto done</Badge>
@@ -424,7 +426,15 @@ export default function OutreachPage() {
                       </div>
                       <div className="text-xs text-zinc-500 truncate">{l.title}</div>
                       <div className="text-[11px] text-zinc-600 mt-0.5">
-                        {l.email ? l.email : <span className="text-amber-500">no email — enrich to send</span>}
+                        {l.automation?.status === "needs_email" ? (
+                          <span className="text-amber-500">
+                            {l.email ? `${l.email} — not deliverable, needs a valid email` : "no valid email — enrich or add one to send"}
+                          </span>
+                        ) : l.email ? (
+                          l.email
+                        ) : (
+                          <span className="text-amber-500">no email — enrich to send</span>
+                        )}
                         {l.technologies?.length ? ` · ${l.technologies.slice(0, 3).join(", ")}` : ""}
                       </div>
                     </div>

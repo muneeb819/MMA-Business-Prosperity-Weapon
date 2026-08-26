@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from datetime import datetime
 import uuid
 from app.models.database import get_db
-from app.models.schema import Lead, Notification
+from app.models.schema import Lead, Notification, OutreachState
 
 router = APIRouter()
 
@@ -301,6 +301,19 @@ def update_lead(lead_id: str, lead: LeadUpdate, db: Session = Depends(get_db)):
     for col, (_, val) in _map.items():
         if val is not None:
             setattr(db_lead, col, val)
+
+    # A user-edited email is explicitly confirmed -> safe for automation.
+    if lead.email is not None:
+        tags = list(db_lead.tags or [])
+        if "email_confirmed" not in tags:
+            tags.append("email_confirmed")
+        db_lead.tags = tags
+        # Reactivate a parked (needs_email) automation state now that we have a confirmed address.
+        st = db.query(OutreachState).filter(OutreachState.lead_id == lead_id).first()
+        if st and st.status == "needs_email":
+            st.status = "active"
+            st.next_due_at = datetime.utcnow()
+            db.add(st)
 
     db.commit()
     db.refresh(db_lead)

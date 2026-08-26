@@ -194,32 +194,79 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
             ))
     db.commit()
 
-    states = (
-        db.query(OutreachState)
-        .filter(OutreachState.enrolled == True, OutreachState.status == "active")
-        .all()
-    )
+    # De-duplicate OutreachState rows per lead (keep the most-progressed one).
+    all_states = db.query(OutreachState).all()
+    by_lead = {}
+    dup_ids = []
+    for s in all_states:
+        prev = by_lead.get(s.lead_id)
+        if prev is None or s.current_step > prev.current_step:
+            if prev is not None:
+                dup_ids.append(prev.id)
+            by_lead[s.lead_id] = s
+        else:
+            dup_ids.append(s.id)
+    if dup_ids:
+        db.query(OutreachState).filter(OutreachState.id.in_(dup_ids)).delete(
+            synchronize_session=False
+        )
+        db.commit()
+    states = list(by_lead.values())
+
     summary = {
         "processed": 0, "sent": 0, "simulated": 0, "logged": 0,
-        "failed": 0, "skipped_noemail": 0, "completed": 0, "errors": 0, "due_later": 0,
+        "failed": 0, "skipped_invalid": 0, "completed": 0, "errors": 0, "due_later": 0,
     }
     processed = 0
     for st in states:
         if processed >= limit:
             break
-        if st.status != "active" or not st.enrolled:
+        if not st.enrolled:
             continue
+
+        lead = db.query(Lead).filter(Lead.id == st.lead_id).first()
+
+        # Parked leads (no valid email): try to recover a real email, else stay parked.
+        if st.status == "needs_email":
+            if lead and outreach_service.is_sendable_email(lead.email, lead):
+                st.status = "active"
+                st.next_due_at = now
+                db.commit()
+            else:
+                try:
+                    res = enrichment.enrich(
+                        lead.company or lead.client_name, verify=True, smtp=False, web=True
+                    )
+                    ne = res.get("email")
+                    ns = res.get("source")
+                    if ne and ns != "heuristic" and outreach_service.is_email_deliverable(ne):
+                        lead.email = ne
+                        tag = f"enriched:{ns}"
+                        if tag not in (lead.tags or []):
+                            lead.tags = (lead.tags or []) + [tag]
+                        db.commit()
+                        st.status = "active"
+                        st.next_due_at = now
+                        db.commit()
+                except Exception:
+                    pass
+                if st.status == "needs_email":
+                    continue
+
+        if st.status != "active":
+            continue
+
+        if lead is None:
+            st.status = "completed"
+            db.commit()
+            summary["completed"] += 1
+            continue
+
         if st.next_due_at is None:
             st.next_due_at = compute_next_due(st, cadence, now)
             db.commit()
         if st.next_due_at and st.next_due_at > now:
             summary["due_later"] += 1
-            continue
-
-        lead = db.query(Lead).filter(Lead.id == st.lead_id).first()
-        if not lead:
-            st.status = "completed"
-            db.commit()
             continue
 
         nxt = st.current_step + 1
@@ -238,13 +285,11 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
             continue
 
         if not result.get("ok"):
-            if result.get("reason") in ("no_email", "no_valid_email"):
-                summary["skipped_noemail"] += 1
-                st.next_due_at = now + timedelta(days=1)
-                db.commit()
-                continue
-            summary["errors"] += 1
-            st.next_due_at = now + timedelta(hours=6)
+            # No valid address or the send actually failed (e.g. SMTP "address not found").
+            # Park the lead instead of hammering the same bad address on every run.
+            st.status = "needs_email"
+            st.next_due_at = None
+            summary["skipped_invalid"] += 1
             db.commit()
             continue
 
