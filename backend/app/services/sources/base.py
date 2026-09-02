@@ -23,6 +23,7 @@ class NormalizedJob:
     source_name: str = ""
     source_url: str = ""
     tags: List[str] = field(default_factory=list)
+    apply_email: str = ""
 
 
 class BaseSource(ABC):

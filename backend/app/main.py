@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import re
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.models.database import create_tables
-from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket, lead_sources, ai_teams, outreach, settings
+from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket, lead_sources, ai_teams, outreach, settings, acie
 from app.middleware.error_handler import ErrorHandlerMiddleware
 
 app = FastAPI(
@@ -71,6 +71,7 @@ app.include_router(lead_sources.router)
 app.include_router(ai_teams.router, prefix="/api/ai-teams", tags=["AI Teams"])
 app.include_router(outreach.router, prefix="/api/outreach", tags=["Outreach"])
 app.include_router(settings.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(acie.router, prefix="/api/acie", tags=["ACIE"])
 
 
 @app.get("/")

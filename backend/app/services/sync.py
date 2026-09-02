@@ -76,13 +76,16 @@ def _guess_project_size(job: NormalizedJob) -> str:
 
 
 def job_to_lead(job: NormalizedJob, verify: bool = False) -> dict:
+    # Prefer the real application email from the job page
+    apply_email = getattr(job, "apply_email", "") or ""
+    
     lead_data = {
         "id": f"live-{_make_id(job)}",
         "title": job.title,
         "description": job.description,
         "client_name": job.company,
         "company": job.company,
-        "email": "",
+        "email": apply_email,
         "phone": "",
         "country": _guess_country(job),
         "budget_min": job.salary_min,
@@ -109,15 +112,17 @@ def job_to_lead(job: NormalizedJob, verify: bool = False) -> dict:
         "analyzed_at": None,
     }
 
-    try:
-        from app.services import enrichment
+    # Only enrich if no apply_email found on job page
+    if not apply_email:
+        try:
+            from app.services import enrichment
 
-        _enr = enrichment.enrich(job.company, verify=verify, title=job.title, smtp=False, web=False)
-        if _enr.get("email"):
-            lead_data["email"] = _enr["email"]
-            lead_data["tags"] = lead_data["tags"] + [f"enriched:{_enr['source']}"]
-    except Exception:  # noqa: BLE001
-        pass
+            _enr = enrichment.enrich(job.company, verify=verify, title=job.title, smtp=False, web=False)
+            if _enr.get("email"):
+                lead_data["email"] = _enr["email"]
+                lead_data["tags"] = lead_data["tags"] + [f"enriched:{_enr['source']}"]
+        except Exception:  # noqa: BLE001
+            pass
 
     return lead_data
 
@@ -143,15 +148,20 @@ async def sync_source(source_name: str, db: Session, limit: int = 50) -> dict:
     fetched = len(raw_jobs)
     new_count = 0
     updated_count = 0
+    seen_ids: set = set()
 
     for job in raw_jobs:
         lead_data = job_to_lead(job, verify)
+        # Skip duplicates within the same feed batch (identical id from duplicate listings).
+        if lead_data["id"] in seen_ids:
+            continue
+        seen_ids.add(lead_data["id"])
         existing = db.query(Lead).filter(Lead.id == lead_data["id"]).first()
         if existing:
-            existing.title = lead_data["title"]
-            existing.description = lead_data["description"]
-            existing.notes = lead_data["notes"]
-            existing.tags = lead_data["tags"]
+            for field in ("title", "description", "client_name", "company", "email",
+                          "country", "technologies", "skills", "url", "notes", "tags"):
+                if field in lead_data:
+                    setattr(existing, field, lead_data[field])
             updated_count += 1
         else:
             db_lead = Lead(**{k: v for k, v in lead_data.items() if hasattr(Lead, k)})

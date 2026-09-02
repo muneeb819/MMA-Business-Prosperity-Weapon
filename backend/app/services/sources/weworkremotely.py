@@ -37,12 +37,28 @@ class WeWorkRemotelySource(BaseSource):
                     parts = title.rsplit(" at ", 1)
                     title = parts[0].strip()
                     company = parts[1].strip()
+                elif title.count(":") == 1 or (":" in title and title.index(":") < len(title) * 0.6):
+                    c, r = title.split(":", 1)
+                    if c.strip():
+                        company = c.strip()
+                        title = r.strip() or title
+                if not company and title.lower() in {"we work remotely", "hiring", "remotely"}:
+                    company = title
+                    title = ""
                 clean_desc = re.sub(r"<[^>]+>", " ", desc)[:2000]
+                
+                # Extract email mentioned directly in RSS description
+                apply_email = None
+                emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", desc)
+                if emails:
+                    apply_email = emails[0]
+                
                 tags = []
                 lower_desc = clean_desc.lower()
                 for tech in ["python", "javascript", "typescript", "react", "node", "go", "rust", "java", "ruby", "php", "swift"]:
                     if tech in lower_desc:
                         tags.append(tech)
+
                 jobs.append(NormalizedJob(
                     title=title,
                     company=company,
@@ -55,5 +71,6 @@ class WeWorkRemotelySource(BaseSource):
                     source_name=self.name,
                     source_url=self.url,
                     tags=tags,
+                    apply_email=apply_email,
                 ))
             return jobs

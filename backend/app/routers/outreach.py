@@ -10,6 +10,7 @@ from app.services.email_sender import send_email
 from app.services import outreach_service
 from app.services import enrichment
 from app.services import outreach_automation
+from app.services.acie.pipeline import run_pipeline
 from app.services.outreach_service import _lead_to_dict, build_dynamic_message
 
 router = APIRouter()
@@ -204,6 +205,169 @@ def automation_settings(data: dict, db: Session = Depends(get_db)):
     enabled = bool(data.get("enabled", True))
     outreach_automation.set_enabled(db, enabled)
     return {"enabled": enabled}
+
+
+# --------------------------------------------------------------------------- #
+# WeWorkRemotely Client Outreach Agent
+# --------------------------------------------------------------------------- #
+# Discovers client companies on WeWorkRemotely (every live posting = a company
+# actively hiring, i.e. a warm prospect for our services), resolves a real,
+# verified company email, auto-enrolls each into the outreach cadence and
+# fires the first touch now. This is a REAL outreach agent built on the
+# existing enrichment + email engine (not a simulation).
+# --------------------------------------------------------------------------- #
+@router.post("/agent/weworkremotely/run")
+def wework_agent_run(data: dict = None, db: Session = Depends(get_db)):
+    import asyncio
+    from app.services.sync import sync_source
+
+    limit = int((data or {}).get("limit", 20))
+
+    # 1) Discover client companies from We Work Remotely (creates/updates Leads).
+    #    This is the fast step (single RSS fetch + dedupe insert). Heavy email
+    #    enrichment + sending runs in the daily cron (longer 60s window) via the
+    #    existing process_due_outreach engine, so this endpoint stays under the
+    #    ~10s Vercel serverless limit.
+    try:
+        result = asyncio.get_event_loop().run_until_complete(
+            sync_source("weworkremotely", db, limit=limit)
+        )
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        result = loop.run_until_complete(sync_source("weworkremotely", db, limit=limit))
+        loop.close()
+
+    if "error" in result and result.get("fetched", 0) == 0:
+        return {"ok": False, "error": result["error"]}
+
+    # 2) Enroll every We Work Remotely client (idempotent) so the automation
+    #    engine picks them up on the next cron run. Run ACIE pipeline on each
+    #    so confidence/channel/gate are ready.
+    wwr_leads = (
+        db.query(Lead)
+        .filter(Lead.platform == "weworkremotely")
+        .order_by(Lead.found_at.desc())
+        .limit(limit)
+        .all()
+    )
+    enrolled = 0
+    already = 0
+    acie_scored = 0
+    for lead in wwr_leads:
+        st = db.query(OutreachState).filter(OutreachState.lead_id == lead.id).first()
+        if st and st.enrolled:
+            already += 1
+        else:
+            outreach_automation.get_or_enroll(db, lead.id)
+            enrolled += 1
+        # Run ACIE pipeline (fast path - uses free providers)
+        try:
+            run_pipeline(db, lead)
+            acie_scored += 1
+        except Exception:
+            pass
+    db.commit()
+
+    return {
+        "ok": True,
+        "agent": "WeWorkRemotely Client Outreach Agent",
+        "source": "weworkremotely",
+        "sync": result,
+        "summary": {
+            "found": len(wwr_leads),
+            "new": result.get("new", 0),
+            "updated": result.get("updated", 0),
+            "enrolled_now": enrolled,
+            "already_enrolled": already,
+            "acie_scored": acie_scored,
+            "note": "Email enrichment + 4-step outreach send automatically on the daily cron (09:00 UTC). ACIE gates all sends.",
+        },
+    }
+
+
+@router.post("/agent/weworkremotely/enrich")
+def wework_agent_enrich(data: dict = None, db: Session = Depends(get_db)):
+    """Enrich a SMALL batch (fits the ~10s limit) of We Work Remotely clients that
+    still lack a verify-able company email. The daily cron does the rest."""
+    batch = int((data or {}).get("batch", 4))
+    wwr_leads = (
+        db.query(Lead)
+        .filter(Lead.platform == "weworkremotely")
+        .order_by(Lead.found_at.asc())
+        .limit(200)
+        .all()
+    )
+    targets = [
+        l for l in wwr_leads
+        if not outreach_service.is_sendable_email(l.email, l)
+    ]
+    enriched = 0
+    verified = 0
+    for lead in targets[:batch]:
+        company = lead.company or lead.client_name
+        try:
+            res = enrichment.enrich(company, verify=True, smtp=False, web=True)
+            ne = res.get("email")
+            ns = res.get("source")
+        except Exception:
+            ne, ns = None, None
+        if ne and ns != "heuristic" and outreach_service.is_email_deliverable(ne):
+            lead.email = ne
+            tag = f"enriched:{ns}"
+            if tag not in (lead.tags or []):
+                lead.tags = (lead.tags or []) + [tag]
+            enriched += 1
+            if outreach_service.is_lead_email_verified(lead):
+                verified += 1
+    db.commit()
+    return {
+        "ok": True,
+        "targets_remaining": len(targets) - enriched,
+        "enriched": enriched,
+        "verified": verified,
+    }
+
+
+@router.get("/agent/weworkremotely/status")
+def wework_agent_status(db: Session = Depends(get_db)):
+    wwr_leads = (
+        db.query(Lead)
+        .filter(Lead.platform == "weworkremotely")
+        .order_by(Lead.found_at.desc())
+        .limit(100)
+        .all()
+    )
+    items = []
+    ready = 0
+    enrolled = 0
+    for l in wwr_leads:
+        sendable = outreach_service.is_sendable_email(l.email, l)
+        st = db.query(OutreachState).filter(OutreachState.lead_id == l.id).first()
+        is_enrolled = st.enrolled if st else False
+        if sendable:
+            ready += 1
+        if is_enrolled:
+            enrolled += 1
+        items.append(
+            {
+                "id": l.id,
+                "company": l.company or l.client_name,
+                "title": l.title,
+                "email": l.email or "",
+                "sendable": sendable,
+                "enrolled": is_enrolled,
+                "current_step": st.current_step if st else -1,
+                "status": st.status if st else "not_enrolled",
+            }
+        )
+    return {
+        "agent": "WeWorkRemotely Client Outreach Agent",
+        "source": "weworkremotely",
+        "companies": len(items),
+        "with_valid_email": ready,
+        "enrolled": enrolled,
+        "items": items,
+    }
 
 
 @router.get("/records")

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from app.models.database import get_db
 from app.models.schema import Lead, Proposal, AgentLog
 from pydantic import BaseModel
@@ -139,13 +139,14 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
             idx = dt.month - 1
             monthly_revenue[idx].revenue += rev
 
+    from sqlalchemy import extract
     proposal_counts_raw = (
         db.query(
-            func.strftime("%m", Proposal.created_at).label("month"),
+            extract('month', Proposal.created_at).label("month"),
             func.count(Proposal.id).label("cnt"),
         )
         .filter(Proposal.created_at.isnot(None))
-        .group_by(func.strftime("%m", Proposal.created_at))
+        .group_by(extract('month', Proposal.created_at))
         .all()
     )
     for month_num, cnt in proposal_counts_raw:
@@ -230,11 +231,11 @@ def get_revenue_analytics(db: Session = Depends(get_db)):
 
     proposal_data = (
         db.query(
-            func.strftime("%m", Proposal.created_at).label("month"),
+            extract('month', Proposal.created_at).label("month"),
             func.count(Proposal.id).label("cnt"),
         )
         .filter(Proposal.created_at.isnot(None))
-        .group_by(func.strftime("%m", Proposal.created_at))
+        .group_by(extract('month', Proposal.created_at))
         .all()
     )
     for month_num, cnt in proposal_data:

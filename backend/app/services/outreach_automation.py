@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from app.models.schema import Lead, Outreach, OutreachState, Notification, AppConfig
 from app.services import outreach_service, enrichment
 from app.services.email_sender import send_email
+from app.services.acie.pipeline import run_pipeline
+from app.services.acie.compliance import can_send
+from app.services.acie.channel import select_channel
+from app.services.acie.learn import record_outcome
 
 AUTOMATION_FLAG = "outreach_automation_enabled"
 
@@ -131,45 +135,42 @@ def compute_next_due(state: OutreachState, cadence, now: datetime | None = None)
 # Sending a single step
 # --------------------------------------------------------------------------- #
 def send_step(db: Session, lead: Lead, step_index: int, custom_note: str = ""):
+    # Run ACIE pipeline to get the decision object
+    decision = run_pipeline(db, lead)
+    intel_decision = decision.get("decision", {})
+    
+    # ACIE compliance gate - MANDATORY
+    gate = can_send(db, lead.id)
+    if not gate["allow"]:
+        return {"ok": False, "reason": f"gate_blocked:{gate['reasons']}", "channel": None}
+
+    # ACIE channel selection - use the ACIE-recommended channel
+    # CADENCE provides step goal/label, ACIE provides the verified channel
     msg = outreach_service.build_dynamic_message(lead, step_index, custom_note)
-    channel = msg["channel"]
+    channel = intel_decision.get("channel") or "email"
+    target_email = intel_decision.get("email") or lead.email
     company = lead.company or lead.client_name or "client"
     now = datetime.utcnow()
 
     if channel == "email":
-        # Only send to a deliverable address from a verified/discovery source
-        # (never heuristic guesses or reserved/placeholder domains).
-        if not outreach_service.is_sendable_email(lead.email, lead):
-            res = enrichment.enrich(
-                lead.company or lead.client_name, verify=True, smtp=False, web=True
-            )
-            ne = res.get("email")
-            ns = res.get("source")
-            if ne and ns != "heuristic" and outreach_service.is_email_deliverable(ne):
-                lead.email = ne
-                tag = f"enriched:{ns}"
-                if tag not in (lead.tags or []):
-                    lead.tags = (lead.tags or []) + [tag]
-                db.commit()
-        if not outreach_service.is_sendable_email(lead.email, lead):
-            return {"ok": False, "reason": "no_valid_email", "channel": channel}
-
-        res = send_email(lead.email, msg["subject"], msg["body_text"], msg["body_html"])
+        if not target_email or not outreach_service.is_email_deliverable(target_email):
+            return {"ok": False, "reason": "no_valid_email_after_acie", "channel": channel}
+        res = send_email(target_email, msg["subject"], msg["body_text"], msg["body_html"])
         status = "sent" if res["sent"] else ("simulated" if res["simulated"] else "failed")
         simulated = res["simulated"]
         reason = res.get("reason", "")
     else:
-        # LinkedIn / WhatsApp are logged as manual outreach actions (no API wired yet).
+        # Phone/LinkedIn: logged as manual action (no API yet)
         status = "logged"
         simulated = False
-        reason = f"Channel '{channel}' tracked as an outreach action (complete manually)."
+        reason = f"Channel '{channel}' tracked as outreach action (complete manually)."
 
     rec = Outreach(
         id=f"out-{uuid.uuid4().hex[:12]}",
         lead_id=lead.id,
         client_name=lead.client_name,
         company=company,
-        email=lead.email,
+        email=target_email,
         channel=channel,
         step=step_index,
         step_label=msg["step_label"],
@@ -188,6 +189,13 @@ def send_step(db: Session, lead: Lead, step_index: int, custom_note: str = ""):
         priority="low",
         created_at=now,
     ))
+
+    # Record ACIE feedback for learning
+    record_outcome(db, lead.id, channel, status, 
+                   provider=intel_decision.get("provider", ""), 
+                   detail=reason, 
+                   confidence=intel_decision.get("confidence", 0.0))
+
     return {"ok": True, "status": status, "channel": channel, "simulated": simulated, "reason": reason}
 
 
@@ -209,6 +217,11 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
                 lead_id=lead.id, enrolled=True, current_step=-1,
                 status="active", next_due_at=now,
             ))
+            # Run ACIE on new enrollments so we have confidence + channel ready
+            try:
+                run_pipeline(db, lead)
+            except Exception:
+                pass
     db.commit()
 
     # Drop orphaned OutreachState rows whose lead no longer exists.
@@ -232,32 +245,21 @@ def process_due_outreach(db: Session, limit: int = 25) -> dict:
 
         lead = db.query(Lead).filter(Lead.id == st.lead_id).first()
 
-        # Parked leads (no valid email): try to recover a real email, else stay parked.
+        # Parked leads: ACIE gate will handle validity check in send_step.
+        # Just re-run pipeline to refresh confidence if stale.
         if st.status == "needs_email":
-            if lead and outreach_service.is_sendable_email(lead.email, lead):
-                st.status = "active"
-                st.next_due_at = now
-                db.commit()
-            else:
+            if lead:
                 try:
-                    res = enrichment.enrich(
-                        lead.company or lead.client_name, verify=True, smtp=False, web=True
-                    )
-                    ne = res.get("email")
-                    ns = res.get("source")
-                    if ne and ns != "heuristic" and outreach_service.is_email_deliverable(ne):
-                        lead.email = ne
-                        tag = f"enriched:{ns}"
-                        if tag not in (lead.tags or []):
-                            lead.tags = (lead.tags or []) + [tag]
-                        db.commit()
-                        st.status = "active"
-                        st.next_due_at = now
-                        db.commit()
+                    run_pipeline(db, lead, force=True)
                 except Exception:
                     pass
-                if st.status == "needs_email":
-                    continue
+            # If ACIE still says no, stay parked
+            gate = can_send(db, st.lead_id)
+            if not gate["allow"]:
+                continue
+            st.status = "active"
+            st.next_due_at = now
+            db.commit()
 
         if st.status != "active":
             continue

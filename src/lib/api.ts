@@ -199,6 +199,17 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ enabled }),
       }),
+    weworkAgentRun: (limit?: number, send_now?: boolean) =>
+      fetchAPI<any>(`/api/outreach/agent/weworkremotely/run`, {
+        method: "POST",
+        body: JSON.stringify({ limit: limit ?? 20, send_now: send_now ?? true }),
+      }),
+    weworkAgentEnrich: (batch?: number) =>
+      fetchAPI<any>(`/api/outreach/agent/weworkremotely/enrich`, {
+        method: "POST",
+        body: JSON.stringify({ batch: batch ?? 4 }),
+      }),
+    weworkAgentStatus: () => fetchAPI<any>(`/api/outreach/agent/weworkremotely/status`),
   },
   settings: {
     get: () => fetchAPI<any>(`/api/settings`),

@@ -17,6 +17,7 @@ import { api } from "@/lib/api"
 import { fetchAllSources, getStoredLeads } from "@/lib/live-sources"
 import { addNotification } from "@/lib/pipeline"
 import { HunterStats } from "@/components/opportunity-hunter/HunterStats"
+import { WeWorkAgentPanel } from "@/components/wework-agent/WeWorkAgentPanel"
 import { SourceCards } from "@/components/opportunity-hunter/SourceCards"
 import { FilterBar } from "@/components/opportunity-hunter/FilterBar"
 import { DiscoveryFeed } from "@/components/opportunity-hunter/DiscoveryFeed"
@@ -563,6 +564,8 @@ export default function OpportunityHunterPage() {
 
             <HunterStats isRunning={isRunning} hunterAgent={hunterAgent} searchSources={searchSources}
               sourceStatuses={sourceStatuses} newDiscoveryCount={discoveries.filter((d) => d.status === "new").length} />
+
+            <WeWorkAgentPanel />
 
             {scanResult && (
               <div className={cn("rounded-xl px-5 py-3 text-sm border",

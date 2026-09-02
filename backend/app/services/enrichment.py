@@ -133,17 +133,25 @@ def _looks_like_email(e: str) -> bool:
     return True
 
 
-def _scrape_email(company: str, timeout: int = 6):
+def _scrape_email(company: str, timeout: int = 8):
     """Find a real, published email on the company's own website (keyless, free).
 
     Many businesses publish contact/sales emails in `mailto:` links or page
-    text. We fetch the homepage / contact pages over HTTPS (allowed on
+    text. We fetch the homepage / contact / career pages over HTTPS (allowed on
     serverless) and return the first company-domain, non-generic address.
     """
     domain = guess_domain(company)
     if not domain or not _domain_resolves(domain):
         return None
-    for path in ("", "/contact", "/contact-us", "/about"):
+    
+    # Prioritize career/hiring pages where real hiring emails appear
+    paths = (
+        "", "/contact", "/contact-us", "/about", 
+        "/careers", "/careers/", "/jobs", "/jobs/",
+        "/team", "/team/", "/hiring", "/hiring/",
+        "/work-with-us", "/join-us", "/join"
+    )
+    for path in paths:
         url = f"https://{domain}{path}"
         try:
             req = urllib.request.Request(
@@ -158,19 +166,35 @@ def _scrape_email(company: str, timeout: int = 6):
             found = [e for e in dict.fromkeys(found) if _looks_like_email(e)]
             if found:
                 tokens = [w for w in re.sub(r"[^a-z0-9 ]", " ", company.lower()).split() if len(w) >= 3]
-
+                
                 def _score(e):
                     d = e.split("@", 1)[1]
+                    local = e.split("@", 1)[0]
                     s = 0
+                    # Strong preference for company domain
                     if d.endswith(domain):
-                        s += 2
+                        s += 10
+                    # Token match in domain
                     if any(t in d for t in tokens):
-                        s += 1
+                        s += 5
+                    # PENALIZE role emails
+                    if local in _ROLE_PREFIXES:
+                        s -= 20
+                    if re.match(r"^(jobs?|career|hr|recruit|talent|apply)\d*$", local):
+                        s -= 20
+                    # Prefer personal-looking emails (has dot, dash, or name-like)
+                    if "." in local or "-" in local or "_" in local:
+                        s += 3
+                    if len(local) >= 5 and local not in _ROLE_PREFIXES:
+                        s += 2
                     return s
 
+                # Filter out generic domains entirely
                 cands = [e for e in found if e.split("@", 1)[1] not in _GENERIC]
                 cands.sort(key=_score, reverse=True)
-                return cands[0]
+                # Return top candidate if it has positive score (i.e., not a role email)
+                if cands and _score(cands[0]) > 0:
+                    return cands[0]
         except Exception:  # noqa: BLE001
             continue
     return None
@@ -265,10 +289,10 @@ def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp
     Priority when verify=True (explicit enrich action):
       1. Apollo  -> real decision-maker email (source 'apollo', verified)
       2. Hunter  -> verified company email      (source 'hunter', verified)
-      3. SMTP-verified role inbox (info@/contact@/sales@…) — keyless, free
+      3. Web scrape -> real email from company career/team pages (source 'web', verified if MX)
+      4. SMTP-verified role inbox (info@/contact@/sales@…) — keyless, free
          (source 'smtp', verified)  [only when smtp=True]
-      4. Heuristic role inbox on a domain that resolves (source 'heuristic')
-    When verify=False (fast sync path) only the heuristic is used.
+    When verify=False (fast sync path): NO heuristic fallback.
     """
     global _apollo_blocked
     domain = guess_domain(company)
@@ -294,8 +318,8 @@ def enrich(company: str, verify: bool = False, title: Optional[str] = None, smtp
             v = _smtp_verify(domain)
             if v:
                 return {"email": v, "source": "smtp", "verified": True}
+        # When verify=True but no real email found, DON'T fall back to info@
+        return {"email": "", "source": "none", "verified": False}
 
-    resolved = _domain_resolves(domain) if verify else True
-    if resolved and domain:
-        return {"email": f"info@{domain}", "source": "heuristic", "verified": False}
+    # Fast sync path: NO heuristic fallback to info@
     return {"email": "", "source": "none", "verified": False}
