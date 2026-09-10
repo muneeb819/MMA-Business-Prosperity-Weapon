@@ -7,15 +7,9 @@
 [![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://python.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://typescriptlang.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
-
-**Live:** [full-repo.vercel.app](https://full-repo.vercel.app) | **Login:** dmin@mbpw.com / dmin123
-
 ---
-
 ## What It Does
-
 The platform runs a full **4-stage pipeline**:
-
 | Stage | Description |
 |-------|-------------|
 | **Hunting** | Fetches real leads from 6 live job boards client-side (Himalayas, RemoteOK, Remotive, We Work Remotely, Arbeitnow, Findwork) |
@@ -169,8 +163,10 @@ All sources are fetched **client-side** (no API keys needed):
 | Source | API | Type |
 |--------|-----|------|
 | Himalayas | himalayas.app/jobs/api | JSON API |
-| RemoteOK | emoteok.com/api | JSON API |
-| Remotive | emotive.com/remote-jobs/feed | RSS/XML |
+| RemoteOK | 
+emoteok.com/api | JSON API |
+| Remotive | 
+emotive.com/remote-jobs/feed | RSS/XML |
 | We Work Remotely | weworkremotely.com/remote-jobs.rss | RSS/XML |
 | Arbeitnow | rbeitnow.com/api/job-board-api | JSON API |
 | Findwork | indwork.dev/api/jobs/ | JSON API |
