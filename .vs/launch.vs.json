@@ -1,0 +1,34 @@
+{
+  "version": "0.2.1",
+  "configurations": [
+    {
+      "type": "default",
+      "project": "package.json",
+      "projectTarget": "dev",
+      "name": "Frontend - Next.js (localhost:3000)",
+      "cwd": "${workspaceRoot}",
+      "workingDirectory": "${workspaceRoot}",
+      "env": {
+        "NEXT_TELEMETRY_DISABLED": "1"
+      }
+    },
+    {
+      "type": "default",
+      "project": "backend\\requirements.txt",
+      "projectTarget": "start",
+      "name": "Backend - FastAPI (localhost:8001)",
+      "cwd": "${workspaceRoot}\\backend",
+      "workingDirectory": "${workspaceRoot}\\backend",
+      "env": {
+        "ENVIRONMENT": "development"
+      }
+    },
+    {
+      "type": "default",
+      "project": "start-mbpw.bat",
+      "projectTarget": "launch",
+      "name": "MBPW - Full Stack (Both)",
+      "cwd": "${workspaceRoot}"
+    }
+  ]
+}

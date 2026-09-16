@@ -1,0 +1,46 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskLabel": "start-frontend",
+      "appliesTo": "package.json",
+      "type": "launch",
+      "command": "npm run dev"
+    },
+    {
+      "taskLabel": "start-backend",
+      "appliesTo": "backend\\requirements.txt",
+      "type": "launch",
+      "contextType": "command",
+      "command": "python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload",
+      "workingDirectory": "backend"
+    },
+    {
+      "taskLabel": "start-all",
+      "appliesTo": "package.json",
+      "type": "launch",
+      "command": "${msvsProjectDir}\\start-mbpw.bat"
+    },
+    {
+      "taskLabel": "build",
+      "appliesTo": "package.json",
+      "type": "default",
+      "contextType": "build",
+      "command": "npm run build"
+    },
+    {
+      "taskLabel": "publish",
+      "appliesTo": "package.json",
+      "type": "default",
+      "contextType": "publish",
+      "command": "npm run build && npm run start -- -H 0.0.0.0 -p 3000"
+    },
+    {
+      "taskLabel": "lint",
+      "appliesTo": "package.json",
+      "contextType": "build",
+      "type": "default",
+      "command": "npm run lint"
+    }
+  ]
+}

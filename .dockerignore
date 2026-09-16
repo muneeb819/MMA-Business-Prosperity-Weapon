@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+.git
+.env
+.env.local
+.env.*.local
+.vercel
+*.log
+mbpw.db
+Fiverr_Screenshots
+data
