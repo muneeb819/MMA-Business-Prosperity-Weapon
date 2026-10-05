@@ -1,0 +1,52 @@
+# Local development database stack for the FastAPI backend.
+#
+# Separate from the root docker-compose.yml on purpose: this file brings up
+# ONLY the data services so you can run the API on the host with uvicorn.
+#
+#   docker compose -f docker-compose.postgres.yml up -d
+#   # then, from backend/:
+#   #   set DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/mbpw
+#   #   python -m alembic -c alembic.ini upgrade head
+#   #   python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
+#
+# pgvector/pgvector is used rather than plain postgres so the image has the
+# extension available; requirements.txt pins pgvector==0.3.5.
+name: mbpw-dev
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: mbpw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # The API must not start against a database that is still booting.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mbpw"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

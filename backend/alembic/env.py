@@ -14,6 +14,16 @@ if config.config_file_name is not None:
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
+# Alembic runs as its own process and never imports app.main, so it needs its
+# own dotenv load before _resolve_database_url() below reads the environment.
+# override=False keeps an explicit environment (CI, container) authoritative.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BACKEND_DIR / ".env", override=False)
+except ImportError:  # pragma: no cover - dotenv is a declared dependency
+    pass
+
 from app.models.database import Base, _normalize_database_url, _resolve_database_url, is_production  # noqa: E402
 import app.models.schema  # noqa: F401,E402 — register business tables
 import app.routers.auth  # noqa: F401,E402 — register users/sessions/audit logs

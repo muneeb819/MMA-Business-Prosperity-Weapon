@@ -1,6 +1,30 @@
+import os
+
+# Load backend/.env before anything else reads the environment.
+#
+# Ordering matters: app.models.database resolves DATABASE_URL at import time
+# (module level), and is_production()/JWT_SECRET are evaluated further down at
+# import time too. python-dotenv is a declared dependency but load_dotenv() was
+# never called, so a .env file was silently ignored -- deployments that wrote
+# one appeared to configure themselves and then ran on in-memory SQLite.
+#
+# Real process environment always wins: override=False means an explicit
+# DATABASE_URL from the shell, a container env, or CI still takes precedence.
+try:
+    from dotenv import load_dotenv
+
+    # backend/.env, resolved relative to this file rather than the cwd, so the
+    # app behaves the same however it is launched (task scheduler, uvicorn,
+    # gunicorn, alembic).
+    load_dotenv(
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
+        override=False,
+    )
+except ImportError:  # pragma: no cover - dotenv is a declared dependency
+    pass
+
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import re
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.models.database import create_tables, is_production
