@@ -1,7 +1,5 @@
 "use client"
 
-import { ExternalLink, Mail, Globe, Building2 } from "lucide-react"
-
 export interface Source {
   id: string
   name: string
@@ -86,7 +84,7 @@ export function storeSourceStats(s: Record<string, { leadsFound: number; lastSca
   localStorage.setItem(STORAGE_SOURCES_KEY, JSON.stringify(s))
 }
 
-export function liveLeadToDiscovery(ll: any): Discovery {
+export function liveLeadToDiscovery(ll: LegacyLooseValue): Discovery {
   const salary = (ll.salaryMax || ll.salaryMin || 0)
   const budget = salary
   const techs = ll.technologies || ll.tags || []

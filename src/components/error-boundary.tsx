@@ -1,7 +1,7 @@
 "use client"
 
 import { Component, type ReactNode, type ErrorInfo } from "react"
-import { AlertTriangle, RefreshCw, XCircle } from "lucide-react"
+import {  RefreshCw, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Props {

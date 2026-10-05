@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 
-export function Skeleton({ className, ...props }: { className?: string; [key: string]: any }) {
+export function Skeleton({ className, ...props }: { className?: string; [key: string]: LegacyLooseValue }) {
   return <div className={cn("animate-pulse rounded-lg bg-zinc-800/50", className)} {...props} />
 }
 
@@ -35,8 +35,8 @@ export function WidgetSkeleton({ type = "card" }: { type?: "card" | "chart" | "l
           <Skeleton className="h-3 w-16" />
         </div>
         <div className="flex items-end gap-2 h-32">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="flex-1" style={{ height: `${30 + Math.random() * 70}%` }} />
+          {[40, 70, 50, 85, 60, 95].map((height, i) => (
+            <Skeleton key={i} className="flex-1" style={{ height: `${height}%` }} />
           ))}
         </div>
       </div>

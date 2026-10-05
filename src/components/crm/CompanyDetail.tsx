@@ -11,7 +11,7 @@ import {
 import { formatCurrency, cn } from "@/lib/utils";
 import type { CRMCompany } from "@/lib/types";
 import {
-  Globe, DollarSign, Users, Mail, Phone, Calendar, Edit3, Save, X, MessageSquare,
+  Globe, DollarSign, Users, Mail, Phone, Calendar, Edit3, Save, X,
 } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {

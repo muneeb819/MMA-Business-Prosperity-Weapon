@@ -89,7 +89,7 @@ export default function LeadsPage() {
       try {
         const data = await api.leads.list();
         if (!cancelled && Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((l: any) => ({
+          const mapped = data.map((l: LegacyLooseValue) => ({
             ...l,
             clientName: l.clientName || l.client_name || "",
             budget: l.budget || { min: l.budget_min || 0, max: l.budget_max || 0 },
@@ -252,7 +252,7 @@ export default function LeadsPage() {
   }, [showToast]);
 
   const handleSendEmail = useCallback((lead: Lead) => {
-    const email = (lead as any).email || "";
+    const email = (lead as LegacyLooseValue).email || "";
     if (email) {
       window.open(`mailto:${email}?subject=${encodeURIComponent(`Re: ${lead.title}`)}&body=${encodeURIComponent(`Dear ${lead.clientName},\n\n`)}`, "_blank");
       showToast(`Opening email to ${lead.clientName}`);
@@ -271,7 +271,7 @@ export default function LeadsPage() {
     setAnalyzingLeadId(lead.id);
     showToast(`Analyzing "${lead.title}" with AI...`);
     try {
-      const result = await api.ai.analyzeLead(lead.id) as any;
+      const result = await api.ai.analyzeLead(lead.id) as LegacyLooseValue;
       if (result?.analysis) {
         const a = result.analysis;
         setLeads((prev) => prev.map((l) =>
@@ -282,7 +282,7 @@ export default function LeadsPage() {
                 difficulty: a.difficulty ?? l.difficulty,
                 riskLevel: a.risk_level ?? l.riskLevel,
                 expectedRevenue: a.expected_revenue ?? l.expectedRevenue,
-                status: "qualified" as any,
+                status: "qualified" as LegacyLooseValue,
                 notes: a.recommendation || l.notes,
               }
             : l
@@ -295,7 +295,7 @@ export default function LeadsPage() {
                 difficulty: a.difficulty ?? prev.difficulty,
                 riskLevel: a.risk_level ?? prev.riskLevel,
                 expectedRevenue: a.expected_revenue ?? prev.expectedRevenue,
-                status: "qualified" as any,
+                status: "qualified" as LegacyLooseValue,
                 notes: a.recommendation || prev.notes,
               }
             : prev
@@ -334,7 +334,7 @@ export default function LeadsPage() {
         <Footer />
       </div>
 
-      <LeadDetailDialog selectedLead={selectedLead} setSelectedLead={setSelectedLead} editingLeadId={editingLeadId} setEditingLeadId={setEditingLeadId} editForm={editForm} setEditForm={setEditForm} leadToDelete={leadToDelete} setLeadToDelete={setLeadToDelete} archivedIds={archivedIds} showToast={showToast} onSave={handleSaveLead} onDelete={handleDeleteLead} onArchive={handleArchiveLead} onGenerateProposal={handleGenerateProposal} onSendEmail={handleSendEmail} onViewOriginal={handleViewOriginal} onAnalyze={handleAnalyzeLead} analyzingLeadId={analyzingLeadId} />
+      <LeadDetailDialog selectedLead={selectedLead} setSelectedLead={setSelectedLead} editingLeadId={editingLeadId} setEditingLeadId={setEditingLeadId} editForm={editForm} setEditForm={setEditForm} leadToDelete={leadToDelete} setLeadToDelete={setLeadToDelete} archivedIds={archivedIds} onSave={handleSaveLead} onDelete={handleDeleteLead} onArchive={handleArchiveLead} onGenerateProposal={handleGenerateProposal} onSendEmail={handleSendEmail} onViewOriginal={handleViewOriginal} onAnalyze={handleAnalyzeLead} analyzingLeadId={analyzingLeadId} />
 
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-[100] animate-in fade-in slide-in-from-bottom-5 duration-300">

@@ -4,8 +4,6 @@ import { useState, useEffect, type ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { CommandPalette } from "@/components/command-palette"
 import { useFavorites } from "@/lib/favorites-context"
-import { useTheme } from "@/lib/theme-context"
-import { useAuth } from "@/lib/auth-context"
 
 const pageLabels: Record<string, string> = {
   "/": "Dashboard",

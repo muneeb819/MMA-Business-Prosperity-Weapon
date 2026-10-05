@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/error-message";
 import { getStoredLeads } from "@/lib/live-sources";
 import { ProposalStats } from "@/components/proposals/ProposalStats";
 import { ProposalFilters } from "@/components/proposals/ProposalFilters";
@@ -28,7 +29,7 @@ function saveStoredProposals(proposals: MockProposal[]) {
   localStorage.setItem(PROPOSALS_KEY, JSON.stringify(proposals));
 }
 
-function mapApiProposalToMock(p: any): MockProposal {
+function mapApiProposalToMock(p: LegacyLooseValue): MockProposal {
   const sections = p.sections || {};
   return {
     id: p.id,
@@ -71,7 +72,7 @@ export default function ProposalsPage() {
   const [availableLeads, setAvailableLeads] = useState<Array<{id: string; title: string; company: string; clientName: string; source: string; location: string; tags: string[]}>>([]);
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = false;
     async function init() {
       setLoading(true);
 
@@ -107,7 +108,7 @@ export default function ProposalsPage() {
         try {
           const data = await api.leads.list();
           if (!cancelled && Array.isArray(data) && data.length > 0) {
-            setAvailableLeads(data.map((l: any) => ({
+            setAvailableLeads(data.map((l: LegacyLooseValue) => ({
               id: l.id,
               title: l.title,
               company: l.company || "Unknown",
@@ -220,7 +221,7 @@ export default function ProposalsPage() {
   const handleSaveEdit = useCallback(async () => {
     if (!selectedProposal) return;
     try {
-      await api.proposals.update(selectedProposal.id, { title: editTitle } as any);
+      await api.proposals.update(selectedProposal.id, { title: editTitle } as LegacyLooseValue);
     } catch {}
     const updated = proposals.map((p) => (p.id === selectedProposal.id ? { ...p, title: editTitle } : p));
     persistProposals(updated);
@@ -286,7 +287,7 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
       const liveLeads = getStoredLeads();
       const selectedLead = liveLeads.find(l => l.id === genLeadId);
 
-      const payload: any = { leadId: genLeadId, tone: genTone, instructions: genInstructions || undefined };
+      const payload: LegacyLooseValue = { leadId: genLeadId, tone: genTone, instructions: genInstructions || undefined };
       if (selectedLead) {
         payload.leadData = {
           title: selectedLead.title,
@@ -309,8 +310,8 @@ ${p.portfolioSuggestions?.length ? `<div class="section"><h2>Related Portfolio P
         setShowGenerateDialog(false);
         showToast("Proposal generated successfully!", "success");
       }
-    } catch (e: any) {
-      showToast(`Generation failed: ${e?.message || "API unavailable"}`, "error");
+    } catch (e: unknown) {
+      showToast(`Generation failed: ${getErrorMessage(e, "API unavailable")}`, "error");
     } finally {
       setIsGenerating(false);
     }

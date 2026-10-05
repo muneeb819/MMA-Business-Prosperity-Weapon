@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { api } from "@/lib/api"
+import { getErrorMessage } from "@/lib/error-message"
 import {
   Bot,
   Play,
@@ -79,7 +80,9 @@ export function WeWorkAgentPanel() {
   }, [])
 
   useEffect(() => {
-    loadStatus()
+    // Initial agent status comes from the backend and is applied once its request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async external API load.
+    void loadStatus()
   }, [loadStatus])
 
   const handleRun = useCallback(async () => {
@@ -93,8 +96,8 @@ export function WeWorkAgentPanel() {
       } else {
         setSummary(res?.summary || null)
       }
-    } catch (e: any) {
-      setError(e?.message || "Agent run failed")
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Agent run failed"))
     } finally {
       setRunning(false)
       loadStatus()
@@ -107,8 +110,8 @@ export function WeWorkAgentPanel() {
     try {
       const res = await api.outreach.weworkAgentEnrich(4)
       setEnrichResult(res)
-    } catch (e: any) {
-      setError(e?.message || "Enrichment failed")
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Enrichment failed"))
     } finally {
       setEnriching(false)
       loadStatus()
@@ -250,7 +253,7 @@ export function WeWorkAgentPanel() {
 
         <div className="flex items-center gap-2 text-[11px] text-zinc-600">
           <Send className="w-3 h-3" />
-          "Run Agent" discovers + enrolls. The daily cron (09:00 UTC) then enriches each client&apos;s
+          &quot;Run Agent&quot; discovers + enrolls. The daily cron (09:00 UTC) then enriches each client&apos;s
           company email and runs the Day 0 / 3 / 7 / 14 outreach cadence (email + LinkedIn) — no valid
           email, no send.
         </div>

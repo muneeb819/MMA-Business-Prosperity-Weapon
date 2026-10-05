@@ -24,7 +24,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("mbpw_token")
-    if (!token) { setLoading(false); return }
+    if (!token) {
+      // Finish the client-only token check when there is no request to wait for.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resolves the one-time localStorage auth check.
+      setLoading(false);
+      return;
+    }
     fetch(`${API_BASE}/api/admin/system/stats`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -69,7 +74,7 @@ export default function AdminPage() {
               <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {statCards.map((card, i) => (
                   <StaggerItem key={i}>
-                    <GlassCard glow={card.color as any} className="p-5">
+                    <GlassCard glow={card.color as LegacyLooseValue} className="p-5">
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="text-xs text-muted-foreground uppercase tracking-wider">{card.label}</p>

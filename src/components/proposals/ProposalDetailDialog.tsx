@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -117,7 +116,7 @@ function ProposalDetailDialogInner({
     setQualityLoading(true);
     setQualityResult(null);
     try {
-      const p = selectedProposal as any;
+      const p = selectedProposal as LegacyLooseValue;
       const result = await api.ai.checkQuality({
         title: p.title,
         cover_letter: p.sections?.coverLetter || "",
@@ -144,7 +143,7 @@ function ProposalDetailDialogInner({
         recipient_email: emailRecipient.trim(),
         subject: emailSubject.trim() || undefined,
         message: emailMessage.trim() || undefined,
-      }) as any;
+      }) as LegacyLooseValue;
       if (result?.success) {
         showToast(`Proposal sent to ${emailRecipient.trim()}`, "success");
         setShowEmailDialog(false);

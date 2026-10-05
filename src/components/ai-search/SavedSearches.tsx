@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatNumber } from "@/lib/utils";
 import { suggestedSearches } from "./SearchHero";
 
 interface SavedSearch {

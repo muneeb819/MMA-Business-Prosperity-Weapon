@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AppProviders } from "@/components/providers";
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "./fonts/InterVariable.woff2",
   variable: "--font-inter",
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,11 +26,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <meta name="theme-color" content="#07080F" />
       </head>
-      <body className={`${inter.variable} font-sans antialiased bg-[#07080F] text-foreground overflow-x-hidden`}>
+      <body className={`${inter.className} antialiased bg-[#07080F] text-foreground overflow-x-hidden`}>
         <div
           aria-hidden
           className="fixed inset-0 -z-10 pointer-events-none opacity-[0.13] bg-center bg-no-repeat"

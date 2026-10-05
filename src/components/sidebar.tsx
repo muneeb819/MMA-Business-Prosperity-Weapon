@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -61,6 +62,8 @@ export function Sidebar() {
   }, [])
 
   useEffect(() => {
+    // Close the mobile drawer after navigation changes the active route.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize drawer visibility with route state.
     setMobileOpen(false)
   }, [pathname])
 
@@ -100,7 +103,7 @@ export function Sidebar() {
       >
         <div className="flex items-center gap-3 px-4 h-16 border-b border-border/50 shrink-0">
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-lg shadow-indigo-500/20">
-            <img src="/logo.jpg" alt="MBPW" className="w-full h-full object-cover" />
+            <Image src="/logo.jpg" alt="MBPW" width={40} height={40} className="w-full h-full object-cover" />
             <div className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card" />
           </div>
           {expanded && (

@@ -16,6 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/error-message";
 import {
   Send,
   Mail,
@@ -80,21 +81,21 @@ function statusBadge(status: string) {
   }
 }
 
-const channelIcon: Record<string, any> = { email: Mail, linkedin: MessageSquare, whatsapp: MessageSquare };
+const channelIcon: Record<string, LegacyLooseValue> = { email: Mail, linkedin: MessageSquare, whatsapp: MessageSquare };
 
 export default function OutreachPage() {
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [cadence, setCadence] = useState<CadenceStep[]>([]);
   const [records, setRecords] = useState<RecordRow[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [autoStatus, setAutoStatus] = useState<any>(null);
+  const [stats, setStats] = useState<LegacyLooseValue>(null);
+  const [autoStatus, setAutoStatus] = useState<LegacyLooseValue>(null);
   const [autoRunning, setAutoRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<LeadRow | null>(null);
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
   const [customNote, setCustomNote] = useState("");
-  const [preview, setPreview] = useState<any>(null);
+  const [preview, setPreview] = useState<LegacyLooseValue>(null);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -129,7 +130,9 @@ export default function OutreachPage() {
 
   useEffect(() => {
     document.title = "Outreach | MBPW";
-    loadAll();
+    // Load outreach records from the API; state updates occur after the request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async external API load.
+    void loadAll();
   }, [loadAll]);
 
   const openLead = async (lead: LeadRow) => {
@@ -159,7 +162,6 @@ export default function OutreachPage() {
     try {
       if (email !== active.email) {
         await api.leads.update(active.id, { email });
-        active.email = email;
       }
       const res = await api.outreach.send({ lead_id: active.id, step, custom_note: customNote });
       showToast(
@@ -171,8 +173,8 @@ export default function OutreachPage() {
       );
       setActive(null);
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Send failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Send failed"));
     } finally {
       setSending(false);
     }
@@ -190,8 +192,8 @@ export default function OutreachPage() {
       const r = await api.outreach.enrichAll();
       showToast(`Enriched ${r.enriched} of ${r.checked} leads with contact emails.`);
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Enrich failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Enrich failed"));
     } finally {
       setSending(false);
     }
@@ -202,8 +204,8 @@ export default function OutreachPage() {
       const r = await api.outreach.enrich(l.id);
       showToast(r.email ? `Enriched ${l.company} → ${r.email}` : `No email found for ${l.company}`);
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Enrich failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Enrich failed"));
     }
   };
 
@@ -213,8 +215,8 @@ export default function OutreachPage() {
       await api.outreach.automationSettings(next);
       showToast(next ? "Automation engine enabled." : "Automation engine paused (global).");
       await loadAuto();
-    } catch (e: any) {
-      showToast(e?.message || "Update failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Update failed"));
     }
   };
 
@@ -228,8 +230,8 @@ export default function OutreachPage() {
           (s.due_later ? ` · ${s.due_later} due later` : "")
       );
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Run failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Run failed"));
     } finally {
       setAutoRunning(false);
     }
@@ -240,8 +242,8 @@ export default function OutreachPage() {
       await api.outreach.automationPause(id);
       showToast("Lead paused from automation.");
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Pause failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Pause failed"));
     }
   };
 
@@ -250,8 +252,8 @@ export default function OutreachPage() {
       await api.outreach.automationResume(id);
       showToast("Lead resumed in automation.");
       await loadAll();
-    } catch (e: any) {
-      showToast(e?.message || "Resume failed");
+    } catch (e: unknown) {
+      showToast(getErrorMessage(e, "Resume failed"));
     }
   };
 

@@ -4,7 +4,7 @@ import { memo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Sparkles, TrendingUp, AlertTriangle, Target, ArrowRight, Clock } from "lucide-react"
+import { Sparkles, TrendingUp, Target, ArrowRight, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface BriefingRecommendation {

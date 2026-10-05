@@ -28,7 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
 const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000
 
-async function fetchAuth(url: string, options?: RequestInit): Promise<any> {
+async function fetchAuth(url: string, options?: RequestInit): Promise<LegacyLooseValue> {
   const token = localStorage.getItem("mbpw_token")
   const res = await fetch(url, {
     ...options,
@@ -47,14 +47,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null)
 
+  const logout = useCallback(async () => {
+    try { await fetchAuth(`${API_BASE}/api/auth/logout`, { method: "POST" }) } catch {}
+    localStorage.removeItem("mbpw_token")
+    setToken(null)
+    setUser(null)
+    setSessionExpiresAt(null)
+  }, [])
+
   useEffect(() => {
     const savedToken = localStorage.getItem("mbpw_token")
     if (savedToken) {
-      setToken(savedToken)
       fetchAuth(`${API_BASE}/api/auth/me`)
-        .then((userData) => { setUser(userData); setLoading(false) })
+        .then((userData) => {
+          setToken(savedToken)
+          setUser(userData)
+          setLoading(false)
+        })
         .catch(() => { localStorage.removeItem("mbpw_token"); setLoading(false) })
     } else {
+      // There is no stored credential to validate, so the initial auth check is complete.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- finish one-time localStorage auth hydration.
       setLoading(false)
     }
   }, [])
@@ -62,14 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!token || !user) return
     const expiresAt = Date.now() + SESSION_TIMEOUT_MS
+    // Record the deadline that the timer below enforces for this authenticated session.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize derived session-expiry display state.
     setSessionExpiresAt(expiresAt)
     const interval = setInterval(() => {
       if (Date.now() > expiresAt) {
-        logout()
+        void logout()
       }
     }, 60000)
     return () => clearInterval(interval)
-  }, [token, user])
+  }, [token, user, logout])
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await fetchAuth(`${API_BASE}/api/auth/login`, {
@@ -89,14 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("mbpw_token", data.access_token)
     setToken(data.access_token)
     setUser(data.user)
-  }, [])
-
-  const logout = useCallback(async () => {
-    try { await fetchAuth(`${API_BASE}/api/auth/logout`, { method: "POST" }) } catch {}
-    localStorage.removeItem("mbpw_token")
-    setToken(null)
-    setUser(null)
-    setSessionExpiresAt(null)
   }, [])
 
   return (

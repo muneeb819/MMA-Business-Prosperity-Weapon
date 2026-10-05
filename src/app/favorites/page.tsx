@@ -7,10 +7,8 @@ import { EmptyState } from "@/components/empty-state"
 import { useFavorites } from "@/lib/favorites-context"
 import { useRouter } from "next/navigation"
 import { Star, Clock, X, ExternalLink, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LegacyLooseValue> = {
   LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3,
 }
 

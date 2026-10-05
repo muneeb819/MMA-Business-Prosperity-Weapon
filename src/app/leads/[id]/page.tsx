@@ -17,9 +17,9 @@ import {
   CheckCircle2,
   RefreshCw,
   Tag,
-  FileText,
 } from "lucide-react"
 import { api } from "@/lib/api"
+import { getErrorMessage } from "@/lib/error-message"
 import type { Lead, LeadStatus, UrgencyLevel, RiskLevel } from "@/lib/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -56,7 +56,7 @@ function fmtMoney(n: number | undefined) {
   return "$" + n.toLocaleString()
 }
 
-function Field({ icon: Icon, label, children }: { icon: any; label: string; children: React.ReactNode }) {
+function Field({ icon: Icon, label, children }: { icon: LegacyLooseValue; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2.5 text-sm">
       <Icon className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
@@ -79,13 +79,11 @@ export default function LeadDetailPage() {
 
   const load = useCallback(async () => {
     if (!id) return
-    setLoading(true)
-    setError(null)
     try {
       const d = await api.leads.get(id)
       setLead(d)
-    } catch (e: any) {
-      setError(e?.message || "Failed to load lead")
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, "Failed to load lead"))
       setLead(null)
     } finally {
       setLoading(false)
@@ -93,7 +91,9 @@ export default function LeadDetailPage() {
   }, [id])
 
   useEffect(() => {
-    load()
+    // Fetch the route's lead record; state updates happen when the API request settles.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async external API load.
+    void load()
   }, [load])
 
   const enrich = async () => {
@@ -104,8 +104,8 @@ export default function LeadDetailPage() {
       await api.outreach.enrich(id)
       await load()
       setEnrichMsg("Email refreshed.")
-    } catch (e: any) {
-      setEnrichMsg(e?.message || "Enrich failed")
+    } catch (e: unknown) {
+      setEnrichMsg(getErrorMessage(e, "Enrich failed"))
     } finally {
       setEnriching(false)
     }

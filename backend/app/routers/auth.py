@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from app.models.database import get_db, Base, engine
+from app.models.database import get_db, Base
 from sqlalchemy import Column, String, Boolean, DateTime, Float
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
@@ -49,8 +49,6 @@ class AuditLogModel(Base):
     details = Column(String, default="")
     ip_address = Column(String, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 

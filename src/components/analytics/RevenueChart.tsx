@@ -46,7 +46,7 @@ export const RevenueChart = memo(function RevenueChart({
               <RefreshCw className="w-6 h-6 text-zinc-500 animate-spin" />
             </div>
           ) : (
-            monthlyRevenue.map((month, i) => (
+            monthlyRevenue.map((month) => (
               <div
                 key={month.month}
                 className="flex items-center gap-4 group"

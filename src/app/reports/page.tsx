@@ -11,7 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts"
-import { TrendingUp, TrendingDown, DollarSign, Target, Activity, Download, RefreshCw } from "lucide-react"
+import { TrendingUp, DollarSign, Target, Activity, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 
@@ -79,7 +79,11 @@ export default function ReportsPage() {
     setRefreshing(false)
   }, [days])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    // Load the report data for the selected period from the API.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async external API load.
+    void fetchData()
+  }, [fetchData])
 
   const pipelineChartData = pipeline
     ? Object.entries(pipeline.stages).map(([name, value]) => ({
@@ -156,7 +160,7 @@ export default function ReportsPage() {
                   <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {stats.map((stat, i) => (
                       <StaggerItem key={i}>
-                        <GlassCard className="p-5" glow={stat.color as any}>
+                        <GlassCard className="p-5" glow={stat.color as LegacyLooseValue}>
                           <div className="flex items-start justify-between">
                             <div>
                               <p className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</p>

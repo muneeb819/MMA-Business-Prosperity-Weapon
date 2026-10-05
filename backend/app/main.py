@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import re
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.models.database import create_tables
+from app.models.database import create_tables, is_production
 from app.routers import leads, proposals, agents, analytics, search, notifications, crm, ai, connectors, knowledge, auth, admin, reports, websocket, lead_sources, ai_teams, outreach, settings, acie, hubspot
 from app.routers.auth import get_current_user
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -57,17 +57,20 @@ app.add_middleware(
 
 @app.middleware("http")
 async def ensure_db(request: Request, call_next):
-    create_tables()
-    try:
-        from app.models.seed import _ensure_admin_user
-        from app.models.database import SessionLocal
-        db = SessionLocal()
+    # Local/dev convenience only. Production schema must be applied with Alembic
+    # before deployment; request handling must never create a partial schema.
+    if not is_production():
+        create_tables()
         try:
-            _ensure_admin_user(db)
-        finally:
-            db.close()
-    except Exception:
-        pass
+            from app.models.seed import _ensure_admin_user
+            from app.models.database import SessionLocal
+            db = SessionLocal()
+            try:
+                _ensure_admin_user(db)
+            finally:
+                db.close()
+        except Exception:
+            pass
     return await call_next(request)
 
 

@@ -2,11 +2,11 @@
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { useTheme, THEMES, type ThemeId } from "@/lib/theme-context"
+import { useTheme, THEMES } from "@/lib/theme-context"
 import { Palette, Check } from "lucide-react"
 
 export function ThemeToggle() {
-  const { theme, setTheme, themeDef } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   return (
     <DropdownMenu>

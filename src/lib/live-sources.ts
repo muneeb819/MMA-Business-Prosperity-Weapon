@@ -1,3 +1,5 @@
+import { getErrorMessage } from "@/lib/error-message";
+
 const API_SOURCES = {
   himalayas: {
     name: "Himalayas",
@@ -5,7 +7,7 @@ const API_SOURCES = {
     fetch: async (limit = 20) => {
       const res = await fetch(`https://himalayas.app/jobs/api?limit=${Math.min(limit, 20)}`);
       const data = await res.json();
-      return (data.jobs || []).map((j: any) => ({
+      return (data.jobs || []).map((j: LegacyLooseValue) => ({
         id: `live-himalayas-${j.id}`,
         title: j.title || "",
         company: j.companyName || "",
@@ -15,7 +17,7 @@ const API_SOURCES = {
         country: j.country || "",
         salaryMin: j.salary?.min || 0,
         salaryMax: j.salary?.max || 0,
-        technologies: (j.technologies || []).map((t: any) => t.name || t),
+        technologies: (j.technologies || []).map((t: LegacyLooseValue) => t.name || t),
         remote: j.remote || false,
         platform: "himalayas",
         source: "Himalayas",
@@ -33,9 +35,9 @@ const API_SOURCES = {
       });
       const data = await res.json();
       return data
-        .filter((j: any) => j && j.id && j.position)
+        .filter((j: LegacyLooseValue) => j && j.id && j.position)
         .slice(0, limit)
-        .map((j: any) => ({
+        .map((j: LegacyLooseValue) => ({
           id: `live-remoteok-${j.id}`,
           title: j.position || "",
           company: j.company || "",
@@ -62,7 +64,7 @@ const API_SOURCES = {
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, "text/xml");
       const items = doc.querySelectorAll("item");
-      const jobs: any[] = [];
+      const jobs: LegacyLooseValue[] = [];
       items.forEach((item) => {
         if (jobs.length >= limit) return;
         const title = item.querySelector("title")?.textContent || "";
@@ -103,7 +105,7 @@ const API_SOURCES = {
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, "text/xml");
       const items = doc.querySelectorAll("item");
-      const jobs: any[] = [];
+      const jobs: LegacyLooseValue[] = [];
       items.forEach((item) => {
         if (jobs.length >= limit) return;
         const title = item.querySelector("title")?.textContent || "";
@@ -148,7 +150,7 @@ const API_SOURCES = {
     fetch: async (limit = 20) => {
       const res = await fetch("https://www.arbeitnow.com/api/job-board-api");
       const data = await res.json();
-      return (data.data || []).slice(0, limit).map((j: any) => ({
+      return (data.data || []).slice(0, limit).map((j: LegacyLooseValue) => ({
         id: `live-arbeitnow-${j.id}`,
         title: j.title || "",
         company: j.company_name || "",
@@ -170,7 +172,7 @@ const API_SOURCES = {
     fetch: async (limit = 20) => {
       const res = await fetch("https://findwork.dev/api/jobs/?order_by=date_posted");
       const data = await res.json();
-      return (data.results || []).slice(0, limit).map((j: any) => ({
+      return (data.results || []).slice(0, limit).map((j: LegacyLooseValue) => ({
         id: `live-findwork-${j.id}`,
         title: j.text || "",
         company: j.company_name || "",
@@ -248,8 +250,8 @@ export async function fetchAllSources(limit = 15): Promise<{
       const leads = await fetchFromSource(name, limit);
       allLeads.push(...leads);
       results[name] = { fetched: leads.length };
-    } catch (e: any) {
-      results[name] = { fetched: 0, error: e.message || "Failed" };
+    } catch (e: unknown) {
+      results[name] = { fetched: 0, error: getErrorMessage(e, "Failed") };
     }
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Check, X } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
@@ -43,7 +43,7 @@ function sortLeads(leads: Lead[], sortBy: string): Lead[] {
   return sorted;
 }
 
-function mapSearchResultToLead(r: any): Lead {
+function mapSearchResultToLead(r: LegacyLooseValue): Lead {
   return {
     id: r.id,
     title: r.title,
@@ -144,7 +144,7 @@ export default function AISearchPage() {
         budget_max: budgetMax ? parseFloat(budgetMax) : undefined,
         technologies: selectedTechs.length > 0 ? selectedTechs : undefined,
         sort_by: sortBy,
-      }) as any;
+      }) as LegacyLooseValue;
       if (data?.results) {
         const mapped = data.results.map(mapSearchResultToLead);
         setResults(mapped);
@@ -162,10 +162,7 @@ export default function AISearchPage() {
     setIsSearching(false);
   }, [query, countryFilter, budgetMin, budgetMax, selectedTechs, sortBy, applyFilters]);
 
-  useEffect(() => {
-    if (!hasSearched || results.length === 0) return;
-    setResults((prev) => sortLeads(prev, sortBy));
-  }, [sortBy, hasSearched, results.length]);
+  const sortedResults = useMemo(() => sortLeads(results, sortBy), [results, sortBy]);
 
   const handleSearch = useCallback(() => {
     if (!query.trim() && countryFilter === "All Countries" && selectedTechs.length === 0) {
@@ -180,7 +177,7 @@ export default function AISearchPage() {
     setHasSearched(true);
     (async () => {
       try {
-        const data = await api.search.search({ query: suggestion }) as any;
+        const data = await api.search.search({ query: suggestion }) as LegacyLooseValue;
         if (data?.results) {
           setResults(data.results.map(mapSearchResultToLead));
           if (data.ai_interpretation?.understanding) {
@@ -260,7 +257,7 @@ export default function AISearchPage() {
         <div className="flex-1 overflow-auto">
           <div className="max-w-[1600px] mx-auto px-6 py-8 space-y-8">
             <Breadcrumbs />
-            <SearchHero query={query} onQueryChange={setQuery} onSearch={handleSearch} isSearching={isSearching} onSuggestedClick={handleSuggestedClick} />
+            <SearchHero query={query} onQueryChange={setQuery} onSearch={handleSearch} isSearching={isSearching} />
             {aiInterpretation && (
               <div className="bg-indigo-500/[0.06] border border-indigo-500/20 rounded-xl px-5 py-3 text-sm text-indigo-300/80">
                 <span className="font-semibold text-indigo-300">AI Understanding:</span> {aiInterpretation}
@@ -269,7 +266,7 @@ export default function AISearchPage() {
             <SearchFilters countryFilter={countryFilter} onCountryChange={setCountryFilter} budgetMin={budgetMin} onBudgetMinChange={setBudgetMin} budgetMax={budgetMax} onBudgetMaxChange={setBudgetMax} selectedTechs={selectedTechs} onToggleTech={toggleTech} onApplyFilters={handleApplyFilters} onClearFilters={handleClearFilters} totalActiveFilters={totalActiveFilters} availableTechs={Array.from(new Set(results.flatMap((l) => l.technologies))).sort()} />
             <div className="flex flex-col lg:flex-row gap-8">
               <div className="flex-1 min-w-0 space-y-4">
-                <SearchResults results={results} isSearching={isSearching} hasSearched={hasSearched} sortBy={sortBy} onSortChange={setSortBy} onSaveSearch={handleSaveSearch} onExport={handleExport} onSuggestedClick={handleSuggestedClick} showToast={showToast} />
+                <SearchResults results={sortedResults} isSearching={isSearching} hasSearched={hasSearched} sortBy={sortBy} onSortChange={setSortBy} onSaveSearch={handleSaveSearch} onExport={handleExport} onSuggestedClick={handleSuggestedClick} showToast={showToast} />
               </div>
               <SavedSearches savedSearches={savedSearches} onDeleteSaved={deleteSavedSearch} onSuggestedClick={handleSuggestedClick} showToast={showToast} />
             </div>

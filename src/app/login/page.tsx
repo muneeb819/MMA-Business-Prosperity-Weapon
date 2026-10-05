@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/lib/auth-context"
+import { getErrorMessage } from "@/lib/error-message"
 import {
   Shield,
   Eye,
@@ -26,8 +28,6 @@ import {
   Lock,
   Mail,
   User,
-  ChevronLeft,
-  ChevronRight,
   Quote,
 } from "lucide-react"
 
@@ -71,6 +71,8 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Reveal the page animations only after the client has mounted.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only animation gate avoids SSR/client mismatch.
     setMounted(true)
   }, [])
 
@@ -107,8 +109,8 @@ export default function LoginPage() {
         await login(email, password)
       }
       router.push("/")
-    } catch (err: any) {
-      setError(err.message || "Authentication failed. Please try again.")
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Authentication failed. Please try again."))
     }
     setLoading(false)
   }, [email, name, password, isRegister, login, register, router])
@@ -176,7 +178,7 @@ export default function LoginPage() {
             className="text-center mb-8"
           >
               <div className="relative inline-flex items-center justify-center mb-5">
-                <img src="/logo.jpg" alt="MMA Business Prosperity Weapon" className="w-20 h-20 rounded-2xl object-contain shadow-2xl shadow-indigo-500/30" />
+                <Image src="/logo.jpg" alt="MMA Business Prosperity Weapon" width={80} height={80} className="w-20 h-20 rounded-2xl object-contain shadow-2xl shadow-indigo-500/30" />
               </div>
             <h1 className="text-3xl font-bold text-white tracking-tight">
               {isRegister ? "Create Account" : "Welcome Back"}

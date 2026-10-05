@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Footer } from "@/components/footer";
 import { api } from "@/lib/api";
+import { getErrorMessage } from "@/lib/error-message";
 import { fetchAllSources, SOURCE_LIST, getLastSyncTime, getStoredLeads } from "@/lib/live-sources";
 import type { Connector } from "@/lib/types";
 import {
@@ -25,7 +26,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  ExternalLink,
   Zap,
   Database,
   Globe,
@@ -45,7 +45,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
   );
 }
 
-const connectorTypeConfig: Record<string, { label: string; icon: any; color: string }> = {
+const connectorTypeConfig: Record<string, { label: string; icon: LegacyLooseValue; color: string }> = {
   scraper: { label: "Scraper", icon: Globe, color: "text-indigo-400" },
   api: { label: "API", icon: Zap, color: "text-amber-400" },
   rss: { label: "RSS Feed", icon: Rss, color: "text-orange-400" },
@@ -97,6 +97,8 @@ export default function ConnectorsPage() {
   const showToast = useCallback((msg: string) => { setToastMsg(msg); }, []);
 
   useEffect(() => {
+    // Read browser-only cached lead state after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time localStorage hydration.
     setLiveLeadCount(getStoredLeads().length);
     setLastSync(getLastSyncTime());
   }, []);
@@ -112,8 +114,8 @@ export default function ConnectorsPage() {
       const totalFetched = Object.values(results).reduce((sum, r) => sum + r.fetched, 0);
       const totalErrors = Object.values(results).filter((r) => r.error).length;
       showToast(`Fetched ${totalFetched} real leads from ${Object.keys(results).length} sources${totalErrors > 0 ? ` (${totalErrors} errors)` : ""}`);
-    } catch (e: any) {
-      showToast("Sync failed: " + (e.message || "Unknown error"));
+    } catch (e: unknown) {
+      showToast("Sync failed: " + getErrorMessage(e, "Unknown error"));
     } finally {
       setSyncingAll(false);
     }
@@ -130,7 +132,11 @@ export default function ConnectorsPage() {
     }
   }, []);
 
-  useEffect(() => { fetchConnectors(); }, [fetchConnectors]);
+  useEffect(() => {
+    // Initial connector list is synchronized from the API and updates after the request settles.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async external API load.
+    void fetchConnectors();
+  }, [fetchConnectors]);
 
   const handleSync = useCallback(async (id: string) => {
     setSyncingId(id);

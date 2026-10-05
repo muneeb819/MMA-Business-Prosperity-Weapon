@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { ChevronRight, LayoutDashboard, Globe, Target, FileText, Search, Bell, Users, BarChart3, Home, Cable, BookOpen, Star, Settings, Shield, LineChart, CalendarDays, UserCog, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LegacyLooseValue> = {
   "": LayoutDashboard,
   "opportunity-hunter": Globe,
   "ai-teams": Bot,

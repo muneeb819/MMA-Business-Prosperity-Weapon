@@ -46,7 +46,7 @@ export const api = {
       fetchAPI(`/api/proposals/${id}/submit`, { method: "POST" }),
     duplicate: (id: string) =>
       fetchAPI(`/api/proposals/${id}/duplicate`, { method: "POST" }),
-    generate: (data: { leadId?: string; tone: string; instructions?: string; leadData?: any }) =>
+    generate: (data: { leadId?: string; tone: string; instructions?: string; leadData?: LegacyLooseValue }) =>
       fetchAPI("/api/proposals/generate", { method: "POST", body: JSON.stringify(data) }),
     sendEmail: (id: string, data: { recipient_email: string; subject?: string; message?: string }) =>
       fetchAPI(`/api/proposals/${id}/send-email`, { method: "POST", body: JSON.stringify(data) }),
@@ -68,9 +68,9 @@ export const api = {
     contacts: {
       list: (params?: Record<string, string>) =>
         fetchAPI(`/api/crm/contacts?${new URLSearchParams(params || {})}`),
-      create: (data: any) =>
+      create: (data: LegacyLooseValue) =>
         fetchAPI("/api/crm/contacts", { method: "POST", body: JSON.stringify(data) }),
-      update: (id: string, data: any) =>
+      update: (id: string, data: LegacyLooseValue) =>
         fetchAPI(`/api/crm/contacts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
       delete: (id: string) =>
         fetchAPI(`/api/crm/contacts/${id}`, { method: "DELETE" }),
@@ -95,7 +95,7 @@ export const api = {
       fetchAPI<AnalyticsData>(`/api/analytics?period=${period || "30d"}`),
   },
   search: {
-    search: (data: any) =>
+    search: (data: LegacyLooseValue) =>
       fetchAPI("/api/search/natural-language", { method: "POST", body: JSON.stringify(data) }),
     sources: () => fetchAPI("/api/search/sources"),
     toggleSource: (name: string) =>
@@ -109,7 +109,7 @@ export const api = {
     analyzeLead: (leadId: string) =>
       fetchAPI(`/api/leads/${leadId}/analyze`, { method: "POST" }),
     briefing: () => fetchAPI("/api/ai/briefing"),
-    checkQuality: (data: any) =>
+    checkQuality: (data: LegacyLooseValue) =>
       fetchAPI("/api/ai/check-quality", { method: "POST", body: JSON.stringify(data) }),
     leadDecision: (leadId: string) => fetchAPI(`/api/ai/leads/${leadId}/decision`),
   },
@@ -126,7 +126,7 @@ export const api = {
   },
   connectors: {
     list: () => fetchAPI<Connector[]>("/api/connectors"),
-    create: (data: { name: string; type: string; platform?: string; config?: Record<string, any> }) =>
+    create: (data: { name: string; type: string; platform?: string; config?: Record<string, LegacyLooseValue> }) =>
       fetchAPI<Connector>("/api/connectors", { method: "POST", body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Connector>) =>
       fetchAPI<Connector>(`/api/connectors/${id}`, { method: "PUT", body: JSON.stringify(data) }),
@@ -141,7 +141,7 @@ export const api = {
     get: (id: string) => fetchAPI(`/api/knowledge/${id}`),
     create: (data: { title: string; entryType: string; content: string; tags?: string[]; source?: string; sourceUrl?: string }) =>
       fetchAPI("/api/knowledge", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: string, data: any) =>
+    update: (id: string, data: LegacyLooseValue) =>
       fetchAPI(`/api/knowledge/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     delete: (id: string) => fetchAPI(`/api/knowledge/${id}`, { method: "DELETE" }),
     types: () => fetchAPI<string[]>("/api/knowledge/types/list"),
@@ -159,86 +159,86 @@ export const api = {
       fetchAPI(`/api/lead-sources/sync-all?limit=${limit || 30}`, { method: "POST" }),
   },
   outreach: {
-    cadence: () => fetchAPI<any>(`/api/outreach/cadence`),
-    leads: () => fetchAPI<any[]>(`/api/outreach/leads`),
+    cadence: () => fetchAPI<LegacyLooseValue>(`/api/outreach/cadence`),
+    leads: () => fetchAPI<LegacyLooseValue[]>(`/api/outreach/leads`),
     preview: (data: { lead_id: string; step?: number; custom_note?: string }) =>
-      fetchAPI<any>(`/api/outreach/preview`, { method: "POST", body: JSON.stringify(data) }),
+      fetchAPI<LegacyLooseValue>(`/api/outreach/preview`, { method: "POST", body: JSON.stringify(data) }),
     send: (data: { lead_id: string; step?: number; custom_note?: string }) =>
-      fetchAPI<any>(`/api/outreach/send`, { method: "POST", body: JSON.stringify(data) }),
-    records: () => fetchAPI<any[]>(`/api/outreach/records`),
+      fetchAPI<LegacyLooseValue>(`/api/outreach/send`, { method: "POST", body: JSON.stringify(data) }),
+    records: () => fetchAPI<LegacyLooseValue[]>(`/api/outreach/records`),
     reply: (id: string) =>
-      fetchAPI<any>(`/api/outreach/${id}/reply`, { method: "POST" }),
+      fetchAPI<LegacyLooseValue>(`/api/outreach/${id}/reply`, { method: "POST" }),
     enrich: (id: string) =>
-      fetchAPI<any>(`/api/outreach/enrich/${id}`, { method: "POST" }),
+      fetchAPI<LegacyLooseValue>(`/api/outreach/enrich/${id}`, { method: "POST" }),
     enrichAll: () =>
-      fetchAPI<any>(`/api/outreach/enrich-all`, { method: "POST" }),
-    stats: () => fetchAPI<any>(`/api/outreach/stats`),
-    automationStatus: () => fetchAPI<any>(`/api/outreach/automation/status`),
+      fetchAPI<LegacyLooseValue>(`/api/outreach/enrich-all`, { method: "POST" }),
+    stats: () => fetchAPI<LegacyLooseValue>(`/api/outreach/stats`),
+    automationStatus: () => fetchAPI<LegacyLooseValue>(`/api/outreach/automation/status`),
     automationRun: (limit?: number) =>
-      fetchAPI<any>(`/api/outreach/automation/run`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/automation/run`, {
         method: "POST",
         body: JSON.stringify({ limit: limit ?? 25 }),
       }),
     automationEnroll: (lead_id?: string) =>
-      fetchAPI<any>(`/api/outreach/automation/enroll`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/automation/enroll`, {
         method: "POST",
         body: JSON.stringify({ lead_id }),
       }),
     automationPause: (lead_id: string) =>
-      fetchAPI<any>(`/api/outreach/automation/pause`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/automation/pause`, {
         method: "POST",
         body: JSON.stringify({ lead_id }),
       }),
     automationResume: (lead_id: string) =>
-      fetchAPI<any>(`/api/outreach/automation/resume`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/automation/resume`, {
         method: "POST",
         body: JSON.stringify({ lead_id }),
       }),
     automationSettings: (enabled: boolean) =>
-      fetchAPI<any>(`/api/outreach/automation/settings`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/automation/settings`, {
         method: "POST",
         body: JSON.stringify({ enabled }),
       }),
     weworkAgentRun: (limit?: number, send_now?: boolean) =>
-      fetchAPI<any>(`/api/outreach/agent/weworkremotely/run`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/agent/weworkremotely/run`, {
         method: "POST",
         body: JSON.stringify({ limit: limit ?? 20, send_now: send_now ?? true }),
       }),
     weworkAgentEnrich: (batch?: number) =>
-      fetchAPI<any>(`/api/outreach/agent/weworkremotely/enrich`, {
+      fetchAPI<LegacyLooseValue>(`/api/outreach/agent/weworkremotely/enrich`, {
         method: "POST",
         body: JSON.stringify({ batch: batch ?? 4 }),
       }),
-    weworkAgentStatus: () => fetchAPI<any>(`/api/outreach/agent/weworkremotely/status`),
+    weworkAgentStatus: () => fetchAPI<LegacyLooseValue>(`/api/outreach/agent/weworkremotely/status`),
   },
   settings: {
-    get: () => fetchAPI<any>(`/api/settings`),
-    update: (data: any) =>
-      fetchAPI<any>(`/api/settings`, { method: "PUT", body: JSON.stringify(data) }),
-    test: (data: any) =>
-      fetchAPI<any>(`/api/settings/test`, { method: "POST", body: JSON.stringify(data || {}) }),
+    get: () => fetchAPI<LegacyLooseValue>(`/api/settings`),
+    update: (data: LegacyLooseValue) =>
+      fetchAPI<LegacyLooseValue>(`/api/settings`, { method: "PUT", body: JSON.stringify(data) }),
+    test: (data: LegacyLooseValue) =>
+      fetchAPI<LegacyLooseValue>(`/api/settings/test`, { method: "POST", body: JSON.stringify(data || {}) }),
   },
   aiTeams: {
-    list: () => fetchAPI<any>("/api/ai-teams"),
-    get: (id: string) => fetchAPI<any>(`/api/ai-teams/${id}`),
+    list: () => fetchAPI<LegacyLooseValue>("/api/ai-teams"),
+    get: (id: string) => fetchAPI<LegacyLooseValue>(`/api/ai-teams/${id}`),
     chat: (id: string, message: string) =>
-      fetchAPI<any>(`/api/ai-teams/${id}/chat`, { method: "POST", body: JSON.stringify({ message }) }),
+      fetchAPI<LegacyLooseValue>(`/api/ai-teams/${id}/chat`, { method: "POST", body: JSON.stringify({ message }) }),
     toggle: (id: string) =>
-      fetchAPI<any>(`/api/ai-teams/${id}/toggle`, { method: "POST" }),
-    dailyReport: () => fetchAPI<any>("/api/ai-teams/reports/daily"),
+      fetchAPI<LegacyLooseValue>(`/api/ai-teams/${id}/toggle`, { method: "POST" }),
+    dailyReport: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/reports/daily"),
     activity: (limit?: number) =>
-      fetchAPI<any>(`/api/ai-teams/activity?limit=${limit || 50}`),
+      fetchAPI<LegacyLooseValue>(`/api/ai-teams/activity?limit=${limit || 50}`),
     supervisor: {
-      health: () => fetchAPI<any>("/api/ai-teams/supervisor/health"),
-      scan: () => fetchAPI<any>("/api/ai-teams/supervisor/scan"),
-      issues: () => fetchAPI<any>("/api/ai-teams/supervisor/issues"),
+      health: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/health"),
+      scan: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/scan"),
+      issues: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/issues"),
       chat: (message: string) =>
-        fetchAPI<any>("/api/ai-teams/supervisor/chat", { method: "POST", body: JSON.stringify({ message }) }),
-      reconcile: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/reconcile", { method: "POST" }),
-      securityAudit: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/security-audit", { method: "POST" }),
-      performanceCheck: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/performance-check", { method: "POST" }),
-      redistribute: () => fetchAPI<any>("/api/ai-teams/supervisor/actions/redistribute", { method: "POST" }),
-      report: () => fetchAPI<any>("/api/ai-teams/supervisor/report"),
+        fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/chat", { method: "POST", body: JSON.stringify({ message }) }),
+      reconcile: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/actions/reconcile", { method: "POST" }),
+      securityAudit: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/actions/security-audit", { method: "POST" }),
+      performanceCheck: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/actions/performance-check", { method: "POST" }),
+      redistribute: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/actions/redistribute", { method: "POST" }),
+      report: () => fetchAPI<LegacyLooseValue>("/api/ai-teams/supervisor/report"),
     },
   },
 };

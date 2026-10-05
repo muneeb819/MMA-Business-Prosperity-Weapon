@@ -14,8 +14,6 @@ import {
   Download,
   Eye,
   Bookmark,
-  Zap,
-  TrendingUp,
 } from "lucide-react";
 import {
   Card,

@@ -160,7 +160,7 @@ export interface Connector {
   type: 'scraper' | 'api' | 'rss' | 'webhook'
   platform?: string
   status: 'active' | 'inactive' | 'syncing' | 'error'
-  config: Record<string, any>
+  config: Record<string, LegacyLooseValue>
   lastSyncAt?: string
   syncCount: number
   leadsFound: number

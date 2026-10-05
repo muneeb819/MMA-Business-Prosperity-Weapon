@@ -30,7 +30,6 @@ interface SearchHeroProps {
   onQueryChange: (q: string) => void;
   onSearch: () => void;
   isSearching: boolean;
-  onSuggestedClick: (s: string) => void;
 }
 
 const SearchHero = React.memo(function SearchHero({
@@ -38,7 +37,6 @@ const SearchHero = React.memo(function SearchHero({
   onQueryChange,
   onSearch,
   isSearching,
-  onSuggestedClick,
 }: SearchHeroProps) {
   return (
     <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-[#12121a] to-[#0d0d14] shadow-2xl shadow-indigo-500/5">
