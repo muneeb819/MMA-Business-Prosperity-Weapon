@@ -28,7 +28,11 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("mbpw_favorites")
-      if (saved) setFavorites(JSON.parse(saved))
+      if (saved) {
+        // Restore browser-persisted favorites after client hydration.
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage hydration.
+        setFavorites(JSON.parse(saved))
+      }
       const recent = localStorage.getItem("mbpw_recent")
       if (recent) setRecentPages(JSON.parse(recent))
     } catch {}

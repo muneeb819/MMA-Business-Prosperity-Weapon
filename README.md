@@ -1,4 +1,4 @@
-﻿# MBPW - MMA Business Prosperity Weapon
+# MBPW - MMA Business Prosperity Weapon
 
 > AI-powered business development platform that hunts opportunities, generates proposals, and automates outreach across global job markets.
 
@@ -62,8 +62,9 @@ The platform runs a full **4-stage pipeline**:
 ### Data Architecture
 - **Leads:** Fetched and normalized server-side (`backend/app/services/sync.py`) from 6+ public job board APIs, persisted in the `Lead` table (SQLite in dev / Postgres in the docker-compose stack). The frontend also keeps a localStorage cache for fast reloads and optimistic UI, but the backend DB is the source of truth.
 - **Proposals:** Generated via backend AI, persisted server-side; localStorage holds a display cache only.
-- **Backend:** SQLAlchemy models backed by SQLite (dev) or Postgres (docker-compose); not purely in-memory/ephemeral — data survives restarts as long as the DB volume/file persists. On Vercel's serverless SQLite default, treat the DB as ephemeral across cold starts unless you point `DATABASE_URL` at a persistent Postgres instance.
-- All API endpoints (except login/register) now require a JWT — see `SECURITY_FIXES.md`.
+- **Backend:** SQLAlchemy supports SQLite for local tests, PostgreSQL for the Docker Compose stack, and Microsoft SQL Server for production. Production refuses SQLite and requires a durable database; the SQL Server database defaults to `MMA_Business_Prosperity_Weapon`. Apply schema changes through Alembic before deploying.
+- Vercel production must receive `DATABASE_URL` or the `SQLSERVER_*` settings through its encrypted environment-variable store. SQL Server must be network-reachable from the Vercel function and use SQL authentication; Windows/Integrated Authentication from a developer's SSMS session is not available to the Linux function.
+- All API endpoints (except login/register) require a JWT — see `SECURITY_FIXES.md`.
 
 ---
 
@@ -104,13 +105,24 @@ The ercel.json configures:
 
 ## Environment Variables
 
+Set production secrets in Vercel's encrypted Environment Variables settings; never commit or paste them into chat.
+
 | Variable | Purpose | Required |
 |----------|---------|----------|
-| NEXT_PUBLIC_API_URL | Backend API base URL | Yes (default: http://localhost:8001) |
-| OPENAI_API_KEY | For AI proposal generation | Optional (falls back to template proposals) |
-| SMTP_HOST | Email server host | Optional (falls back to mailto: links) |
-| SMTP_USER | Email username | Optional |
-| SMTP_PASSWORD | Email password | Optional |
+| SQLSERVER_HOST | Reachable SQL Server DNS name or IP (do not include a named instance) | Production, unless using `DATABASE_URL` |
+| SQLSERVER_USER | SQL Server SQL-authentication login | Production, unless using `DATABASE_URL` |
+| SQLSERVER_PASSWORD | Password for that SQL login | Production, unless using `DATABASE_URL` |
+| SQLSERVER_DATABASE | Database name (defaults to `MMA_Business_Prosperity_Weapon`) | Recommended |
+| SQLSERVER_PORT | SQL Server TCP port (defaults to `1433`) | Usually optional |
+| SQLSERVER_ENCRYPTION | TLS policy (`require` by default) | Optional |
+| DATABASE_URL | Alternative full SQLAlchemy URL (`mssql+pymssql://...`) | Alternative to split SQL Server settings |
+| JWT_SECRET | Unique signing secret, at least 32 characters | Production |
+| CRON_SECRET | Secret for the outreach cron route | Required to authorize cron runs |
+| NEXT_PUBLIC_API_URL | Not used; the frontend calls same-origin `/api` routes through the server-side proxy | Do not set |
+| OPENAI_API_KEY | AI proposal generation (template fallback is available) | Optional |
+| SMTP_HOST / SMTP_USER / SMTP_PASSWORD | Email delivery configuration | Optional |
+
+See [`backend/DATABASE_OPERATIONS.md`](backend/DATABASE_OPERATIONS.md) for secure SQL Server setup, migrations, and backup guidance.
 
 ---
 

@@ -37,7 +37,7 @@ export function liveLeadToLead(ll: LiveLead): Lead {
 
 const PROPOSALS_KEY = "mbpw_proposals";
 
-export function getStoredProposals(): any[] {
+export function getStoredProposals(): LegacyLooseValue[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(PROPOSALS_KEY);
@@ -47,11 +47,11 @@ export function getStoredProposals(): any[] {
   }
 }
 
-export function storeProposals(proposals: any[]) {
+export function storeProposals(proposals: LegacyLooseValue[]) {
   localStorage.setItem(PROPOSALS_KEY, JSON.stringify(proposals));
 }
 
-export function addProposal(proposal: any) {
+export function addProposal(proposal: LegacyLooseValue) {
   const existing = getStoredProposals();
   existing.unshift(proposal);
   storeProposals(existing);
@@ -59,7 +59,7 @@ export function addProposal(proposal: any) {
 
 const NOTIF_KEY = "mbpw_notifications";
 
-export function getStoredNotifications(): any[] {
+export function getStoredNotifications(): LegacyLooseValue[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(NOTIF_KEY);
@@ -69,11 +69,11 @@ export function getStoredNotifications(): any[] {
   }
 }
 
-export function storeNotifications(notifs: any[]) {
+export function storeNotifications(notifs: LegacyLooseValue[]) {
   localStorage.setItem(NOTIF_KEY, JSON.stringify(notifs));
 }
 
-export function addNotification(notif: any) {
+export function addNotification(notif: LegacyLooseValue) {
   const existing = getStoredNotifications();
   existing.unshift(notif);
   if (existing.length > 100) existing.length = 100;

@@ -7,14 +7,15 @@ import { TopBar } from "@/components/top-bar"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useTheme, THEMES, type ThemeId } from "@/lib/theme-context"
+import { useTheme, THEMES } from "@/lib/theme-context"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
-import { Sun, Moon, Shield, Bell, User, Database, Globe, Palette, Users, Key, Save, CheckCircle, LogOut, Trash2, Check } from "lucide-react"
+import { getErrorMessage } from "@/lib/error-message"
+import { Sun, Moon, Shield, Bell, User, Database, Palette, Users, Key, Save, CheckCircle, LogOut, Trash2, Check } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { theme, setTheme, themeDef } = useTheme()
+  const { theme, setTheme } = useTheme()
   const { user, logout } = useAuth()
   const [saved, setSaved] = useState(false)
   const [showDanger, setShowDanger] = useState(false)
@@ -25,7 +26,7 @@ export default function SettingsPage() {
   const [apolloKey, setApolloKey] = useState("")
   const [provLoading, setProvLoading] = useState(false)
   const [provSaved, setProvSaved] = useState(false)
-  const [testResult, setTestResult] = useState<any>(null)
+  const [testResult, setTestResult] = useState<LegacyLooseValue>(null)
   const [testLoading, setTestLoading] = useState(false)
 
   const handleSave = () => {
@@ -68,8 +69,8 @@ export default function SettingsPage() {
         apollo_api_key: apolloKey || undefined,
       })
       setTestResult(d)
-    } catch (e: any) {
-      setTestResult({ error: e?.message || "Test failed" })
+    } catch (e: unknown) {
+      setTestResult({ error: getErrorMessage(e, "Test failed") })
     } finally {
       setTestLoading(false)
     }
@@ -220,7 +221,7 @@ export default function SettingsPage() {
                 {testResult && !testResult.error && (
                   <div className="text-xs space-y-1">
                     {(() => {
-                      const fmt = (p: any) => {
+                      const fmt = (p: LegacyLooseValue) => {
                         if (!p) return ""
                         if (p.ok) return `verified (${p.email})`
                         if (p.error === "plan_limited") return "Free plan blocks email lookup — add a Hunter key or upgrade Apollo"
@@ -230,7 +231,7 @@ export default function SettingsPage() {
                         if (p.error === "no_people") return "no matches returned"
                         return p.error || "not verified"
                       }
-                      const cls = (p: any) =>
+                      const cls = (p: LegacyLooseValue) =>
                         p?.ok ? "text-emerald-400" : p?.error === "plan_limited" ? "text-amber-400" : "text-zinc-400"
                       return (
                         <>

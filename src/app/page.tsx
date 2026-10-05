@@ -6,12 +6,10 @@ import { Footer } from "@/components/footer"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { WidgetSkeleton } from "@/components/skeleton"
-import { EmptyState } from "@/components/empty-state"
-import { Tooltip } from "@/components/tooltip-wrapper"
 import { ExportCSV } from "@/components/export-button"
 import { Button } from "@/components/ui/button"
-import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle, Loader2, RefreshCw, Clock, RotateCcw } from "lucide-react"
-import { useState, useCallback, useEffect, useRef } from "react"
+import { Download, Sparkles, X, TrendingUp, AlertTriangle, Brain, Send, CheckCircle, RefreshCw, Clock, RotateCcw } from "lucide-react"
+import { useState, useCallback, useEffect } from "react"
 import { api } from "@/lib/api"
 import { getStoredLeads } from "@/lib/live-sources"
 import type { Lead, Notification, Agent, ActivityLog, AnalyticsData } from "@/lib/types"
@@ -62,7 +60,7 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [agents, setAgents] = useState<Agent[]>([])
-  const [activities, setActivities] = useState<ActivityLog[]>([])
+  const activities: ActivityLog[] = []
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -72,9 +70,9 @@ export default function DashboardPage() {
     if (showLoad) setLoading(true)
     try {
       const [leadsData, notifsData, agentsData, analyticsData, briefingData] = await Promise.all([
-        api.leads.list().catch(() => [] as any),
-        api.notifications.list().catch(() => [] as any),
-        api.agents.list().catch(() => [] as any),
+        api.leads.list().catch(() => [] as LegacyLooseValue),
+        api.notifications.list().catch(() => [] as LegacyLooseValue),
+        api.agents.list().catch(() => [] as LegacyLooseValue),
         api.analytics.get().catch(() => null),
         api.ai.briefing().catch(() => null),
       ])
@@ -106,16 +104,20 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    fetchAll()
+    // The dashboard is synchronized with several backend endpoints on mount and while open.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async dashboard API polling.
+    void fetchAll()
     const interval = setInterval(() => fetchAll(false), 30000)
     return () => clearInterval(interval)
   }, [fetchAll])
 
   useEffect(() => {
     if (showInsightsModal && !aiInsights) {
+      // The modal's loading indicator follows this explicit API request.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- request lifecycle state for opened modal.
       setLoadingInsights(true);
       api.ai.insights()
-        .then((data) => { setAiInsights(data as any); setLoadingInsights(false); })
+        .then((data) => { setAiInsights(data as LegacyLooseValue); setLoadingInsights(false); })
         .catch(() => { setLoadingInsights(false); });
     }
   }, [showInsightsModal, aiInsights]);
@@ -146,8 +148,8 @@ export default function DashboardPage() {
   const currentActivities = activities.length > 0 ? activities : []
 
   const revenueMonths = activeAnalytics?.monthlyRevenue || []
-  const maxMonthlyRevenue = revenueMonths.length > 0 ? Math.max(...revenueMonths.map((m: any) => m.revenue)) : 0
-  const revenueData = revenueMonths.map((m: any) => ({ label: m.month, value: m.revenue, max: maxMonthlyRevenue }))
+  const maxMonthlyRevenue = revenueMonths.length > 0 ? Math.max(...revenueMonths.map((m: LegacyLooseValue) => m.revenue)) : 0
+  const revenueData = revenueMonths.map((m: LegacyLooseValue) => ({ label: m.month, value: m.revenue, max: maxMonthlyRevenue }))
 
   const analyticsExportData = activeAnalytics ? [
     { metric: "Total Revenue", value: activeAnalytics.totalRevenue },

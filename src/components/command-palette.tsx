@@ -11,7 +11,7 @@ interface Command {
   id: string
   label: string
   description: string
-  icon: any
+  icon: LegacyLooseValue
   action: () => void
   shortcut?: string
   category: string
@@ -23,7 +23,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [query, setQuery] = useState("")
   const [selectedIndex, setSelectedIndex] = useState(0)
   const { user, logout } = useAuth()
-  const { theme, isDark, toggleTheme } = useTheme()
+  const { isDark, toggleTheme } = useTheme()
 
   const commands: Command[] = [
     { id: "dashboard", label: "Dashboard", description: "Go to executive dashboard", icon: LayoutDashboard, action: () => router.push("/"), shortcut: "⌘1", category: "Navigation" },
@@ -50,6 +50,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
 
   useEffect(() => {
     if (open) {
+      // Each opening starts a fresh palette session rather than restoring stale input.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset local UI state on controlled open transition.
       setQuery("")
       setSelectedIndex(0)
       setTimeout(() => inputRef.current?.focus(), 50)
@@ -108,7 +110,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             Object.entries(grouped).map(([category, items]) => (
               <div key={category}>
                 <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">{category}</div>
-                {items.map((cmd, idx) => {
+                {items.map((cmd) => {
                   const globalIdx = filtered.indexOf(cmd)
                   return (
                     <button

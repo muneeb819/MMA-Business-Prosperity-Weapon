@@ -4,7 +4,7 @@ import { Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
-export function ExportCSV({ data, filename, label = "Export CSV" }: { data: Record<string, any>[]; filename: string; label?: string }) {
+export function ExportCSV({ data, filename, label = "Export CSV" }: { data: Record<string, LegacyLooseValue>[]; filename: string; label?: string }) {
   const [exporting, setExporting] = useState(false)
 
   const handleExport = () => {

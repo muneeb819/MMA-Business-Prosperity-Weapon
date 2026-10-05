@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Mail, Phone, MessageSquare, UserPlus, ExternalLink } from "lucide-react";
+import { Users, Search, Mail, Phone, MessageSquare, UserPlus } from "lucide-react";
 
 interface Contact {
   id: string;

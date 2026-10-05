@@ -1,10 +1,12 @@
 "use client"
 
 import { useEffect } from "react"
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const router = useRouter()
   useEffect(() => { console.error("Application error:", error) }, [error])
 
   return (
@@ -23,7 +25,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
           <Button onClick={reset} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white shadow-lg shadow-indigo-500/20">
             <RefreshCw className="w-4 h-4 mr-2" /> Try Again
           </Button>
-          <Button variant="outline" onClick={() => window.location.href = "/"} className="border-zinc-800 hover:bg-zinc-800/50">
+          <Button variant="outline" onClick={() => router.push("/")} className="border-zinc-800 hover:bg-zinc-800/50">
             <Home className="w-4 h-4 mr-2" /> Go Home
           </Button>
         </div>

@@ -9,11 +9,11 @@ import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
-  Bot, Users, Target, Send, Mail, MessageSquare, BarChart3, Activity,
+  Bot, Users, Target, Send, Mail, BarChart3, Activity,
   Play, Pause, Loader2, CheckCircle, AlertTriangle, Clock, TrendingUp,
-  ChevronDown, ChevronUp, Zap, Shield, Briefcase, Eye, Sparkles,
-  CircleDot, ArrowUpRight, MessageCircle, FileText, RefreshCw,
-  Radar, Lock, Database, Gauge, Globe, ShieldCheck, ShieldAlert, XCircle,
+  ChevronDown, ChevronUp, Shield,
+  CircleDot, MessageCircle, FileText, RefreshCw,
+  Radar, Lock, Database, Gauge, XCircle,
 } from "lucide-react";
 
 interface Agent {
@@ -51,7 +51,7 @@ const STATUS_TEXT: Record<string, string> = {
 export default function AITeamsPage() {
   const [data, setData] = useState<{ summary: TeamSummary; manager: Agent; teams: TeamData[] } | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<LegacyLooseValue>(null);
   const [loading, setLoading] = useState(true);
   const [chatAgent, setChatAgent] = useState<string | null>(null);
   const [chatInput, setChatInput] = useState("");
@@ -64,17 +64,17 @@ export default function AITeamsPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Supervisor state
-  const [supervisorHealth, setSupervisorHealth] = useState<any>(null);
-  const [supervisorScan, setSupervisorScan] = useState<any>(null);
-  const [supervisorIssues, setSupervisorIssues] = useState<any>(null);
+  const [supervisorHealth, setSupervisorHealth] = useState<LegacyLooseValue>(null);
+  const [supervisorScan, setSupervisorScan] = useState<LegacyLooseValue>(null);
+  const [supervisorIssues, setSupervisorIssues] = useState<LegacyLooseValue>(null);
   const [scanRunning, setScanRunning] = useState(false);
   const [supervisorChat, setSupervisorChat] = useState<ChatMessage[]>([]);
   const [supervisorChatInput, setSupervisorChatInput] = useState("");
   const [supervisorChatLoading, setSupervisorChatLoading] = useState(false);
   const [showSupervisorChat, setShowSupervisorChat] = useState(false);
-  const [supervisorExpanded, setSupervisorExpanded] = useState(true);
+  const supervisorExpanded = true;
   const [actionRunning, setActionRunning] = useState<string | null>(null);
-  const [qualityReport, setQualityReport] = useState<any>(null);
+  const [qualityReport, setQualityReport] = useState<LegacyLooseValue>(null);
   const [showQualityReport, setShowQualityReport] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -85,7 +85,13 @@ export default function AITeamsPage() {
     } catch {} finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(); const t = setInterval(fetchData, 15000); return () => clearInterval(t); }, [fetchData]);
+  useEffect(() => {
+    // This poll synchronizes the view with the AI teams API; updates follow the async request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external API polling.
+    void fetchData();
+    const t = setInterval(() => { void fetchData(); }, 15000);
+    return () => clearInterval(t);
+  }, [fetchData]);
 
   // Supervisor auto-scan on mount + every 60 seconds
   const fetchSupervisorData = useCallback(async () => {
@@ -100,17 +106,12 @@ export default function AITeamsPage() {
   }, []);
 
   useEffect(() => {
-    fetchSupervisorData();
-    const t = setInterval(fetchSupervisorData, 60000);
+    // Load health and issue data from the supervisor API, then refresh it periodically.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- external API polling.
+    void fetchSupervisorData();
+    const t = setInterval(() => { void fetchSupervisorData(); }, 60000);
     return () => clearInterval(t);
   }, [fetchSupervisorData]);
-
-  // Auto-run initial scan if no scan has been done yet
-  useEffect(() => {
-    if (supervisorHealth && supervisorHealth.totalScansCompleted === 0 && !scanRunning) {
-      handleRunScan();
-    }
-  }, [supervisorHealth]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages, chatAgent]);
 
@@ -140,7 +141,7 @@ export default function AITeamsPage() {
     try { const res = await api.aiTeams.dailyReport(); setReport(res); } finally { setReportLoading(false); }
   };
 
-  const handleRunScan = async () => {
+  const handleRunScan = useCallback(async () => {
     setScanRunning(true);
     try {
       const scanRes = await api.aiTeams.supervisor.scan();
@@ -152,7 +153,14 @@ export default function AITeamsPage() {
       setSupervisorHealth(healthRes);
       setSupervisorIssues(issuesRes);
     } catch {} finally { setScanRunning(false); }
-  };
+  }, []);
+
+  // Automatically start the supervisor's first scan when the service has no scan history.
+  useEffect(() => {
+    if (!supervisorHealth || supervisorHealth.totalScansCompleted !== 0 || scanRunning) return;
+    const timer = window.setTimeout(() => { void handleRunScan(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [supervisorHealth, scanRunning, handleRunScan]);
 
   const handleSupervisorChat = async () => {
     if (!supervisorChatInput.trim() || supervisorChatLoading) return;
@@ -169,7 +177,7 @@ export default function AITeamsPage() {
     } finally { setSupervisorChatLoading(false); }
   };
 
-  const handleSupervisorAction = async (action: string, apiCall: () => Promise<any>) => {
+  const handleSupervisorAction = async (action: string, apiCall: () => Promise<LegacyLooseValue>) => {
     setActionRunning(action);
     try {
       const res = await apiCall();
@@ -470,7 +478,7 @@ export default function AITeamsPage() {
               <AlertTriangle className="w-3 h-3 text-amber-500" /> Open Issues ({supervisorIssues.count})
             </p>
             <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-              {supervisorIssues.issues.map((issue: any) => (
+              {supervisorIssues.issues.map((issue: LegacyLooseValue) => (
                 <div key={issue.id} className={cn(
                   "rounded-xl border p-3 transition-all",
                   issue.severity === "critical" ? "bg-red-500/[0.04] border-red-500/10" :
@@ -620,13 +628,12 @@ export default function AITeamsPage() {
             const data = qualityReport.sections?.[section];
             if (!data) return null;
             const titles: Record<string, string> = { dataReconciliation: "Data Reconciliation", securityAudit: "Security Audit", performanceCheck: "Performance Check" };
-            const colors: Record<string, string> = { dataReconciliation: "violet", securityAudit: "amber", performanceCheck: "cyan" };
             const sectionColorClass: Record<string, string> = { dataReconciliation: "text-rose-400", securityAudit: "text-amber-400", performanceCheck: "text-indigo-400" };
             return (
               <div key={section} className="mb-4">
                 <p className={cn("text-xs uppercase tracking-wider font-semibold mb-2", sectionColorClass[section])}>{titles[section]}</p>
                 <div className="space-y-1">
-                  {(data.findings || []).map((f: any, i: number) => (
+                  {(data.findings || []).map((f: LegacyLooseValue, i: number) => (
                     <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] text-xs">
                       <span>{f.status === "pass" ? "✅" : f.status === "warn" ? "⚠️" : "❌"}</span>
                       <span className="font-medium text-white">{f.check}</span>
@@ -805,7 +812,7 @@ export default function AITeamsPage() {
             <div className="mb-3">
               <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold mb-2">Hunter Performance</p>
               <div className="space-y-1.5">
-                {report.leadsFoundToday.byAgent.map((h: any) => (
+                {report.leadsFoundToday.byAgent.map((h: LegacyLooseValue) => (
                   <div key={h.agentId} className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-white/[0.02]">
                     <span className="text-sm">{h.agentName}</span>
                     <span className="text-[10px] text-zinc-600 ml-auto">{h.channel}</span>

@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from app.models.database import get_db, Base, engine
-from sqlalchemy import Column, String, Boolean, DateTime, Float
+from app.models.database import get_db, Base
+from sqlalchemy import Column, Unicode, Boolean, DateTime, Float
+from app.models.database_types import LONG_TEXT
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -18,39 +19,37 @@ security = HTTPBearer(auto_error=False)
 
 class UserModel(Base):
     __tablename__ = "users"
-    id = Column(String, primary_key=True)
-    email = Column(String, unique=True, nullable=False)
-    name = Column(String, nullable=False)
-    role = Column(String, default="user")
-    hashed_password = Column(String, nullable=False)
+    id = Column(Unicode(128), primary_key=True)
+    email = Column(Unicode(320), unique=True, nullable=False)
+    name = Column(Unicode(255), nullable=False)
+    role = Column(Unicode(255), default="user")
+    hashed_password = Column(Unicode(128), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
-    avatar_url = Column(String, default="")
+    avatar_url = Column(Unicode(2048), default="")
 
 class SessionModel(Base):
     __tablename__ = "sessions"
-    id = Column(String, primary_key=True)
-    user_id = Column(String, nullable=False)
-    token = Column(String, nullable=False)
-    device = Column(String, default="")
-    ip_address = Column(String, default="")
+    id = Column(Unicode(128), primary_key=True)
+    user_id = Column(Unicode(128), nullable=False)
+    token = Column(Unicode(2048), nullable=False)
+    device = Column(Unicode(255), default="")
+    ip_address = Column(Unicode(64), default="")
     created_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=False)
     is_active = Column(Boolean, default=True)
 
 class AuditLogModel(Base):
     __tablename__ = "audit_logs"
-    id = Column(String, primary_key=True)
-    user_id = Column(String, nullable=False)
-    action = Column(String, nullable=False)
-    resource = Column(String, default="")
-    resource_id = Column(String, default="")
-    details = Column(String, default="")
-    ip_address = Column(String, default="")
+    id = Column(Unicode(128), primary_key=True)
+    user_id = Column(Unicode(128), nullable=False)
+    action = Column(Unicode(255), nullable=False)
+    resource = Column(Unicode(255), default="")
+    resource_id = Column(Unicode(128), default="")
+    details = Column(LONG_TEXT, default="")
+    ip_address = Column(Unicode(64), default="")
     created_at = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 

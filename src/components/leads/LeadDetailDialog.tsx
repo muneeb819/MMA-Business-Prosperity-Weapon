@@ -41,7 +41,6 @@ interface LeadDetailDialogProps {
   leadToDelete: string | null;
   setLeadToDelete: Dispatch<SetStateAction<string | null>>;
   archivedIds: Set<string>;
-  showToast: (msg: string) => void;
   onSave: (leadId: string, form: Partial<Lead>) => void;
   onDelete: (leadId: string) => void;
   onArchive: (leadId: string) => void;
@@ -62,7 +61,6 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
   leadToDelete,
   setLeadToDelete,
   archivedIds,
-  showToast,
   onSave,
   onDelete,
   onArchive,

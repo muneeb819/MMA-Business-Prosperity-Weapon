@@ -3,8 +3,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
-ENV NEXT_PUBLIC_API_URL=http://host.docker.internal:8005
-ENV BACKEND_URL=http://host.docker.internal:8005
+ARG BACKEND_URL=http://host.docker.internal:8005
+ENV BACKEND_URL=${BACKEND_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

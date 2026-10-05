@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
-import { Shield, Lock, AlertTriangle } from "lucide-react"
+import { Shield, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function AuthGuard({ children, requiredRole }: { children: ReactNode; requiredRole?: string }) {

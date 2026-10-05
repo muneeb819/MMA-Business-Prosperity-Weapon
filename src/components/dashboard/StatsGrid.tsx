@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Tooltip } from "@/components/tooltip-wrapper"
 import { AnimatedCounter } from "@/components/animated-counter"
 import { GlassCard } from "@/components/glass-card"
-import { FadeIn, StaggerItem } from "@/components/page-transition"
+import {  StaggerItem } from "@/components/page-transition"
 
 interface StatsGridProps {
   totalRevenue: number
@@ -67,7 +67,7 @@ const StatsGrid = React.memo(function StatsGrid({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {statsConfig.map((stat, i) => {
+      {statsConfig.map((stat) => {
         const Icon = stat.icon
         const val = values[stat.key]
         const displayVal = stat.format === "currency" ? val : val

@@ -3,7 +3,6 @@
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatCurrency, timeAgo, cn } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 import { statusConfig, urgencyConfig } from "./leads-config";

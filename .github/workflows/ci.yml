@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+      - name: Reject critical dependency advisories
+        run: npm audit --audit-level=critical
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: sqlite:////tmp/mbpw-ci.sqlite
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Run backend regression tests
+        run: PYTHONPATH=. pytest -q tests
+      - name: Verify Alembic migrations against a clean database
+        run: |
+          PYTHONPATH=. alembic -c alembic.ini upgrade head
+          PYTHONPATH=. alembic -c alembic.ini check
+      - name: Compile the migration for SQL Server without a live connection
+        run: |
+          ENVIRONMENT=test DATABASE_URL='mssql+pymssql://ci:ci@127.0.0.1:1433/MMA_Business_Prosperity_Weapon?charset=utf8&encryption=require' \
+            PYTHONPATH=. alembic -c alembic.ini upgrade head --sql > /tmp/mbpw-mssql-migration.sql
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          sql = Path('/tmp/mbpw-mssql-migration.sql').read_text()
+          assert 'CREATE TABLE leads' in sql
+          assert 'NVARCHAR(max)' in sql
+          assert not re.search(r'(?<!N)VARCHAR\(max\)', sql)
+          print('SQL Server migration DDL compiled successfully.')
+          PY

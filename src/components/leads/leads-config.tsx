@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Zap, Brain, CheckCircle2, Send, Target, AlertTriangle } from "lucide-react";
+import { Zap, Brain, CheckCircle2, Send, Target } from "lucide-react";
 
 export type SortKey = "newest" | "oldest" | "budget-high" | "budget-low" | "probability";
 

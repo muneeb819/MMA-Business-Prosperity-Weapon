@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type { CRMCompany } from "@/lib/types";
@@ -22,7 +21,7 @@ import { CompanyDetail } from "@/components/crm/CompanyDetail";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { AddContactDialog } from "@/components/crm/AddContactDialog";
 import { AddCompanyDialog } from "@/components/crm/AddCompanyDialog";
-import { Users, Building2, Target, DollarSign, Plus, UserPlus, X, Check, Calendar, Clock, Phone, Mail, MoreHorizontal, Trash2 } from "lucide-react";
+import { Users, Building2, Target, DollarSign, Plus, UserPlus, X, Check, Calendar, Clock, Phone, Mail, Trash2 } from "lucide-react";
 
 interface Meeting {
   id: string;
@@ -215,7 +214,7 @@ export default function CRMPage() {
     setMeetings((prev) => prev.map((m) => m.id === id ? { ...m, status: "completed" } : m));
     const meeting = meetings.find((m) => m.id === id);
     if (meeting) {
-      const act: Activity = { id: `act-${Date.now()}`, type: "meeting", description: `Completed: ${meeting.title}`, timestamp: new Date().toISOString(), contact: meeting.contact, company: meeting.company };
+      const act: Activity = { id: `act-${meeting.id}-completed`, type: "meeting", description: `Completed: ${meeting.title}`, timestamp: new Date().toISOString(), contact: meeting.contact, company: meeting.company };
       setActivities((prev) => [act, ...prev]);
     }
     showToast("Meeting marked completed");

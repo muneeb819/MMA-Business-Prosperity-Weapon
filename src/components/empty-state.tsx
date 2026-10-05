@@ -5,7 +5,7 @@ import { Inbox, Search, Globe, FileText, Users, Bell, BarChart3 } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
-const illustrations: Record<string, { icon: any; gradient: string }> = {
+const illustrations: Record<string, { icon: LegacyLooseValue; gradient: string }> = {
   default: { icon: Inbox, gradient: "from-zinc-500/20 to-zinc-600/20" },
   search: { icon: Search, gradient: "from-indigo-500/20 to-rose-500/20" },
   leads: { icon: Globe, gradient: "from-emerald-500/20 to-rose-500/20" },

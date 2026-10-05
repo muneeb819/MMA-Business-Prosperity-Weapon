@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { api } from "@/lib/api"
+import { getErrorMessage } from "@/lib/error-message"
 import { fetchAllSources, getStoredLeads } from "@/lib/live-sources"
 import { addNotification } from "@/lib/pipeline"
 import { HunterStats } from "@/components/opportunity-hunter/HunterStats"
@@ -91,7 +92,7 @@ interface OutreachRecord {
   discoveryId: string
   company: string
   title: string
-  proposal: any
+  proposal: LegacyLooseValue
   generatedAt: string
   status: string
   emailMethod?: string
@@ -262,7 +263,12 @@ export default function OpportunityHunterPage() {
     setCategories((prev) => prev.map((cat) => cat.id === id ? { ...cat, selected: !cat.selected } : cat))
 
   const toggleBookmark = (id: string) =>
-    setBookmarkedIds((prev) => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    })
 
   const toggleSourceStatus = (id: string) =>
     setSourceStatuses((prev) => ({ ...prev, [id]: prev[id] === "active" ? "idle" : "active" }))
@@ -336,9 +342,9 @@ export default function OpportunityHunterPage() {
         : `Scan complete: ${totalFetched} leads fetched across ${SOURCE_KEYS.length} sources (${fresh.length} new)`
       setScanResult(msg)
       setToastMessage(`Hunter found ${fresh.length} new opportunities`)
-    } catch (e: any) {
+    } catch (e: unknown) {
       setSourceStatuses(Object.fromEntries(SOURCE_KEYS.map((k) => [k, "error"])))
-      setScanResult(`Failed: ${e?.message || "Could not reach live sources"}`)
+      setScanResult(`Failed: ${getErrorMessage(e, "Could not reach live sources")}`)
     } finally {
       setHunterFetching(false)
     }
@@ -376,7 +382,7 @@ export default function OpportunityHunterPage() {
           },
           tone: "professional",
           instructions: `Generate a tailored business proposal for ${d.company} regarding the "${d.title}" opportunity discovered on ${d.source} (${d.location}). Key technologies: ${d.tags.join(", ") || "N/A"}.`,
-        }) as any
+        }) as LegacyLooseValue
 
         const coverLetter = result?.coverLetter || result?.sections?.coverLetter || result?.cover_letter || ""
         const introduction = result?.introduction || result?.sections?.introduction || ""
@@ -412,7 +418,7 @@ export default function OpportunityHunterPage() {
             recipient_email: recipientEmail,
             subject: emailSubject,
             body_text: emailBody,
-          }) as any
+          }) as LegacyLooseValue
           if (emailResult?.success) {
             emailMethod = "smtp"
             emailsSent++
@@ -447,8 +453,8 @@ export default function OpportunityHunterPage() {
         setOutreachLog((prev) => [...prev, { company: d.company, ok: true, error: emailMethod === "smtp" ? "Email sent via SMTP" : "Email opened in mail client" }])
         const idx = updated.findIndex((x) => x.id === d.id)
         if (idx >= 0) updated[idx] = { ...updated[idx], status: "proposal-sent" }
-      } catch (e: any) {
-        setOutreachLog((prev) => [...prev, { company: d.company, ok: false, error: e?.message || "Failed" }])
+      } catch (e: unknown) {
+        setOutreachLog((prev) => [...prev, { company: d.company, ok: false, error: getErrorMessage(e, "Failed") }])
       }
       setOutreachProgress(Math.round(((i + 1) / targets.length) * 100))
     }

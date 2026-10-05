@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, Shield, Clock, GitBranch } from "lucide-react"
+import { Activity, Shield, Clock } from "lucide-react"
 
 export function Footer() {
   return (

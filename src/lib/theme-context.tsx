@@ -268,6 +268,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("mbpw_theme") as Theme | null
     if (saved && THEMES.find((t) => t.id === saved)) {
+      // Restore the saved browser preference after client hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage hydration.
       setThemeState(saved)
     }
     setMounted(true)

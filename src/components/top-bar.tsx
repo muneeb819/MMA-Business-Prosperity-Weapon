@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
   Bell,
   Search,
@@ -122,17 +123,21 @@ export function TopBar() {
   useEffect(() => {
     const stored = localStorage.getItem("mbpw_notifications");
     if (stored) {
-      try { setNotifications(JSON.parse(stored)); } catch {}
+      try {
+        // Hydrate cached notifications once on the client before merging server data.
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- browser localStorage hydration.
+        setNotifications(JSON.parse(stored));
+      } catch {}
     }
     api.notifications.list().then((data) => {
       if (Array.isArray(data) && data.length > 0) {
-        const mapped = data.map((n: any) => ({
+        const mapped = data.map((n: LegacyLooseValue) => ({
           ...n,
           leadId: n.leadId || n.lead_id || undefined,
           createdAt: n.createdAt || n.created_at || new Date().toISOString(),
         }));
         setNotifications(prev => {
-          const merged = [...mapped, ...prev.filter(p => !mapped.find((m: any) => m.id === p.id))];
+          const merged = [...mapped, ...prev.filter(p => !mapped.find((m: LegacyLooseValue) => m.id === p.id))];
           localStorage.setItem("mbpw_notifications", JSON.stringify(merged));
           return merged;
         });
@@ -145,6 +150,8 @@ export function TopBar() {
   const [recentSearches, setRecentSearches] = useState<string[]>([])
 
   useEffect(() => {
+    // Refresh locally stored search history when the search control opens.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage-backed state synchronization.
     setRecentSearches(getRecentSearches())
   }, [searchFocused])
 
@@ -218,7 +225,7 @@ export function TopBar() {
 
   return (
     <header className="h-16 border-b border-border/50 bg-card/60 backdrop-blur-xl flex items-center justify-between pl-14 pr-4 md:px-6 sticky top-0 z-30">
-      <img src="/logo.jpg" alt="MBPW" className="hidden md:block h-9 w-9 rounded-lg object-contain shrink-0 mr-1" />
+      <Image src="/logo.jpg" alt="MBPW" width={36} height={36} className="hidden md:block h-9 w-9 rounded-lg object-contain shrink-0 mr-1" />
       <div className="flex items-center gap-4 flex-1" ref={searchRef}>
         <div className="relative max-w-lg w-full group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
