@@ -27,7 +27,7 @@
 - `npm audit --omit=dev` — zero production dependency vulnerabilities.
 - Full `npm audit` still reports five high-severity findings in the development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`). The registry's latest `braces` release is 3.0.3, which remains in the advisory range; npm only offered a breaking downgrade of `eslint-config-next` to 14.2.35. That downgrade and an out-of-range override were not applied. Recheck the lint toolchain when an upstream fix is available.
 - Backend release tests — 9 passed. SQLite Alembic upgrade/check/downgrade/re-upgrade passed locally; this does not verify PostgreSQL behavior.
-- GitHub Actions has not yet run for this working tree. The CI workflow audits production dependencies and fails on critical advisories; the known high findings are limited to the lint toolchain and are documented above.
+- GitHub Actions CI passed on commit `868feb4` (Frontend checks and Backend checks): [run 37325095374](https://github.com/muneeb819/MMA-Business-Prosperity-Weapon/actions/runs/37325095374). The workflow audits production dependencies and fails on critical advisories; the known high findings are limited to the lint toolchain and are documented above.
 
 ## Release gates
 
