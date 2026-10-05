@@ -1,6 +1,5 @@
 from logging.config import fileConfig
 from pathlib import Path
-import os
 import sys
 
 from alembic import context
@@ -15,25 +14,19 @@ if config.config_file_name is not None:
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_DIR))
 
-from app.models.database import Base, is_production  # noqa: E402
+from app.models.database import Base, _normalize_database_url, _resolve_database_url, is_production  # noqa: E402
 import app.models.schema  # noqa: F401,E402 — register business tables
 import app.routers.auth  # noqa: F401,E402 — register users/sessions/audit logs
 
-# Use the same provider-aware URL resolution as the application. For local
-# migration work, use the persistent ./mbpw.db file rather than an in-memory DB.
-url = os.getenv("DATABASE_URL", "").strip()
-if not url:
-    for key in ("POSTGRES_URL_NON_POOLING", "POSTGRES_URL", "POSTGRES_PRISMA_URL"):
-        url = os.getenv(key, "").strip()
-        if url:
-            break
+# Use the application's resolver so Alembic honors either DATABASE_URL or
+# the secure SQLSERVER_* environment settings. For local work, use a persistent
+# SQLite file rather than the in-memory application fallback.
+url = _resolve_database_url()
 if not url:
     if is_production():
-        # Importing app.models.database already rejects this case; keep the
-        # migration command's requirement explicit as a second guard.
-        raise RuntimeError("DATABASE_URL is required to run production migrations.")
+        raise RuntimeError("A durable database URL is required for production migrations.")
     url = "sqlite:///./mbpw.db"
-url = url.replace("postgres://", "postgresql://", 1)
+url = _normalize_database_url(url)
 config.set_main_option("sqlalchemy.url", url.replace("%", "%%"))
 
 target_metadata = Base.metadata

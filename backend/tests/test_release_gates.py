@@ -192,7 +192,7 @@ def test_cron_requires_secret_and_accepts_authorized_request(client, monkeypatch
     assert accepted.json() == {"ok": True, "summary": {"processed": 0, "sent": 0}}
 
 
-def test_production_database_requires_postgresql_url():
+def test_production_database_requires_supported_durable_database():
     from app.models.database import _resolve_database_url
 
     try:
@@ -205,8 +205,79 @@ def test_production_database_requires_postgresql_url():
     try:
         _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": "sqlite:///./mbpw.db"})
     except RuntimeError as exc:
-        assert "PostgreSQL" in str(exc)
+        assert "Microsoft SQL Server" in str(exc)
     else:
         raise AssertionError("Production accepted SQLite")
 
     assert _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": "postgresql://db/app"}) == "postgresql://db/app"
+    secure_mssql_url = "mssql+pymssql://app:secret@db/app?charset=utf8&encryption=require"
+    assert _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": secure_mssql_url}) == secure_mssql_url
+    assert _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": "mssql://app:secret@db/app?encryption=require"}) == "mssql+pymssql://app:secret@db/app?encryption=require"
+
+    try:
+        _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": "postgresql+asyncpg://db/app"})
+    except RuntimeError as exc:
+        assert "synchronous" in str(exc)
+    else:
+        raise AssertionError("Production accepted an async PostgreSQL driver for a sync engine")
+
+
+def test_production_sqlserver_url_requires_credentials_and_tls():
+    from app.models.database import _resolve_database_url
+
+    for url, expected_error in (
+        ("mssql+pymssql://db/app?encryption=require", "SQL login"),
+        ("mssql+pymssql://app:secret@db/app", "encryption=require"),
+        ("mssql+pymssql://app:secret@db/app?encryption=off", "encryption=require"),
+    ):
+        try:
+            _resolve_database_url({"ENVIRONMENT": "production", "DATABASE_URL": url})
+        except RuntimeError as exc:
+            assert expected_error in str(exc)
+        else:
+            raise AssertionError(f"Production accepted insecure SQL Server URL: {url}")
+
+
+def test_sqlserver_environment_builds_an_escaped_secure_url():
+    from sqlalchemy.engine import make_url
+    from app.models.database import _resolve_database_url
+
+    url = _resolve_database_url({
+        "ENVIRONMENT": "production",
+        "SQLSERVER_HOST": "sql.example.com",
+        "SQLSERVER_USER": "app user",
+        "SQLSERVER_PASSWORD": "safe@secret#1",
+        "SQLSERVER_DATABASE": "MMA_Business_Prosperity_Weapon",
+    })
+    parsed = make_url(url)
+    assert parsed.drivername == "mssql+pymssql"
+    assert parsed.username == "app user"
+    assert parsed.password == "safe@secret#1"
+    assert parsed.host == "sql.example.com"
+    assert parsed.database == "MMA_Business_Prosperity_Weapon"
+    assert parsed.query["encryption"] == "require"
+
+
+def test_partial_sqlserver_production_config_fails_closed():
+    from app.models.database import _resolve_database_url
+
+    try:
+        _resolve_database_url({"ENVIRONMENT": "production", "SQLSERVER_HOST": "sql.example.com"})
+    except RuntimeError as exc:
+        assert "SQLSERVER_USER" in str(exc)
+        assert "SQLSERVER_PASSWORD" in str(exc)
+    else:
+        raise AssertionError("Production accepted partial SQL Server configuration")
+
+    try:
+        _resolve_database_url({
+            "ENVIRONMENT": "production",
+            "SQLSERVER_HOST": "sql.example.com",
+            "SQLSERVER_USER": "app",
+            "SQLSERVER_PASSWORD": "secret",
+            "SQLSERVER_ENCRYPTION": "off",
+        })
+    except RuntimeError as exc:
+        assert "SQLSERVER_ENCRYPTION=require" in str(exc)
+    else:
+        raise AssertionError("Production accepted an unencrypted SQL Server connection")

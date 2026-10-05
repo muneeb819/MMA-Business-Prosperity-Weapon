@@ -9,7 +9,7 @@ import { GlassCard, GlassCardContent, GlassCardHeader } from "@/components/glass
 import { AnimatedCounter } from "@/components/animated-counter"
 import { Shield, Users, Database, Activity, Settings, RefreshCw } from "lucide-react"
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+const API_BASE = "" // Use same-origin relative /api routes; never call localhost from the browser.
 
 interface SystemStats {
   total_leads: number; total_proposals: number; total_users: number

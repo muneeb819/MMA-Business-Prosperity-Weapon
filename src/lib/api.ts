@@ -1,10 +1,10 @@
 import type { Lead, Proposal, CRMCompany, Notification, AnalyticsData, Connector } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE = ""; // Use same-origin relative /api routes; Next/Vercel proxies them server-side.
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   let token: string | null = null;
-  try { token = JSON.parse(localStorage.getItem("mbpw_auth") || "null")?.token; } catch {}
+  try { token = localStorage.getItem("mbpw_token"); } catch {}
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...authHeaders, ...options?.headers },

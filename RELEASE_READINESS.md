@@ -1,40 +1,43 @@
-# Release baseline & staging readiness
+# Release readiness: SQL Server target
 
 **Review date:** 2026-10-05
+**Target database:** `MMA_Business_Prosperity_Weapon` (Microsoft SQL Server)
+**Working branch:** `arena/01a10c59-mma-business-prosperity-weapon`
+**Base revision at start of this change:** `e97cb0a`
 
-**Target:** a non-production Vercel Preview deployment of the Arena session branch; production is not the target for this work.
+## Current decision
 
-## Baseline recorded
+**Code checks pass, but this is not yet verified live-ready.** The app now has SQL Server support and refuses unsafe production database/secret configuration. The database name alone does not identify a server that Vercel can reach. No SQL Server host, SQL-authentication credentials, Vercel project access, or production deployment access were available in this workspace, so no real database connection, migration, or deployed login/API check has been performed.
 
-- **Working branch:** `arena/01a10c59-mma-business-prosperity-weapon`
-- **Checked-out commit:** `294d9582773f799fd35443e305bb5f90496a6672`
-- **Remote comparison:** `origin/main` resolved to the same commit during this review (`git ls-remote`, 2026-10-05).
-- **Clone note:** this checkout is shallow. The result confirms the GitHub `main` tip at review time, not the existence of unseen history or any separate unpublished “complete updated” package.
-- **Target deploy:** Vercel Preview only, after local checks pass and staging database/environment values are provided.
+Do not promote this change to production until the database endpoint is reachable from the deployment, the initial migration is applied to the intended database, and the live health/authenticated-data checks pass. The initial migration expects an empty application schema; inspect/back up first if the database already contains tables or data.
 
-## Deployment verification state
+## Completed in this change
 
-- The repository README points to `https://full-repo.vercel.app`; it returned Vercel `404: DEPLOYMENT_NOT_FOUND` when checked on 2026-10-05.
-- No Vercel CLI, linked `.vercel` project, or deployment credential/environment names were available in this workspace during the review.
-- No managed PostgreSQL URL was available. A production deployment must not be attempted until a durable database is linked and migrations have been run.
-- The code now rejects production startup without a PostgreSQL URL. This is intentionally fail-closed; it does not create or configure a managed database.
+- Added `mssql+pymssql` support and configurable `SQLSERVER_*` environment settings, defaulting to database `MMA_Business_Prosperity_Weapon`, port `1433`, and required TLS.
+- Made application schema strings bounded Unicode types and long text SQL Server-compatible; updated report date grouping for MSSQL.
+- Updated Alembic URL resolution and regenerated the initial schema migration for the current metadata.
+- Made production reject SQLite, asynchronous/unsupported PostgreSQL drivers, missing SQL Server credentials, and SQL Server URLs without required TLS.
+- Enforced a unique production `JWT_SECRET` of at least 32 characters.
+- Switched browser API calls to same-origin `/api` paths, added server-side Next.js proxy rewrites for local/Docker use, and aligned API requests with the token saved by the login flow.
+- Added offline SQL Server migration compilation to CI and documented secure setup, migration, backup, and restore gates.
 
-## Local verification (2026-10-05)
+## Verification performed locally
 
-- `npm run lint` — passed with no errors or warnings.
-- `npx tsc --noEmit` — passed.
-- `npm run build` — passed on Next.js 16.3.8, with Inter loaded from the repository rather than Google Fonts.
-- `npm audit --omit=dev` — zero production dependency vulnerabilities.
-- Full `npm audit` still reports five high-severity findings in the development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`). The registry's latest `braces` release is 3.0.3, which remains in the advisory range; npm only offered a breaking downgrade of `eslint-config-next` to 14.2.35. That downgrade and an out-of-range override were not applied. Recheck the lint toolchain when an upstream fix is available.
-- Backend release tests — 9 passed. SQLite Alembic upgrade/check/downgrade/re-upgrade passed locally; this does not verify PostgreSQL behavior.
-- GitHub Actions CI passed on code commit `95e74ed` (Frontend checks and Backend checks): [run 37325590525](https://github.com/muneeb819/MMA-Business-Prosperity-Weapon/actions/runs/37325590525). The workflow runs on Ubuntu 24.04 with Node 24-compatible actions, audits production dependencies, and fails on critical advisories; the known high findings are limited to the lint toolchain and are documented above.
+- Backend regression suite: **12 passed**.
+- SQLite Alembic: clean upgrade, schema check, downgrade, re-upgrade, and second schema check passed.
+- SQL Server: Alembic rendered the migration into MSSQL DDL without a live connection; generated DDL included the expected tables and `NVARCHAR(max)` fields. SQLAlchemy loaded the `mssql+pymssql` dialect. **No server connection was made.**
+- Frontend: ESLint, TypeScript check, and Next.js production build passed.
+- `npm audit --omit=dev`: **0 production dependency vulnerabilities**.
+- `npm audit --audit-level=critical`: passed. Full audit still reports **5 high-severity findings** in the development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`); the suggested automatic fix is a breaking downgrade, so it was not applied.
 
-## Release gates
+These checks verify code and offline schema rendering only. They do not verify SQL Server permissions/version/network/TLS behavior, production data migration, Vercel environment settings, or backup restore.
 
-1. Configure Vercel Preview environment variables using the deployment provider's secret store (at minimum `ENVIRONMENT=production` for a production-like API, `DATABASE_URL`, `JWT_SECRET`, `CRON_SECRET`, and `ALLOWED_ORIGINS`). Add OpenAI, SMTP, and source credentials only for explicitly enabled features.
-2. Run `cd backend && alembic upgrade head` against the Preview database before serving application traffic.
-3. Verify `/health`, registration/login, authenticated leads API, and the automated test/CI checks.
-4. Verify a controlled source-sync → lead persistence → proposal draft → compliance-gated email sandbox flow. Do not send unsolicited production email as a smoke test.
-5. Promote only after the Preview environment passes and the owner confirms the release.
+## Required release gates
 
-No production deploy or real outbound email was performed as part of this code change.
+1. In Vercel's encrypted environment settings, configure `SQLSERVER_HOST`, `SQLSERVER_USER`, `SQLSERVER_PASSWORD`, `SQLSERVER_DATABASE=MMA_Business_Prosperity_Weapon`, `SQLSERVER_PORT` (normally `1433`), and `SQLSERVER_ENCRYPTION=require`; or configure a full `mssql+pymssql` `DATABASE_URL` with `encryption=require`. Also set a strong `JWT_SECRET` (32+ characters) and `CRON_SECRET`. **Do not send passwords in chat.** SQL Server needs SQL authentication; SSMS Windows/Integrated Authentication will not work in the Linux function.
+2. Ensure the SQL Server host is resolvable and reachable from the deployed function over TCP/TLS. Do not expose the database broadly to the internet. Use a restricted runtime account and a separately scoped migration account where possible.
+3. Confirm the target database is empty or safely baselined, then run `cd backend && alembic -c alembic.ini upgrade head` using the migration account from a secure release environment. Verify with `alembic check` and a backup/restore test to a separate staging database.
+4. Deploy to Vercel Preview and verify `/health`, registration/login, an authenticated leads read/write, and persistence after a fresh function invocation. Verify cron authorization and email only against a sandbox; do not send unsolicited production email as a smoke test.
+5. Promote to production only after the Preview checks pass and the owner confirms the deployment.
+
+The app is not marked live-ready until gates 1–4 are verified against the actual SQL Server and deployment.

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import Date, cast, func
 from datetime import datetime, timedelta
 from ..models.database import get_db
 from ..models.schema import Lead, Proposal, Company, Contact, Notification, AgentLog
@@ -41,8 +41,15 @@ def performance_report(
     current_user: UserModel = Depends(get_current_user),
 ):
     cutoff = datetime.utcnow() - timedelta(days=days)
-    leads_by_day = db.query(func.date(Lead.found_at), func.count(Lead.id)).filter(Lead.found_at >= cutoff).group_by(func.date(Lead.found_at)).all()
-    proposals_by_day = db.query(func.date(Proposal.created_at), func.count(Proposal.id)).filter(Proposal.created_at >= cutoff).group_by(func.date(Proposal.created_at)).all()
+    if db.bind is not None and db.bind.dialect.name == "mssql":
+        lead_day = cast(Lead.found_at, Date)
+        proposal_day = cast(Proposal.created_at, Date)
+    else:
+        # SQLite and PostgreSQL both provide date(timestamp); SQL Server needs CAST.
+        lead_day = func.date(Lead.found_at)
+        proposal_day = func.date(Proposal.created_at)
+    leads_by_day = db.query(lead_day, func.count(Lead.id)).filter(Lead.found_at >= cutoff).group_by(lead_day).all()
+    proposals_by_day = db.query(proposal_day, func.count(Proposal.id)).filter(Proposal.created_at >= cutoff).group_by(proposal_day).all()
     agent_logs = db.query(AgentLog).filter(AgentLog.timestamp >= cutoff).count()
     return {
         "leads_by_day": [{"date": str(d), "count": c} for d, c in leads_by_day],

@@ -9,12 +9,14 @@ from app.routers.auth import get_current_user
 from app.middleware.error_handler import ErrorHandlerMiddleware
 
 # --- Fail fast on insecure/missing secrets in production ---------------------
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 _DEFAULT_JWT_SECRET = "mbpw-dev-secret-change-in-prod"
-if ENVIRONMENT == "production" and os.getenv("JWT_SECRET", _DEFAULT_JWT_SECRET) == _DEFAULT_JWT_SECRET:
+_JWT_SECRET = os.getenv("JWT_SECRET", _DEFAULT_JWT_SECRET)
+if is_production() and (
+    _JWT_SECRET == _DEFAULT_JWT_SECRET or len(_JWT_SECRET.strip()) < 32
+):
     raise RuntimeError(
-        "JWT_SECRET must be set to a strong, unique value in production. "
-        "Refusing to start with the default development secret."
+        "JWT_SECRET must be a strong, unique value of at least 32 characters in production. "
+        "Refusing to start with a missing or weak signing secret."
     )
 
 app = FastAPI(

@@ -25,7 +25,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"
+const API_BASE = "" // Use same-origin relative /api routes; never call localhost from the browser.
 const SESSION_TIMEOUT_MS = 8 * 60 * 60 * 1000
 
 async function fetchAuth(url: string, options?: RequestInit): Promise<LegacyLooseValue> {
