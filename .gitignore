@@ -56,3 +56,6 @@ __pycache__/
 mbpw.db
 *.db
 
+
+# Visual Studio workspace files
+.vs/
