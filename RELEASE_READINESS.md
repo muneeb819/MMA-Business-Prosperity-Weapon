@@ -26,9 +26,11 @@ Do not promote this change to production until the database endpoint is reachabl
 - Backend regression suite: **12 passed**.
 - SQLite Alembic: clean upgrade, schema check, downgrade, re-upgrade, and second schema check passed.
 - SQL Server: Alembic rendered the migration into MSSQL DDL without a live connection; generated DDL included the expected tables and `NVARCHAR(max)` fields. SQLAlchemy loaded the `mssql+pymssql` dialect. **No server connection was made.**
-- Frontend: ESLint, TypeScript check, and Next.js production build passed.
+- Frontend: ESLint, TypeScript check, and Next.js production build passed. A build with `BACKEND_URL=http://backend:8000` also confirmed the container `/api` and `/health` proxy rewrites.
+- Local same-origin proxy smoke test with disposable SQLite: `/health`, registration, and authenticated leads read all returned 200.
 - `npm audit --omit=dev`: **0 production dependency vulnerabilities**.
 - `npm audit --audit-level=critical`: passed. Full audit still reports **5 high-severity findings** in the development-only ESLint dependency chain (`eslint-config-next` → `@next/eslint-plugin-next` → `fast-glob` → `micromatch` → `braces`); the suggested automatic fix is a breaking downgrade, so it was not applied.
+- GitHub Actions CI passed on commit `43a405a`: [run 37331136514](https://github.com/muneeb819/MMA-Business-Prosperity-Weapon/actions/runs/37331136514) (Frontend checks and Backend checks, including MSSQL offline migration compilation).
 
 These checks verify code and offline schema rendering only. They do not verify SQL Server permissions/version/network/TLS behavior, production data migration, Vercel environment settings, or backup restore.
 
