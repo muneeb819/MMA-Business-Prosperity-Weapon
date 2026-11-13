@@ -79,6 +79,8 @@ class AIService:
             return await self._chat_anthropic(cfg, system, user, temperature)
         if protocol == llm_providers.PROTOCOL_GEMINI:
             return await self._chat_gemini(cfg, system, user, temperature)
+        if protocol == llm_providers.PROTOCOL_DEEPGRAM:
+            return await self._chat_deepgram(cfg, system, user, temperature)
         return await self._chat_openai_compatible(cfg, system, user, temperature)
 
     def _openai_client(self, cfg: Dict[str, Any]):
@@ -169,6 +171,58 @@ class AIService:
         text = "".join(p.get("text", "") for p in parts)
         if not text:
             raise RuntimeError(f"Empty Gemini response: {str(data)[:300]}")
+        return text
+
+    async def _chat_deepgram(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float
+    ) -> str:
+        """Deepgram's POST /v1/think — Chat Completions dialect, Token auth.
+
+        Strict request contract (Early Access): only model/messages/temperature
+        (plus tools/stream/reasoning_effort/mip_opt_out) are accepted —
+        max_tokens and friends are rejected with a 400.
+        """
+        import httpx
+
+        base = (cfg.get("base_url") or "https://agent.deepgram.com/v1").rstrip("/")
+        async with httpx.AsyncClient(timeout=90) as http:
+            resp = await http.post(
+                f"{base}/think",
+                headers={
+                    "Authorization": f"Token {cfg['api_key']}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": cfg["model"],
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    "temperature": temperature,
+                },
+            )
+            if resp.status_code >= 400:
+                body: Dict[str, Any] = {}
+                try:
+                    body = resp.json()
+                except Exception:  # noqa: BLE001 - non-JSON error page
+                    pass
+                err = body.get("error")
+                err_detail = err.get("message") if isinstance(err, dict) else err
+                msg = (
+                    body.get("err_msg")
+                    or body.get("message")
+                    or err_detail
+                    or resp.text[:300]
+                )
+                raise RuntimeError(f"Deepgram error {resp.status_code}: {msg}")
+            data = resp.json()
+        choices = data.get("choices") or []
+        if not choices:
+            raise RuntimeError(f"Empty Deepgram response: {str(data)[:300]}")
+        text = (choices[0].get("message") or {}).get("content") or ""
+        if not text:
+            raise RuntimeError(f"Empty Deepgram reply: {str(data)[:300]}")
         return text
 
     async def _chat_json(self, system: str, user: str, temperature: float = 0.3) -> dict:

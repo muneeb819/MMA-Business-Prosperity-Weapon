@@ -188,6 +188,8 @@ def update_llm_settings(payload: LLMSettingsUpdate):
 def _friendly_llm_error(exc: Exception) -> str:
     text = str(exc)
     lowered = text.lower()
+    if "403" in text or "forbidden" in lowered or "early access" in lowered:
+        return "not_authorized"
     if "api key" in lowered or "unauthorized" in lowered or "401" in text or "authentication" in lowered:
         return "invalid_key"
     if "429" in text or "rate limit" in lowered or "quota" in lowered:

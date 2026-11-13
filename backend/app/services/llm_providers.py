@@ -39,6 +39,7 @@ from typing import Any, Dict, List, Optional
 PROTOCOL_OPENAI = "openai"
 PROTOCOL_ANTHROPIC = "anthropic"
 PROTOCOL_GEMINI = "gemini"
+PROTOCOL_DEEPGRAM = "deepgram_think"
 
 # --- Provider registry -------------------------------------------------------
 # ``models`` is a convenience list for the UI dropdown; every provider also
@@ -116,6 +117,19 @@ PROVIDERS: Dict[str, Dict[str, Any]] = {
         "requires_key": True,
         "site": "https://deepinfra.com/dashboard",
         "blurb": "200+ open models, cheap inference",
+    },
+    "deepgram": {
+        "id": "deepgram",
+        "label": "Deepgram LLM",
+        "emoji": "🎙️",
+        "protocol": PROTOCOL_DEEPGRAM,
+        "base_url": "https://agent.deepgram.com/v1",
+        "env_keys": ["DEEPGRAM_API_KEY"],
+        "default_model": "think-fast",
+        "models": ["think-fast", "phonellm-mini-alpha-2-fp8"],
+        "requires_key": True,
+        "site": "https://console.deepgram.com",
+        "blurb": "One Deepgram key · Think-Fast · free in Early Access",
     },
     "xai": {
         "id": "xai",

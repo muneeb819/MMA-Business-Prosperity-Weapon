@@ -400,11 +400,13 @@ export default function SettingsPage() {
                             ? "Network unreachable from server"
                             : llmTest.error === "invalid_key"
                               ? "Invalid API key"
-                              : llmTest.error === "quota_exceeded"
-                                ? "Rate limit / quota exceeded"
-                                : llmTest.error === "model_not_found"
-                                  ? "Model not found — check the model name"
-                                  : "Test failed"}
+                              : llmTest.error === "not_authorized"
+                                ? "Not authorized — check plan / Early Access enrollment"
+                                : llmTest.error === "quota_exceeded"
+                                  ? "Rate limit / quota exceeded"
+                                  : llmTest.error === "model_not_found"
+                                    ? "Model not found — check the model name"
+                                    : "Test failed"}
                         {llmTest.message ? ` — ${llmTest.message}` : ""}
                       </>
                     )}
