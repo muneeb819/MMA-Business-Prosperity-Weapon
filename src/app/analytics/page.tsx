@@ -106,12 +106,14 @@ export default function AnalyticsPage() {
   });
 
   const kpis = useMemo(() => [
-    { label: "Total Leads", value: formatNumber(data.totalLeads), trend: "+12.5%", up: true, icon: Target, color: "text-indigo-400", glow: "bg-indigo-500/10" },
-    { label: "Total Proposals", value: String(data.totalProposals), trend: "+8.2%", up: true, icon: FileText, color: "text-rose-400", glow: "bg-rose-500/10" },
-    { label: "Win Rate", value: `${data.winRate}%`, trend: "+3.1%", up: true, icon: TrendingUp, color: "text-emerald-400", glow: "bg-emerald-500/10" },
-    { label: "Total Revenue", value: formatCurrency(data.totalRevenue), trend: "+18.7%", up: true, icon: DollarSign, color: "text-amber-400", glow: "bg-amber-500/10" },
-    { label: "Avg Deal Size", value: formatCurrency(data.avgDealSize), trend: "-2.3%", up: false, icon: Briefcase, color: "text-rose-400", glow: "bg-rose-500/10" },
-    { label: "Conversion Rate", value: `${data.conversionRate}%`, trend: "+5.4%", up: true, icon: Zap, color: "text-indigo-400", glow: "bg-indigo-500/10" },
+    // No fabricated trend chips: period-over-period change is shown only when the
+    // backend provides real prior-period data (removed hardcoded +12.5% etc.).
+    { label: "Total Leads", value: formatNumber(data.totalLeads), icon: Target, color: "text-indigo-400", glow: "bg-indigo-500/10" },
+    { label: "Total Proposals", value: String(data.totalProposals), icon: FileText, color: "text-rose-400", glow: "bg-rose-500/10" },
+    { label: "Win Rate", value: `${data.winRate}%`, icon: TrendingUp, color: "text-emerald-400", glow: "bg-emerald-500/10" },
+    { label: "Total Revenue", value: formatCurrency(data.totalRevenue), icon: DollarSign, color: "text-amber-400", glow: "bg-amber-500/10" },
+    { label: "Avg Deal Size", value: formatCurrency(data.avgDealSize), icon: Briefcase, color: "text-rose-400", glow: "bg-rose-500/10" },
+    { label: "Conversion Rate", value: `${data.conversionRate}%`, icon: Zap, color: "text-indigo-400", glow: "bg-indigo-500/10" },
   ], [data]);
 
   const handleExportCSV = useCallback(() => {

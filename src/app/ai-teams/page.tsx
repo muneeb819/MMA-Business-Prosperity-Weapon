@@ -232,7 +232,7 @@ export default function AITeamsPage() {
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-        <p className="text-zinc-400">Failed to load AI Teams. Backend may be starting up.</p>
+        <p className="text-zinc-400">Couldn&apos;t load AI teams — sign in and retry. (If you&apos;re signed in, the backend may still be starting up.)</p>
         <Button onClick={fetchData} variant="outline" className="mt-4 border-white/10 text-zinc-400">
           <RefreshCw className="w-4 h-4 mr-2" /> Retry
         </Button>
