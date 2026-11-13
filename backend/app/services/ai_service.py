@@ -11,25 +11,93 @@ try:
 except ImportError:
     AsyncOpenAI = None
 
+from app.services import llm_providers
+
 
 class AIService:
-    """Central AI service orchestrating all AI operations via OpenAI."""
+    """Central AI service orchestrating all AI operations.
+
+    The model provider is resolved at call time — Settings → AI Model Provider
+    selects between OpenAI, Anthropic Claude, Google Gemini, DeepSeek, xAI,
+    Groq, Mistral, OpenRouter, Together, Ollama, LM Studio, or any custom
+    OpenAI-compatible endpoint, with environment variables as fallback.
+    """
 
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-        self.client = None
-        if AsyncOpenAI and self.api_key:
-            self.client = AsyncOpenAI(api_key=self.api_key)
+        self._openai_clients: Dict[tuple, Any] = {}
+
+    # --- provider resolution ----------------------------------------------
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        return llm_providers.resolve_active()
+
+    @property
+    def provider(self) -> str:
+        return self.config.get("provider", "openai")
+
+    @property
+    def api_key(self) -> str:
+        return self.config.get("api_key", "")
+
+    @property
+    def model(self) -> str:
+        return self.config.get("model", "")
+
+    @property
+    def client(self):
+        """Back-compat accessor: the OpenAI-protocol client, else None."""
+        cfg = self.config
+        if not self._is_available() or cfg.get("protocol") != llm_providers.PROTOCOL_OPENAI:
+            return None
+        return self._openai_client(cfg)
 
     def _is_available(self) -> bool:
-        return self.client is not None
+        return self._configured(self.config)
+
+    @staticmethod
+    def _configured(cfg: Dict[str, Any]) -> bool:
+        if cfg.get("requires_key", True):
+            return bool(cfg.get("api_key"))
+        return True  # local / keyless providers (Ollama, LM Studio, custom)
+
+    # --- chat dispatch -----------------------------------------------------
 
     async def _chat(self, system: str, user: str, temperature: float = 0.7) -> str:
-        if not self._is_available():
-            raise RuntimeError("OpenAI API key not configured")
-        response = await self.client.chat.completions.create(
-            model=self.model,
+        return await self._chat_with(self.config, system, user, temperature)
+
+    async def _chat_with(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float = 0.7
+    ) -> str:
+        if not self._configured(cfg):
+            raise RuntimeError(
+                f"LLM provider '{cfg.get('provider')}' is not configured — "
+                "add an API key in Settings → AI Model Provider"
+            )
+        protocol = cfg.get("protocol", llm_providers.PROTOCOL_OPENAI)
+        if protocol == llm_providers.PROTOCOL_ANTHROPIC:
+            return await self._chat_anthropic(cfg, system, user, temperature)
+        if protocol == llm_providers.PROTOCOL_GEMINI:
+            return await self._chat_gemini(cfg, system, user, temperature)
+        return await self._chat_openai_compatible(cfg, system, user, temperature)
+
+    def _openai_client(self, cfg: Dict[str, Any]):
+        if AsyncOpenAI is None:
+            raise RuntimeError("openai package is not installed")
+        key = cfg.get("api_key") or "not-needed"
+        cache_key = (cfg.get("base_url") or "", key)
+        client = self._openai_clients.get(cache_key)
+        if client is None:
+            client = AsyncOpenAI(api_key=key, base_url=cfg.get("base_url") or None)
+            self._openai_clients[cache_key] = client
+        return client
+
+    async def _chat_openai_compatible(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float
+    ) -> str:
+        client = self._openai_client(cfg)
+        response = await client.chat.completions.create(
+            model=cfg["model"],
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
@@ -38,6 +106,70 @@ class AIService:
             max_tokens=2048,
         )
         return response.choices[0].message.content
+
+    async def _chat_anthropic(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float
+    ) -> str:
+        import httpx
+
+        base = (cfg.get("base_url") or "https://api.anthropic.com/v1").rstrip("/")
+        async with httpx.AsyncClient(timeout=90) as http:
+            resp = await http.post(
+                f"{base}/messages",
+                headers={
+                    "x-api-key": cfg["api_key"],
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": cfg["model"],
+                    "max_tokens": 2048,
+                    "system": system,
+                    "messages": [{"role": "user", "content": user}],
+                    "temperature": temperature,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        parts = data.get("content") or []
+        text = "".join(p.get("text", "") for p in parts if p.get("type") == "text")
+        if not text:
+            raise RuntimeError(f"Empty Anthropic response: {str(data)[:300]}")
+        return text
+
+    async def _chat_gemini(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float
+    ) -> str:
+        import httpx
+        from urllib.parse import quote
+
+        base = (
+            cfg.get("base_url") or "https://generativelanguage.googleapis.com/v1beta"
+        ).rstrip("/")
+        url = f"{base}/models/{quote(cfg['model'], safe='')}:generateContent"
+        async with httpx.AsyncClient(timeout=90) as http:
+            resp = await http.post(
+                url,
+                params={"key": cfg["api_key"]},
+                json={
+                    "system_instruction": {"parts": [{"text": system}]},
+                    "contents": [{"role": "user", "parts": [{"text": user}]}],
+                    "generationConfig": {
+                        "temperature": temperature,
+                        "maxOutputTokens": 2048,
+                    },
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            raise RuntimeError(f"Empty Gemini response: {str(data)[:300]}")
+        parts = (candidates[0].get("content") or {}).get("parts") or []
+        text = "".join(p.get("text", "") for p in parts)
+        if not text:
+            raise RuntimeError(f"Empty Gemini response: {str(data)[:300]}")
+        return text
 
     async def _chat_json(self, system: str, user: str, temperature: float = 0.3) -> dict:
         raw = await self._chat(system, user, temperature)

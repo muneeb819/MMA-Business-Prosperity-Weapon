@@ -11,7 +11,34 @@ import { useTheme, THEMES } from "@/lib/theme-context"
 import { useAuth } from "@/lib/auth-context"
 import { api } from "@/lib/api"
 import { getErrorMessage } from "@/lib/error-message"
-import { Sun, Moon, Shield, Bell, User, Database, Palette, Users, Key, Save, CheckCircle, LogOut, Trash2, Check } from "lucide-react"
+import { Sun, Moon, Shield, Bell, User, Database, Palette, Users, Key, Save, CheckCircle, LogOut, Trash2, Check, Bot, ExternalLink } from "lucide-react"
+
+type LLMProviderInfo = {
+  id: string
+  label: string
+  emoji: string
+  protocol: string
+  blurb: string
+  site: string
+  models: string[]
+  defaultModel: string
+  model: string
+  baseUrl: string
+  defaultBaseUrl: string
+  requiresKey: boolean
+  keySet: boolean
+  keyMasked: string
+  keySource: string
+  active: boolean
+}
+
+type LLMSettings = {
+  active: string
+  providers: LLMProviderInfo[]
+  configured: boolean
+  model: string
+  label: string
+}
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -29,6 +56,19 @@ export default function SettingsPage() {
   const [testResult, setTestResult] = useState<LegacyLooseValue>(null)
   const [testLoading, setTestLoading] = useState(false)
 
+  // LLM provider (Settings → AI Model Provider)
+  const [llm, setLlm] = useState<LLMSettings | null>(null)
+  const [selProvider, setSelProvider] = useState("openai")
+  const [llmKey, setLlmKey] = useState("")
+  const [llmModel, setLlmModel] = useState("")
+  const [llmBase, setLlmBase] = useState("")
+  const [llmSaving, setLlmSaving] = useState(false)
+  const [llmSaved, setLlmSaved] = useState(false)
+  const [llmTesting, setLlmTesting] = useState(false)
+  const [llmTest, setLlmTest] = useState<LegacyLooseValue>(null)
+
+  const selInfo = llm?.providers?.find((p) => p.id === selProvider)
+
   const handleSave = () => {
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -41,7 +81,67 @@ export default function SettingsPage() {
 
   useEffect(() => {
     api.settings.get().then((d) => setProv(d || {})).catch(() => {})
+    api.settings
+      .llmGet()
+      .then((d: LLMSettings) => {
+        if (!d) return
+        setLlm(d)
+        const active = d.providers?.find((p) => p.id === d.active)
+        if (active) {
+          setSelProvider(active.id)
+          setLlmModel(active.model || "")
+          setLlmBase(active.baseUrl || "")
+        }
+      })
+      .catch(() => {})
   }, [])
+
+  const selectLLMProvider = (p: LLMProviderInfo) => {
+    setSelProvider(p.id)
+    setLlmKey("")
+    setLlmModel(p.model || "")
+    setLlmBase(p.baseUrl || "")
+    setLlmTest(null)
+  }
+
+  const saveLLM = async () => {
+    setLlmSaving(true)
+    setLlmTest(null)
+    try {
+      const d = await api.settings.llmUpdate({
+        provider: selProvider,
+        api_key: llmKey || undefined,
+        model: llmModel || undefined,
+        base_url: llmBase || undefined,
+      })
+      setLlm(d as LLMSettings)
+      setLlmSaved(true)
+      setLlmKey("")
+      setTimeout(() => setLlmSaved(false), 2000)
+    } catch (e: unknown) {
+      setLlmTest({ ok: false, error: getErrorMessage(e, "Save failed") })
+    } finally {
+      setLlmSaving(false)
+    }
+  }
+
+  const testLLM = async () => {
+    setLlmTesting(true)
+    setLlmTest(null)
+    try {
+      const d = await api.settings.llmTest({
+        provider: selProvider,
+        api_key: llmKey || undefined,
+        model: llmModel || undefined,
+        base_url: llmBase || undefined,
+      })
+      setLlmTest(d)
+    } catch (e: unknown) {
+      setLlmTest({ ok: false, error: getErrorMessage(e, "Test failed") })
+    } finally {
+      setLlmTesting(false)
+    }
+  }
 
   const saveProvider = async () => {
     setProvLoading(true)
@@ -123,6 +223,193 @@ export default function SettingsPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* AI Model Provider */}
+            <div className="space-y-4 animate-fade-in-up" style={{ animationDelay: "75ms" }}>
+              <h2 className="text-sm font-semibold flex items-center gap-2"><Bot className="w-4 h-4 text-primary" /> AI Model Provider</h2>
+              <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Choose which LLM powers lead analysis, proposal generation, AI search and outreach copy.
+                  Paste the API key for any provider below — switch vendors anytime, no code changes needed.
+                </p>
+
+                <div
+                  className={`text-xs rounded-xl px-3 py-2 border ${
+                    llm?.configured
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      : "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                  }`}
+                >
+                  {llm?.configured ? (
+                    <>
+                      Active: <span className="font-medium">{llm.label}</span> · {llm.model} — real AI responses enabled
+                    </>
+                  ) : (
+                    <>No API key yet — running in template fallback mode (deterministic templates, no LLM).</>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {(llm?.providers || []).map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => selectLLMProvider(p)}
+                      className={`relative text-left p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                        selProvider === p.id
+                          ? "border-primary bg-primary/5 shadow-md shadow-primary/5"
+                          : "border-border hover:border-primary/30 hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg leading-none">{p.emoji}</span>
+                        <span className="text-xs font-medium truncate">{p.label}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1 truncate">{p.blurb}</p>
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {p.active && <span className="text-[10px] text-emerald-400 font-medium">● active</span>}
+                        {p.keySet ? (
+                          <span className="text-[10px] text-zinc-400">key …{p.keyMasked.slice(-4)}</span>
+                        ) : p.requiresKey ? (
+                          <span className="text-[10px] text-zinc-500">no key</span>
+                        ) : (
+                          <span className="text-[10px] text-zinc-500">no key needed</span>
+                        )}
+                      </div>
+                      {selProvider === p.id && (
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                      API Key{" "}
+                      {selInfo?.keySet ? (
+                        <span className="text-emerald-400 ml-1">
+                          ● {selInfo.keySource === "env" ? "from env" : "saved"} (…{selInfo.keyMasked.slice(-4)})
+                        </span>
+                      ) : (
+                        <span className="text-zinc-500 ml-1">— not set</span>
+                      )}
+                    </label>
+                    <Input
+                      type="password"
+                      value={llmKey}
+                      onChange={(e) => setLlmKey(e.target.value)}
+                      placeholder={
+                        selInfo?.requiresKey
+                          ? selInfo.keySet
+                            ? "Enter new key to replace"
+                            : `${selProvider.toUpperCase()}_API_KEY`
+                          : "Optional for local providers"
+                      }
+                      className="bg-muted/30 border-border h-10 rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Model</label>
+                    <Input
+                      list={`llm-models-${selProvider}`}
+                      value={llmModel}
+                      onChange={(e) => setLlmModel(e.target.value)}
+                      placeholder={selInfo?.defaultModel || "model name"}
+                      className="bg-muted/30 border-border h-10 rounded-xl"
+                    />
+                    <datalist id={`llm-models-${selProvider}`}>
+                      {(selInfo?.models || []).map((m) => (
+                        <option key={m} value={m} />
+                      ))}
+                    </datalist>
+                  </div>
+                  {(selProvider === "custom" || selProvider === "ollama" || selProvider === "lmstudio") && (
+                    <div className="sm:col-span-2">
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Base URL</label>
+                      <Input
+                        value={llmBase}
+                        onChange={(e) => setLlmBase(e.target.value)}
+                        placeholder={selInfo?.defaultBaseUrl || "https://your-gateway.example.com/v1"}
+                        className="bg-muted/30 border-border h-10 rounded-xl"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Button
+                    onClick={saveLLM}
+                    size="sm"
+                    disabled={llmSaving}
+                    className="bg-gradient-to-r from-primary to-rose-600 hover:from-primary/90 hover:to-rose-500 text-white shadow-lg shadow-primary/20"
+                  >
+                    {llmSaved ? (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2 text-emerald-300" /> Saved
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" /> {llmSaving ? "Saving…" : "Save & Activate"}
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={testLLM}
+                    size="sm"
+                    variant="outline"
+                    disabled={llmTesting}
+                    className="border-border hover:bg-muted/50"
+                  >
+                    {llmTesting ? "Testing…" : "Test connection"}
+                  </Button>
+                  {selInfo?.site && (
+                    <a
+                      href={selInfo.site}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      Get API key <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  <span className="text-xs text-muted-foreground">Keys are stored server-side and never shown in full.</span>
+                </div>
+
+                {llmTest && (
+                  <div
+                    className={`text-xs rounded-xl px-3 py-2 border ${
+                      llmTest.ok
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-red-500/10 border-red-500/20 text-red-400"
+                    }`}
+                  >
+                    {llmTest.ok ? (
+                      <>
+                        ✓ {llmTest.label} · {llmTest.model} responded in {llmTest.latency_ms}ms — “{llmTest.reply}”
+                      </>
+                    ) : (
+                      <>
+                        ✗{" "}
+                        {llmTest.error === "no_key"
+                          ? "No API key set for this provider"
+                          : llmTest.error === "network_unreachable"
+                            ? "Network unreachable from server"
+                            : llmTest.error === "invalid_key"
+                              ? "Invalid API key"
+                              : llmTest.error === "quota_exceeded"
+                                ? "Rate limit / quota exceeded"
+                                : llmTest.error === "model_not_found"
+                                  ? "Model not found — check the model name"
+                                  : "Test failed"}
+                        {llmTest.message ? ` — ${llmTest.message}` : ""}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
