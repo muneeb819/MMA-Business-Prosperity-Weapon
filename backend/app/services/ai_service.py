@@ -154,7 +154,11 @@ class AIService:
         async with httpx.AsyncClient(timeout=90) as http:
             resp = await http.post(
                 url,
+                # ?key= works for legacy AIza keys; AQ. auth keys (issued since
+                # May 2026) accept it too on the native endpoint, and the header
+                # is the documented path — send both for maximum compatibility.
                 params={"key": cfg["api_key"]},
+                headers={"x-goog-api-key": cfg["api_key"]},
                 json={
                     "system_instruction": {"parts": [{"text": system}]},
                     "contents": [{"role": "user", "parts": [{"text": user}]}],
