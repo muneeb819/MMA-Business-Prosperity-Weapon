@@ -176,9 +176,9 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Success Probability", value: selectedLead.successProbability || 0, color: "emerald", icon: <Target className="w-4 h-4" /> },
-                      { label: "Difficulty Score", value: selectedLead.difficulty || 50, color: "amber", icon: <BarChart3 className="w-4 h-4" /> },
-                      { label: "Risk Level", value: selectedLead.riskLevel === "low" ? 20 : selectedLead.riskLevel === "medium" ? 50 : selectedLead.riskLevel === "high" ? 75 : 90, color: "red", icon: <AlertTriangle className="w-4 h-4" /> },
+                      { label: "Success Probability", value: selectedLead.analyzedAt ? (selectedLead.successProbability || 0) : null, color: "emerald", icon: <Target className="w-4 h-4" /> },
+                      { label: "Difficulty Score", value: selectedLead.analyzedAt ? (selectedLead.difficulty || 50) : null, color: "amber", icon: <BarChart3 className="w-4 h-4" /> },
+                      { label: "Risk Level", value: selectedLead.analyzedAt ? (selectedLead.riskLevel === "low" ? 20 : selectedLead.riskLevel === "medium" ? 50 : selectedLead.riskLevel === "high" ? 75 : 90) : null, color: "red", icon: <AlertTriangle className="w-4 h-4" /> },
                     ].map((score, i) => {
                       const scoreColorClass: Record<string, { bg: string; text: string }> = {
                         emerald: { bg: "bg-emerald-500/10", text: "text-emerald-400" },
@@ -192,7 +192,7 @@ const LeadDetailDialog = memo(function LeadDetailDialog({
                           <span className={cn(sc.text)}>{score.icon}</span>
                         </div>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{score.label}</p>
-                        <p className={cn("text-xl font-bold", sc.text)}>{score.value}%</p>
+                        <p className={cn("text-xl font-bold", score.value == null ? "text-zinc-500" : sc.text)}>{score.value == null ? "—" : `${score.value}%`}</p>
                       </div>
                       );
                     })}
