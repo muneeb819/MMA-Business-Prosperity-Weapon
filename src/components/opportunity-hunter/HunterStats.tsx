@@ -2,7 +2,7 @@
 
 import { memo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Bot, CheckCircle, Zap, Clock } from "lucide-react"
+import { Bot, CheckCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Source } from "./types"
 
@@ -112,13 +112,7 @@ function HunterStatsInner({
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/50 border border-zinc-800">
                   <Zap className="w-3.5 h-3.5 text-amber-400" />
                   <span className="text-xs font-medium">
-                    {hunterAgent.efficiency}% efficiency
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800/50 border border-zinc-800">
-                  <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="text-xs font-medium">
-                    99.9% uptime
+                    {hunterAgent.efficiency}% source accuracy
                   </span>
                 </div>
               </div>

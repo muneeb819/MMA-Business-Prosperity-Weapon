@@ -6,6 +6,7 @@ import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/lib/auth-context"
 import { getErrorMessage } from "@/lib/error-message"
+import { ApiStatusDot } from "@/components/api-status"
 import {
   Shield,
   Eye,
@@ -538,8 +539,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-4 pt-4 border-t border-zinc-800/30 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-zinc-600">All systems operational</span>
+              <ApiStatusDot className="text-[10px] text-zinc-600" />
             </div>
             <div className="flex items-center gap-1">
               <Lock className="w-3 h-3 text-zinc-700" />

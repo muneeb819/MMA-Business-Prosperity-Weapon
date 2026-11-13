@@ -554,7 +554,7 @@ export default function SettingsPage() {
                     <Key className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm">Change Password</p>
-                      <p className="text-xs text-muted-foreground">Last changed 30 days ago</p>
+                      <p className="text-xs text-muted-foreground">Update your account password</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="border-border hover:bg-muted/50">Update</Button>
@@ -564,7 +564,7 @@ export default function SettingsPage() {
                     <Users className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm">Active Sessions</p>
-                      <p className="text-xs text-muted-foreground">1 active session</p>
+                      <p className="text-xs text-muted-foreground">Review and sign out other devices</p>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="border-border hover:bg-muted/50">Manage</Button>
