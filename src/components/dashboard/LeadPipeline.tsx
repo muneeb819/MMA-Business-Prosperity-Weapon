@@ -191,14 +191,16 @@ const LeadPipeline = React.memo(function LeadPipeline({
                     variant="secondary"
                     className={cn(
                       "text-xs shrink-0 ml-2",
-                      lead.successProbability >= 90
-                        ? "bg-emerald-500/10 text-emerald-400"
-                        : lead.successProbability >= 70
-                          ? "bg-amber-500/10 text-amber-400"
-                          : "bg-zinc-500/10 text-zinc-400"
+                      !lead.analyzedAt
+                        ? "bg-zinc-500/10 text-zinc-400"
+                        : lead.successProbability >= 90
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : lead.successProbability >= 70
+                            ? "bg-amber-500/10 text-amber-400"
+                            : "bg-zinc-500/10 text-zinc-400"
                     )}
                   >
-                    {lead.successProbability}%
+                    {lead.analyzedAt ? `${lead.successProbability}%` : "—"}
                   </Badge>
                 </div>
                 <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
@@ -211,7 +213,7 @@ const LeadPipeline = React.memo(function LeadPipeline({
                           ? "bg-gradient-to-r from-amber-500 to-yellow-400"
                           : "bg-gradient-to-r from-zinc-500 to-zinc-400"
                     )}
-                    style={{ width: `${lead.successProbability}%` }}
+                    style={{ width: lead.analyzedAt ? `${lead.successProbability}%` : "0%" }}
                   />
                 </div>
                 <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
