@@ -217,6 +217,11 @@ export const api = {
       fetchAPI<LegacyLooseValue>(`/api/settings`, { method: "PUT", body: JSON.stringify(data) }),
     test: (data: LegacyLooseValue) =>
       fetchAPI<LegacyLooseValue>(`/api/settings/test`, { method: "POST", body: JSON.stringify(data || {}) }),
+    llmGet: () => fetchAPI<LegacyLooseValue>(`/api/settings/llm`),
+    llmUpdate: (data: { provider?: string; api_key?: string; model?: string; base_url?: string }) =>
+      fetchAPI<LegacyLooseValue>(`/api/settings/llm`, { method: "PUT", body: JSON.stringify(data) }),
+    llmTest: (data: { provider?: string; api_key?: string; model?: string; base_url?: string }) =>
+      fetchAPI<LegacyLooseValue>(`/api/settings/llm/test`, { method: "POST", body: JSON.stringify(data || {}) }),
   },
   aiTeams: {
     list: () => fetchAPI<LegacyLooseValue>("/api/ai-teams"),

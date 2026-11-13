@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 
 from app.models.database import get_db
 from app.models.schema import AppConfig
+from app.services import llm_providers
 from app.services.enrichment import _apollo_lookup, _hunter_lookup, guess_domain
 
 router = APIRouter()
@@ -152,3 +153,99 @@ def update_settings(payload: SettingsUpdate, db: Session = Depends(get_db)):
         row.value = v
     db.commit()
     return {"ok": True}
+
+
+# --- LLM provider settings ---------------------------------------------------
+# Settings → AI Model Provider: pick any supported LLM vendor, paste its API
+# key, optionally override model / base URL, and run a live connectivity test.
+# Keys are stored server-side in app_config and never returned in full.
+
+class LLMSettingsUpdate(BaseModel):
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    base_url: Optional[str] = None
+
+
+@router.get("/llm")
+def get_llm_settings():
+    return llm_providers.public_settings()
+
+
+@router.put("/llm")
+def update_llm_settings(payload: LLMSettingsUpdate):
+    try:
+        return llm_providers.save_settings(
+            provider=payload.provider,
+            api_key=payload.api_key,
+            model=payload.model,
+            base_url=payload.base_url,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def _friendly_llm_error(exc: Exception) -> str:
+    text = str(exc)
+    lowered = text.lower()
+    if "403" in text or "forbidden" in lowered or "early access" in lowered:
+        return "not_authorized"
+    if "api key" in lowered or "unauthorized" in lowered or "401" in text or "authentication" in lowered:
+        return "invalid_key"
+    if "429" in text or "rate limit" in lowered or "quota" in lowered:
+        return "quota_exceeded"
+    if "connect" in lowered or "timed out" in lowered or "timeout" in lowered or "name or service" in lowered or "temporary failure" in lowered or "getaddrinfo" in lowered:
+        return "network_unreachable"
+    if "model" in lowered and ("not found" in lowered or "invalid" in lowered or "unknown" in lowered):
+        return "model_not_found"
+    return "error"
+
+
+@router.post("/llm/test")
+async def test_llm_settings(payload: LLMSettingsUpdate):
+    import time as _time
+
+    cfg = llm_providers.resolve_provider(
+        payload.provider,
+        api_key=payload.api_key,
+        model=payload.model,
+        base_url=payload.base_url,
+    )
+    base = {
+        "provider": cfg["provider"],
+        "label": cfg["label"],
+        "model": cfg["model"],
+        "baseUrl": cfg["base_url"],
+    }
+    if cfg.get("requires_key", True) and not cfg.get("api_key"):
+        return {
+            **base,
+            "ok": False,
+            "error": "no_key",
+            "message": "No API key configured for this provider yet.",
+        }
+
+    from app.services.ai_service import AIService
+
+    svc = AIService()
+    started = _time.time()
+    try:
+        reply = await svc._chat_with(
+            cfg,
+            "You are a connectivity test bot. Reply with exactly one word: ready",
+            "ping",
+            temperature=0.0,
+        )
+        return {
+            **base,
+            "ok": True,
+            "latency_ms": round((_time.time() - started) * 1000),
+            "reply": (reply or "").strip()[:120],
+        }
+    except Exception as e:  # noqa: BLE001 - surfaced to the UI verbatim
+        return {
+            **base,
+            "ok": False,
+            "error": _friendly_llm_error(e),
+            "message": str(e)[:400],
+        }

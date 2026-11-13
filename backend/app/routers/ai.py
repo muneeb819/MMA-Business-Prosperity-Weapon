@@ -11,11 +11,15 @@ router = APIRouter()
 @router.get("/status")
 def ai_status():
     from app.services.ai_service import ai_service
+    cfg = ai_service.config
     return {
         "available": ai_service._is_available(),
+        "provider": cfg.get("provider", "openai"),
+        "provider_label": cfg.get("label", ""),
         "model": ai_service.model,
-        "api_key_set": bool(ai_service.api_key),
+        "api_key_set": bool(ai_service.api_key) or not cfg.get("requires_key", True),
         "fallback_mode": not ai_service._is_available(),
+        "base_url": cfg.get("base_url", ""),
     }
 
 
