@@ -40,6 +40,7 @@ PROTOCOL_OPENAI = "openai"
 PROTOCOL_ANTHROPIC = "anthropic"
 PROTOCOL_GEMINI = "gemini"
 PROTOCOL_DEEPGRAM = "deepgram_think"
+PROTOCOL_VERTEX = "vertex_gemini"
 
 # --- Provider registry -------------------------------------------------------
 # ``models`` is a convenience list for the UI dropdown; every provider also
@@ -84,6 +85,21 @@ PROVIDERS: Dict[str, Dict[str, Any]] = {
         "requires_key": True,
         "site": "https://aistudio.google.com/apikey",
         "blurb": "Gemini Flash / Pro",
+    },
+    "gemini_vertex": {
+        "id": "gemini_vertex",
+        "label": "Gemini (Vertex AI)",
+        "emoji": "🔷",
+        "protocol": PROTOCOL_VERTEX,
+        # Vertex paths are project-scoped: the user supplies
+        # https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}
+        "base_url": "https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT/locations/us-central1",
+        "env_keys": ["VERTEX_API_KEY"],
+        "default_model": "gemini-2.5-flash",
+        "models": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+        "requires_key": True,
+        "site": "https://console.cloud.google.com/apis/credentials",
+        "blurb": "Same Gemini models · billed to your Google Cloud credits",
     },
     "deepseek": {
         "id": "deepseek",

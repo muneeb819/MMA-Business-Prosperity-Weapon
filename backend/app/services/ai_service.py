@@ -81,6 +81,8 @@ class AIService:
             return await self._chat_gemini(cfg, system, user, temperature)
         if protocol == llm_providers.PROTOCOL_DEEPGRAM:
             return await self._chat_deepgram(cfg, system, user, temperature)
+        if protocol == llm_providers.PROTOCOL_VERTEX:
+            return await self._chat_vertex(cfg, system, user, temperature)
         return await self._chat_openai_compatible(cfg, system, user, temperature)
 
     def _openai_client(self, cfg: Dict[str, Any]):
@@ -223,6 +225,69 @@ class AIService:
         text = (choices[0].get("message") or {}).get("content") or ""
         if not text:
             raise RuntimeError(f"Empty Deepgram reply: {str(data)[:300]}")
+        return text
+
+    async def _chat_vertex(
+        self, cfg: Dict[str, Any], system: str, user: str, temperature: float
+    ) -> str:
+        """Gemini on Vertex AI — same models, billed to Google Cloud credits.
+
+        ``base_url`` is the project-scoped root:
+        https://{region}-aiplatform.googleapis.com/v1/projects/{project}/locations/{region}
+        Auth uses an API key via the x-goog-api-key header (also passed as
+        ?key= for proxies that only forward query parameters).
+        """
+        import httpx
+        from urllib.parse import quote
+
+        base = (
+            cfg.get("base_url")
+            or "https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT/locations/us-central1"
+        ).rstrip("/")
+        if "YOUR_PROJECT" in base:
+            raise RuntimeError(
+                "Vertex AI base_url still contains YOUR_PROJECT — set the real "
+                "project path in Settings → AI Model Provider → Base URL"
+            )
+        url = f"{base}/publishers/google/models/{quote(cfg['model'], safe='')}:generateContent"
+        async with httpx.AsyncClient(timeout=90) as http:
+            resp = await http.post(
+                url,
+                params={"key": cfg["api_key"]},
+                headers={"x-goog-api-key": cfg["api_key"]},
+                json={
+                    "systemInstruction": {"parts": [{"text": system}]},
+                    "contents": [{"role": "user", "parts": [{"text": user}]}],
+                    "generationConfig": {
+                        "temperature": temperature,
+                        "maxOutputTokens": 2048,
+                    },
+                },
+            )
+            if resp.status_code >= 400:
+                body: Any = {}
+                try:
+                    body = resp.json()
+                except Exception:  # noqa: BLE001 - non-JSON error page
+                    pass
+                if isinstance(body, dict):
+                    err = body.get("error") or {}
+                    msg = (
+                        err.get("message")
+                        if isinstance(err, dict)
+                        else str(err)
+                    ) or body.get("message") or resp.text[:300]
+                else:
+                    msg = resp.text[:300]
+                raise RuntimeError(f"Vertex AI error {resp.status_code}: {msg}")
+            data = resp.json()
+        candidates = data.get("candidates") or []
+        if not candidates:
+            raise RuntimeError(f"Empty Vertex AI response: {str(data)[:300]}")
+        parts = (candidates[0].get("content") or {}).get("parts") or []
+        text = "".join(p.get("text", "") for p in parts)
+        if not text:
+            raise RuntimeError(f"Empty Vertex AI response: {str(data)[:300]}")
         return text
 
     async def _chat_json(self, system: str, user: str, temperature: float = 0.3) -> dict:

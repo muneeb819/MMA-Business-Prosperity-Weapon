@@ -327,15 +327,25 @@ export default function SettingsPage() {
                       ))}
                     </datalist>
                   </div>
-                  {(selProvider === "custom" || selProvider === "ollama" || selProvider === "lmstudio") && (
+                  {(selProvider === "custom" ||
+                    selProvider === "ollama" ||
+                    selProvider === "lmstudio" ||
+                    selProvider === "gemini_vertex") && (
                     <div className="sm:col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Base URL</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                        {selProvider === "gemini_vertex" ? "Base URL (project path)" : "Base URL"}
+                      </label>
                       <Input
                         value={llmBase}
                         onChange={(e) => setLlmBase(e.target.value)}
                         placeholder={selInfo?.defaultBaseUrl || "https://your-gateway.example.com/v1"}
-                        className="bg-muted/30 border-border h-10 rounded-xl"
+                        className="bg-muted/30 border-border h-10 rounded-xl font-mono text-xs"
                       />
+                      {selProvider === "gemini_vertex" && (
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Replace YOUR_PROJECT with your Google Cloud project ID (Console → project selector at the top).
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
