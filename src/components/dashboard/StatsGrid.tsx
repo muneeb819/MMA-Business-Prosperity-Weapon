@@ -1,8 +1,7 @@
 "use client"
 
 import React from "react"
-import { TrendingUp, TrendingDown, DollarSign, Users, Target, Brain, Info } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { DollarSign, Users, Target, Brain, Info } from "lucide-react"
 import { Tooltip } from "@/components/tooltip-wrapper"
 import { AnimatedCounter } from "@/components/animated-counter"
 import { GlassCard } from "@/components/glass-card"
@@ -19,7 +18,6 @@ const statsConfig = [
     title: "Total Revenue",
     key: "totalRevenue" as const,
     format: "currency",
-    change: 12.5,
     icon: DollarSign,
     glow: "emerald" as const,
     tooltip: "Total revenue generated from all won proposals across all time periods.",
@@ -28,7 +26,6 @@ const statsConfig = [
     title: "Active Leads",
     key: "leadsCount" as const,
     format: "number",
-    change: 8.2,
     icon: Users,
     glow: "blue" as const,
     tooltip: "Number of leads currently in active status.",
@@ -37,7 +34,6 @@ const statsConfig = [
     title: "Conversion Rate",
     key: "conversionRate" as const,
     format: "percent",
-    change: -2.1,
     icon: Target,
     glow: "purple" as const,
     tooltip: "Percentage of leads that convert to won deals.",
@@ -46,10 +42,9 @@ const statsConfig = [
     title: "AI Efficiency",
     key: "aiEfficiency" as const,
     format: "percent",
-    change: 5.3,
     icon: Brain,
     glow: "emerald" as const,
-    tooltip: "Overall AI agent efficiency score based on task completion rate.",
+    tooltip: "Completed agent tasks as a share of all tasks — shown once agent logs are available.",
   },
 ] as const
 
@@ -88,17 +83,6 @@ const StatsGrid = React.memo(function StatsGrid({
                       <AnimatedCounter end={displayVal} decimals={0} />
                       {stat.format === "percent" && "%"}
                     </p>
-                    <div className="flex items-center gap-1.5">
-                      {stat.change >= 0 ? (
-                        <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 text-red-400 shrink-0" />
-                      )}
-                      <span className={cn("text-sm font-medium", stat.change >= 0 ? "text-emerald-400" : "text-red-400")}>
-                        {stat.change >= 0 ? "+" : ""}{stat.change}%
-                      </span>
-                      <span className="text-xs text-white/30">vs last month</span>
-                    </div>
                   </div>
                   <div className="p-3 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/[0.06] shrink-0">
                     <Icon className="w-5 h-5 text-white/60" />

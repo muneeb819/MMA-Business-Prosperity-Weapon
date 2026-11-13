@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { ApiStatusDot, ApiStatusIndicator } from "@/components/api-status"
 import {
   LayoutDashboard,
   Globe,
@@ -13,7 +14,6 @@ import {
   BarChart3,
   Target,
   Bot,
-  Activity,
   Menu,
   Cable,
   LineChart,
@@ -169,25 +169,14 @@ export function Sidebar() {
                   </div>
                   <span className="text-xs font-semibold text-gradient">AI Agents</span>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[11px] text-muted-foreground">3 agents running</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                    <span className="text-[11px] text-muted-foreground">94.7% efficiency</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 pt-1">
-                  <Activity className="h-3 w-3 text-emerald-500" />
-                  <span className="text-[10px] text-emerald-500 font-medium">All systems operational</span>
+                <div className="flex items-center gap-1.5">
+                  <ApiStatusDot className="text-[11px] text-muted-foreground" />
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <Bot className="h-5 w-5 text-primary" />
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <ApiStatusIndicator />
               </div>
             )}
           </div>

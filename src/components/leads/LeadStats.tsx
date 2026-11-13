@@ -1,18 +1,28 @@
 "use client";
 
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, DollarSign, TrendingUp, Target } from "lucide-react";
+import { Users, DollarSign, TrendingUp, Target, Info } from "lucide-react";
+import { Tooltip } from "@/components/tooltip-wrapper";
 import { formatCurrency, cn } from "@/lib/utils";
 import { statusConfig, statusSummaryCards } from "./leads-config";
 
 interface LeadStatsProps {
   activeLeadCount: number;
   totalBudget: number;
-  avgProbability: number;
+  avgProbability: number | null;
   statusCounts: Record<string, number>;
   statusFilter: string;
   setStatusFilter: (filter: string) => void;
+}
+
+interface StatCardDef {
+  label: string;
+  value: string;
+  icon: ReactNode;
+  color: string;
+  bg: string;
+  tooltip?: string;
 }
 
 const LeadStats = memo(function LeadStats({
@@ -26,19 +36,40 @@ const LeadStats = memo(function LeadStats({
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-        {[
-          { label: "Total Leads", value: activeLeadCount, icon: <Users className="w-5 h-5" />, color: "text-indigo-400", bg: "from-indigo-500/10 to-rose-600/5 border-indigo-500/20" },
-          { label: "Total Pipeline", value: formatCurrency(totalBudget), icon: <DollarSign className="w-5 h-5" />, color: "text-emerald-400", bg: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20" },
-          { label: "Avg. Win Probability", value: `${avgProbability}%`, icon: <TrendingUp className="w-5 h-5" />, color: "text-amber-400", bg: "from-amber-500/10 to-amber-600/5 border-amber-500/20" },
+        {([
+          { label: "Total Leads", value: String(activeLeadCount), icon: <Users className="w-5 h-5" />, color: "text-indigo-400", bg: "from-indigo-500/10 to-rose-600/5 border-indigo-500/20" },
+          {
+            label: "Est. Pipeline",
+            value: formatCurrency(totalBudget),
+            icon: <DollarSign className="w-5 h-5" />,
+            color: "text-emerald-400",
+            bg: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20",
+            tooltip: "Sum of posted budget/salary maximums across visible leads — an estimate from source listings, not booked revenue.",
+          },
+          {
+            label: "Avg. Win Probability",
+            value: avgProbability === null ? "—" : `${avgProbability}%`,
+            icon: <TrendingUp className="w-5 h-5" />,
+            color: "text-amber-400",
+            bg: "from-amber-500/10 to-amber-600/5 border-amber-500/20",
+            tooltip: "Average across AI-analyzed leads only; unanalyzed leads are excluded.",
+          },
           { label: "Conversion Rate", value: `${activeLeadCount ? Math.round(((statusCounts.won || 0) / activeLeadCount) * 100) : 0}%`, icon: <Target className="w-5 h-5" />, color: "text-rose-400", bg: "from-rose-500/10 to-rose-600/5 border-rose-500/20" },
-        ].map((stat, i) => (
+        ] as StatCardDef[]).map((stat, i) => (
           <Card key={i} className={cn("bg-zinc-900/80 bg-gradient-to-br border animate-in fade-in slide-in-from-bottom-4 duration-500", stat.bg)} style={{ animationDelay: `${i * 80}ms` }}>
             <CardContent className="p-4 flex items-center gap-4 overflow-hidden">
               <div className={cn("p-2.5 rounded-xl bg-gradient-to-br border shrink-0", stat.bg)}>
                 <span className={stat.color}>{stat.icon}</span>
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate">{stat.label}</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium truncate flex items-center gap-1">
+                  <span className="truncate">{stat.label}</span>
+                  {stat.tooltip && (
+                    <Tooltip content={stat.tooltip} side="top">
+                      <Info className="w-3 h-3 text-zinc-600 hover:text-zinc-300 cursor-help shrink-0" />
+                    </Tooltip>
+                  )}
+                </p>
                 <p className="text-xl font-bold text-white mt-0.5 truncate">{stat.value}</p>
               </div>
             </CardContent>

@@ -166,8 +166,12 @@ export default function LeadsPage() {
   );
 
   const avgProbability = useMemo(() => {
-    const valid = leads.filter((l) => !deletedIds.has(l.id) && l.successProbability);
-    return valid.length ? Math.round(valid.reduce((sum, l) => sum + (l.successProbability || 0), 0) / valid.length) : 0;
+    // Only AI-analyzed leads carry a meaningful win probability; live-sourced
+    // leads get a placeholder score, so they are excluded to keep the average real.
+    const analyzed = leads.filter((l) => !deletedIds.has(l.id) && l.analyzedAt && l.successProbability);
+    return analyzed.length
+      ? Math.round(analyzed.reduce((sum, l) => sum + (l.successProbability || 0), 0) / analyzed.length)
+      : null;
   }, [leads, deletedIds]);
 
   const activeLeadCount = leads.length - deletedIds.size;
