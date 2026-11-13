@@ -61,6 +61,7 @@ const LeadGrid = memo(function LeadGrid({
             const sCfg = statusConfig[lead.status] || statusConfig.new;
             const uCfg = urgencyConfig[lead.urgency] || urgencyConfig.low;
             const prob = lead.successProbability || 0;
+            const analyzed = Boolean(lead.analyzedAt);
 
             return (
               <div
@@ -115,12 +116,12 @@ const LeadGrid = memo(function LeadGrid({
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Success Probability</span>
-                      <span className={cn("text-xs font-bold", prob >= 70 ? "text-emerald-400" : prob >= 40 ? "text-amber-400" : "text-red-400")}>{prob}%</span>
+                      <span className={cn("text-xs font-bold", !analyzed ? "text-zinc-500" : prob >= 70 ? "text-emerald-400" : prob >= 40 ? "text-amber-400" : "text-red-400")}>{analyzed ? `${prob}%` : "—"}</span>
                     </div>
                     <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
                       <div
                         className={cn("h-full rounded-full transition-all duration-700", prob >= 70 ? "bg-gradient-to-r from-emerald-500 to-green-400" : prob >= 40 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-red-500 to-rose-400")}
-                        style={{ width: `${prob}%` }}
+                        style={{ width: analyzed ? `${prob}%` : "0%" }}
                       />
                     </div>
                   </div>

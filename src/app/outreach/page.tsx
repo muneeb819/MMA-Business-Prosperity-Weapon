@@ -91,6 +91,7 @@ export default function OutreachPage() {
   const [autoStatus, setAutoStatus] = useState<LegacyLooseValue>(null);
   const [autoRunning, setAutoRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [active, setActive] = useState<LeadRow | null>(null);
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
@@ -113,19 +114,27 @@ export default function OutreachPage() {
   }, []);
 
   const loadAll = useCallback(async () => {
-    const [l, c, r, s, a] = await Promise.all([
-      api.outreach.leads(),
-      api.outreach.cadence(),
-      api.outreach.records(),
-      api.outreach.stats(),
-      api.outreach.automationStatus(),
-    ]);
-    setLeads(l);
-    setCadence(c.cadence || []);
-    setRecords(r);
-    setStats(s);
-    setAutoStatus(a);
-    setLoading(false);
+    try {
+      const [l, c, r, s, a] = await Promise.all([
+        api.outreach.leads(),
+        api.outreach.cadence(),
+        api.outreach.records(),
+        api.outreach.stats(),
+        api.outreach.automationStatus(),
+      ]);
+      setLeads(l);
+      setCadence(c.cadence || []);
+      setRecords(r);
+      setStats(s);
+      setAutoStatus(a);
+      setLoadError(false);
+    } catch {
+      // API unreachable or unauthenticated — surface an honest error instead of
+      // spinning forever (previously an unhandled rejection left "Loading…" stuck).
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -264,6 +273,29 @@ export default function OutreachPage() {
         <div className="flex-1 flex flex-col">
           <TopBar />
           <div className="p-10 text-zinc-500">Loading outreach…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <TopBar />
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-10 max-w-lg mx-auto text-center space-y-3">
+              <p className="text-lg font-semibold text-zinc-200">Couldn&apos;t load outreach data</p>
+              <p className="text-sm text-zinc-500">Sign in and retry — the API requires authentication, or the backend may still be starting up.</p>
+              <button
+                onClick={() => { setLoading(true); setLoadError(false); void loadAll(); }}
+                className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

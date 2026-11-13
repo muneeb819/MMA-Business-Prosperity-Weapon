@@ -9,8 +9,9 @@ import type { LucideIcon } from "lucide-react";
 interface KpiItem {
   label: string;
   value: string;
-  trend: string;
-  up: boolean;
+  /** Optional period-over-period change. Omitted when no real prior-period data exists. */
+  trend?: string;
+  up?: boolean;
   icon: LucideIcon;
   color: string;
   glow: string;
@@ -34,13 +35,15 @@ export const KpiCards = memo(function KpiCards({ kpis }: KpiCardsProps) {
               <div className={cn("p-2 rounded-lg shrink-0", kpi.glow)}>
                 <kpi.icon className={cn("w-4 h-4", kpi.color)} />
               </div>
-              <span className={cn(
-                "flex items-center gap-0.5 text-xs font-medium shrink-0",
-                kpi.up ? "text-emerald-400" : "text-rose-400"
-              )}>
-                <ArrowUpRight className={cn("w-3 h-3", !kpi.up && "rotate-90")} />
-                {kpi.trend}
-              </span>
+              {kpi.trend && (
+                <span className={cn(
+                  "flex items-center gap-0.5 text-xs font-medium shrink-0",
+                  kpi.up ? "text-emerald-400" : "text-rose-400"
+                )}>
+                  <ArrowUpRight className={cn("w-3 h-3", !kpi.up && "rotate-90")} />
+                  {kpi.trend}
+                </span>
+              )}
             </div>
             <p className="text-xl font-bold text-white truncate">{kpi.value}</p>
             <p className="text-xs text-zinc-500 mt-1 truncate">{kpi.label}</p>

@@ -33,7 +33,8 @@ export function AnimatedCounter({
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
       const current = Math.round(eased * end * Math.pow(10, decimals)) / Math.pow(10, decimals)
-      setCount(current)
+      // Normalize -0 to 0 — Intl renders -0 as the literal string "-0" (e.g. "$-0").
+      setCount(current === 0 ? 0 : current)
 
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate)
