@@ -66,6 +66,10 @@ class AIService:
     async def _chat(self, system: str, user: str, temperature: float = 0.7) -> str:
         return await self._chat_with(self.config, system, user, temperature)
 
+    async def chat(self, system: str, user: str, temperature: float = 0.7) -> str:
+        """Public generic chat completion against the active provider."""
+        return await self._chat(system, user, temperature)
+
     async def _chat_with(
         self, cfg: Dict[str, Any], system: str, user: str, temperature: float = 0.7
     ) -> str:

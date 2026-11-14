@@ -172,7 +172,7 @@ export default function AITeamsPage() {
       const agentMsg: ChatMessage = { role: "agent", content: res.response, timestamp: new Date().toISOString() };
       setSupervisorChat(prev => [...prev, agentMsg]);
     } catch {
-      const errMsg: ChatMessage = { role: "agent", content: "Quality Sentinel could not process that request.", timestamp: new Date().toISOString() };
+      const errMsg: ChatMessage = { role: "agent", content: "Commander could not process that request — try again in a moment.", timestamp: new Date().toISOString() };
       setSupervisorChat(prev => [...prev, errMsg]);
     } finally { setSupervisorChatLoading(false); }
   };
@@ -205,16 +205,15 @@ export default function AITeamsPage() {
     hunting: ["How many leads found today?", "Which sources are performing best?", "Any issues with the hunters?"],
     outreach: ["How many proposals sent?", "What's our response rate?", "Any emails bounced?"],
     supervisor: [
+      "Give me the full project report",
+      "Show me all recent activity",
+      "How is the system doing right now?",
+      "What do you need from me?",
       "Run a full system health check",
-      "What are the critical issues right now?",
-      "Run a data reconciliation sweep",
       "Run a security audit",
-      "Check API response times and performance",
       "Redistribute agent workload",
-      "Generate a full quality report",
-      "How is lead quality across industries?",
+      "What are the critical issues right now?",
       "What do you recommend I fix first?",
-      "Compare system metrics over time",
       "Tell me about yourself",
     ],
   };
@@ -288,18 +287,18 @@ export default function AITeamsPage() {
           <div className="flex-1">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/30 to-amber-500/30 border border-red-500/30 flex items-center justify-center text-3xl shadow-lg shadow-red-500/10">
-                🛡️
+                👑
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-white">Quality Sentinel</h2>
-                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-500/20 text-red-300 border border-red-500/20">SUPERVISOR</span>
+                  <h2 className="text-xl font-bold text-white">Commander</h2>
+                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/20">CHAIRMAN</span>
                   <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="text-[10px] text-emerald-400 font-semibold uppercase">Always On</span>
                   </div>
                 </div>
-                <p className="text-zinc-500 text-sm">Perpetual Quality & Testing Supervisor — monitors the entire system 24/7</p>
+                <p className="text-zinc-500 text-sm">Chairman of the AI Bots Board &amp; Chief Executive — answers anything, runs operations, asks when he needs something</p>
               </div>
             </div>
 
@@ -518,7 +517,7 @@ export default function AITeamsPage() {
             <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
             <div>
               <p className="text-sm text-emerald-300 font-medium">All Systems Operational</p>
-              <p className="text-[11px] text-zinc-500">No issues detected. The Quality Sentinel is continuously monitoring.</p>
+              <p className="text-[11px] text-zinc-500">No issues detected. Commander is continuously monitoring.</p>
             </div>
           </div>
         )}
@@ -528,13 +527,13 @@ export default function AITeamsPage() {
           <div className="relative mt-5 rounded-xl border border-red-500/10 bg-black/20 overflow-hidden">
             <div className="px-4 py-2 border-b border-white/[0.04] flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-xs text-zinc-400">Quality Sentinel is online — ask anything about system health</span>
+              <span className="text-xs text-zinc-400">Commander is online — ask anything; he answers, acts, and asks when he needs something</span>
             </div>
             <ScrollArea className="h-[280px] p-4">
               {supervisorChat.length === 0 && (
                 <div className="text-center py-6">
                   <Shield className="w-10 h-10 text-red-500/30 mx-auto mb-2" />
-                  <p className="text-zinc-600 text-xs mb-3">Ask the Quality Sentinel about system health, issues, or run diagnostics</p>
+                  <p className="text-zinc-600 text-xs mb-3">Ask Commander anything — questions, full reports, activity, or operations</p>
                   <div className="flex flex-wrap gap-1.5 justify-center">
                     {(QUICK_QUESTIONS.supervisor || []).map((q) => (
                       <button key={q} onClick={() => setSupervisorChatInput(q)}
@@ -568,7 +567,7 @@ export default function AITeamsPage() {
             <div className="px-4 py-3 border-t border-white/[0.04] flex gap-2">
               <input value={supervisorChatInput} onChange={(e) => setSupervisorChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSupervisorChat()}
-                placeholder="Ask the Quality Sentinel..."
+                placeholder="Ask Commander anything — questions, reports, tasks..."
                 className="flex-1 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-sm text-white placeholder:text-zinc-700 focus:outline-none focus:border-red-500/40" />
               <Button onClick={handleSupervisorChat} disabled={!supervisorChatInput.trim() || supervisorChatLoading}
                 size="sm" className="bg-red-600 hover:bg-red-500 text-white rounded-xl px-3">

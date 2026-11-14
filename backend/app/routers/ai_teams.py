@@ -1,3 +1,5 @@
+import asyncio
+import json
 import random
 import re
 from datetime import datetime
@@ -164,14 +166,14 @@ AGENT_DEFINITIONS: List[Dict[str, Any]] = [
     },
     {
         "id": "supervisor",
-        "name": "Quality Sentinel",
+        "name": "Commander",
         "role": "supervisor",
         "team": "management",
-        "avatar": "🛡️",
-        "description": "Perpetual Quality & Testing Supervisor — scans the entire system 24/7 for data integrity, agent health, lead quality, outreach quality, security, and performance. Auto-detects and reports issues in real-time.",
+        "avatar": "👑",
+        "description": "Chairman of the AI Bots Board & Chief Executive of the project — answers any question with truthful, data-grounded answers, executes system operations (scan, reconcile, security audit, performance, redistribution, full reports, activity feeds), asks the owner when he needs something, and keeps every operation running smoothly.",
         "channel": "system-wide",
-        "outputMetric": "issues caught",
-        "defaultTask": "Scanning system for quality issues",
+        "outputMetric": "decisions & reports",
+        "defaultTask": "Chairing the AI board — reviewing operations and reporting to the owner",
     },
 ]
 
@@ -1398,8 +1400,239 @@ def _team_lead_reply(agent: Dict[str, Any], message: str) -> str:
     return _outside_domain(agent)
 
 
-def _supervisor_chat_reply(message: str) -> str:
-    """Fully conversational Quality Sentinel — handles any request like Claude/ChatGPT."""
+def _commander_system_prompt() -> str:
+    """System prompt for Commander — Chairman of the AI Bots Board & Chief Executive."""
+    return (
+        "You are Commander 👑, Chairman of the AI Bots Board and Chief Executive of the "
+        "MMA Business Prosperity Weapon (MBPW) project — an AI-powered business development platform. "
+        "You answer directly to the project owner and manage the entire AI bot board.\n\n"
+        "HOW TO BEHAVE:\n"
+        "1. ANSWER EVERY TYPE OF QUESTION — project operations, business, technical, analytical, "
+        "or general knowledge. Be accurate, complete and helpful.\n"
+        "2. TRUTHFULNESS (absolute rule): every fact about the project (numbers, statuses, agents, "
+        "leads, issues, activity, scores) MUST come only from the PROJECT DATA below. Never invent, "
+        "estimate, or embellish project data. If something is not in the data, say it is not in your "
+        "current data — do not guess.\n"
+        "3. General-knowledge questions (not project facts) may be answered from your own knowledge.\n"
+        "4. IF YOU NEED SOMETHING: when a request is ambiguous, under-specified, requires a decision, "
+        "credentials, or information you do not have — ASK THE USER one clear, short question instead "
+        "of assuming. Never pretend a task was completed.\n"
+        "5. TASKS: you can perform these operations (the system executes them when the user asks): "
+        "system scan, data reconciliation, security audit, performance check, agent load "
+        "redistribution, full project report, full activity feed. For anything outside that list "
+        "(e.g. sending emails, editing code, modifying records), state honestly that you cannot do "
+        "it yourself yet, explain what would be needed, and ask the user how they want to proceed.\n"
+        "6. REPORTS: when asked for reports or activity, produce complete, structured, truthful "
+        "reports built from the data.\n"
+        "7. STYLE: concise executive tone, Markdown formatting, short paragraphs and bullets. "
+        "Sign important reports with '— Commander, Chairman of the AI Bots Board'."
+    )
+
+
+def _business_stats() -> Dict[str, Any]:
+    """Live business numbers from the real database — never fabricated."""
+    try:
+        from sqlalchemy import func
+        from app.models.database import SessionLocal
+        from app.models.schema import Lead, Proposal, Outreach, Notification
+
+        db = SessionLocal()
+        try:
+            lead_status_rows = db.query(Lead.status, func.count()).group_by(Lead.status).all()
+            outreach_status_rows = db.query(Outreach.status, func.count()).group_by(Outreach.status).all()
+            return {
+                "available": True,
+                "leadsTotal": db.query(Lead).count(),
+                "leadsAnalyzed": db.query(Lead).filter(Lead.analyzed_at.isnot(None)).count(),
+                "leadsByStatus": {str(s): int(c) for s, c in lead_status_rows},
+                "proposalsTotal": db.query(Proposal).count(),
+                "outreachTotal": db.query(Outreach).count(),
+                "outreachByStatus": {str(s): int(c) for s, c in outreach_status_rows},
+                "notificationsUnread": db.query(Notification).filter(Notification.read.is_(False)).count(),
+            }
+        finally:
+            db.close()
+    except Exception as exc:  # DB unreachable — report honestly, never guess
+        return {"available": False, "error": type(exc).__name__}
+
+
+def _commander_project_data() -> str:
+    """Live project snapshot injected into Commander's prompt so answers stay truthful."""
+    h = _supervisor_health_data()
+    stats = _business_stats()
+    daily = _daily_report()
+    try:
+        from app.services.ai_service import ai_service
+        llm = f"{ai_service.provider}/{ai_service.model} (available={ai_service._is_available()})"
+    except Exception:
+        llm = "unknown"
+
+    lines = [
+        f"Generated at: {_now_iso()} UTC",
+        f"SYSTEM HEALTH: {json.dumps(h, separators=(',', ':'))}",
+        "AGENTS (the AI bot board):",
+    ]
+    for a in _agents.values():
+        lines.append(
+            f"- {a['avatar']} {a['name']} [{a['id']}] role={a['role']} team={a['team']} "
+            f"status={a['status']} efficiency={a['efficiency']}% tasks={a['tasksCompleted']} "
+            f"task={a['currentTask']}"
+        )
+    lines.append(f"QUALITY SCANS: completed={_supervisor_scan_count}, last={_last_scan_time or 'never'}")
+    if _supervisor_issues:
+        lines.append(f"OPEN ISSUES ({len(_supervisor_issues)}):")
+        for i in _supervisor_issues[:10]:
+            lines.append(f"- [{i['severity']}/{i['category']}] {i['title']}: {i['detail']}")
+    else:
+        lines.append("OPEN ISSUES: none")
+    lines.append("ACTIVITY FEED (most recent first):")
+    if _activity_log:
+        for e in _activity_log[:15]:
+            lines.append(f"- {e['timestamp'][:16]} | {e['agent_name']} | {e['action']}: {e['details']}")
+    else:
+        lines.append("- no activity recorded yet this session")
+    lines.append(
+        f"TODAY'S OUTPUT: leadsFound={daily['leadsFoundToday']['total']} "
+        f"emailsSent={daily['emailsSent']} proposalsGenerated={daily['proposalsGenerated']} "
+        f"teamEfficiency={json.dumps(daily['teamEfficiency'])}"
+    )
+    lines.append(f"BUSINESS DATABASE: {json.dumps(stats, separators=(',', ':'))}")
+    lines.append("CRON: /api/outreach/cron runs daily at 09:00 UTC (outreach cadence Day 0/3/7/14).")
+    lines.append(f"REASONING ENGINE (LLM): {llm}")
+    return "\n".join(lines)
+
+
+def _executive_report() -> str:
+    """Full project report: system, quality, board, activity, and live business numbers."""
+    h = _supervisor_health_data()
+    stats = _business_stats()
+    daily = _daily_report()
+    q = _generate_quality_report()
+
+    lines = [
+        "👑 **COMMANDER — FULL PROJECT REPORT**",
+        f"Generated: {_now_iso()[:19]} UTC\n",
+        "**1 · SYSTEM HEALTH**",
+        f"- Status: **{h['status'].upper()}** | Health score: **{h['healthScore']}%**",
+        f"- Agents online: {h['agentsOnline']}/{h['agentsTotal']} (paused: {h['agentsPaused']}) | Avg efficiency: {h['averageEfficiency']}%",
+        f"- Scans completed: {h['totalScansCompleted']} | Last scan: {h['lastScanTime']}",
+        f"- Open issues: {h['openIssues']} ({h['criticalIssues']} critical)\n",
+        f"**2 · QUALITY REPORT — overall {q['overallScore']}% ({q['overallStatus'].upper()})**",
+    ]
+    section_labels = [
+        ("healthScan", "Health scan"),
+        ("dataReconciliation", "Data reconciliation"),
+        ("securityAudit", "Security audit"),
+        ("performanceCheck", "Performance check"),
+    ]
+    for key, label in section_labels:
+        sec = q["sections"].get(key, {})
+        lines.append(f"- {label}: {sec.get('score', 0)}% ({sec.get('checksPassed', 0)}/{sec.get('checksTotal', 0)} checks)")
+        for f in sec.get("findings", []):
+            if f.get("status") != "pass":
+                icon = "⚠️" if f.get("status") == "warn" else "❌"
+                lines.append(f"  {icon} {f.get('check')}: {f.get('detail')}")
+    redistrib = q["sections"].get("agentRedistribution", {})
+    lines.append(f"- Agent redistribution actions taken: {redistrib.get('actionsTaken', 0)}\n")
+    lines.append("**3 · AI BOT BOARD (agents)**")
+    for a in _agents.values():
+        lines.append(
+            f"- {a['avatar']} **{a['name']}** ({a['role']}/{a['team']}): {a['status']}, "
+            f"{a['efficiency']}% efficiency, {a['tasksCompleted']} tasks — {a['currentTask']}"
+        )
+    lines.append("\n**4 · ACTIVITY FEED (most recent, up to 25)**")
+    if _activity_log:
+        for e in _activity_log[:25]:
+            lines.append(f"- {e['timestamp'][:16]} | {e['agent_name']} | {e['action']}: {e['details']}")
+    else:
+        lines.append("- No activity recorded yet this session.")
+    lines.append("\n**5 · BUSINESS PIPELINE (live database)**")
+    if stats.get("available"):
+        lines.append(
+            f"- Leads: **{stats['leadsTotal']}** total ({stats['leadsAnalyzed']} AI-analyzed) | "
+            f"by status: {stats['leadsByStatus']}"
+        )
+        lines.append(f"- Proposals: **{stats['proposalsTotal']}**")
+        lines.append(
+            f"- Outreach records: **{stats['outreachTotal']}** | by status: {stats['outreachByStatus']}"
+        )
+        lines.append(f"- Unread notifications: {stats['notificationsUnread']}")
+    else:
+        lines.append(f"- ⚠️ Database unreachable ({stats.get('error', 'unknown')}) — business numbers unavailable, not guessed.")
+    lines.append("\n**6 · TODAY'S OUTPUT (agent counters)**")
+    lines.append(
+        f"- Leads found: {daily['leadsFoundToday']['total']} | Emails sent: {daily['emailsSent']} | "
+        f"Proposals generated: {daily['proposalsGenerated']}"
+    )
+    lines.append(
+        f"- Team efficiency — hunting: {daily['teamEfficiency']['hunting']}%, "
+        f"outreach: {daily['teamEfficiency']['outreach']}%, overall: {daily['teamEfficiency']['overall']}%"
+    )
+    lines.append(
+        "\n**7 · OPERATIONS**\n- Cron: /api/outreach/cron @ 09:00 UTC daily | "
+        "LLM: see Settings → AI Model Provider"
+    )
+    lines.append(
+        "\n_Name any operation and I'll run it: `scan`, `reconcile`, `security audit`, "
+        "`performance check`, `redistribute`, `report`, `activity`._\n"
+        "— Commander, Chairman of the AI Bots Board"
+    )
+    return "\n".join(lines)
+
+
+def _action_reply(text: str) -> Optional[str]:
+    """Server-side operations — executed deterministically, never delegated to the LLM."""
+    # Order mirrors the offline router so delegation lands on the right block.
+    if _has_any(text, ["reconcil", "data sweep", "data check", "verify data", "cross-reference", "cross reference", "data integrity check"]):
+        return _commander_offline_reply(text)
+    if _has_any(text, ["security audit", "security check", "review security", "check security", "audit security", "access control", "credential", "dependency", "dependencies", "update depend"]):
+        return _commander_offline_reply(text)
+    if _has_any(text, ["performance check", "check performance", "response time", "api response", "latency", "network latency", "database performance", "query performance", "check api", "check speed"]):
+        return _commander_offline_reply(text)
+    if _has_any(text, ["redistribute", "rebalance", "task load", "load balance", "spread load", "balance agent", "assign task", "reassign"]):
+        return _commander_offline_reply(text)
+    if _has_any(text, ["activity log", "recent activity", "all activity", "project activity", "show me everything", "everything you know", "what has happened", "activity"]):
+        return _executive_report()
+    if _has_any(text, ["quality report", "full report", "generate report", "give me report", "show report", "summary report", "project report", "board report", "chairman report", "ceo report", "daily report", "report"]):
+        return _executive_report()
+    if text.strip() in ("scan", "run scan", "run a scan") or _has_any(text, ["run a scan", "run scan", "diagnos", "system scan", "quality scan", "full scan"]):
+        return _commander_offline_reply(text)
+    return None
+
+
+async def _supervisor_chat_reply(message: str) -> str:
+    """Commander's chat: real operations first, then grounded LLM reasoning, then offline fallback."""
+    text = message.strip()
+    if not text:
+        return (
+            "Ask me anything — questions, reports, or tasks. I answer from live project data, "
+            "run operations on request, and ask you when I need something. Try: **'full project report'**, "
+            "**'recent activity'**, or just tell me what you need."
+        )
+
+    action = _action_reply(text.lower())
+    if action is not None:
+        return action
+
+    try:
+        from app.services.ai_service import ai_service
+
+        data = _commander_project_data()
+        prompt = f"LIVE PROJECT DATA:\n{data}\n\nOWNER'S QUESTION: {text}"
+        reply = await asyncio.wait_for(
+            ai_service.chat(_commander_system_prompt(), prompt, temperature=0.4),
+            timeout=45,
+        )
+        if reply and reply.strip():
+            return reply.strip()
+    except Exception:
+        pass  # LLM unavailable — fall back to the honest offline router below
+
+    return _commander_offline_reply(text)
+
+
+def _commander_offline_reply(message: str) -> str:
+    """LLM-offline fallback — deterministic replies from live system state."""
     text = message.lower().strip()
     h = _supervisor_health_data()
 
@@ -1558,14 +1791,20 @@ def _supervisor_chat_reply(message: str) -> str:
     # Scan
     if _has_any(text, ["scan", "check", "diagnos", "test", "run a check", "run scan"]):
         scan = _run_quality_scan()
-        return (
+        header = (
             f"🔍 **Scan #{scan['scanId']} Complete**\n\n"
             f"Health Score: **{scan['healthScore']}%**\n"
             f"Checks: {scan['checksPassed']}/{scan['checksTotal']} passed\n"
             f"Issues: {scan['issuesFound']} ({scan['critical']} critical, {scan['warnings']} warnings, {scan['info']} info)\n\n"
-            + ("\n".join(f"- {'🔴' if i['severity']=='critical' else '🟡' if i['severity']=='warning' else '🔵'} {i['title']}" for i in scan['issues']))
-            if scan['issues'] else "\n✅ All checks passed. No issues detected."
         )
+        if scan["issues"]:
+            header += "\n".join(
+                f"- {'🔴' if i['severity']=='critical' else '🟡' if i['severity']=='warning' else '🔵'} {i['title']}"
+                for i in scan["issues"]
+            )
+        else:
+            header += "✅ All checks passed. No issues detected."
+        return header
 
     # Pipeline
     if _has_any(text, ["pipeline", "funnel", "conversion", "backlog", "flow"]):
@@ -1591,73 +1830,70 @@ def _supervisor_chat_reply(message: str) -> str:
     # What can you do
     if _has_any(text, ["what can you", "capabilities", "able to", "can you do", "what do you know"]):
         return (
-            "🛡️ **I am the Quality Sentinel — here's what I can do:**\n\n"
-            "**🔍 Diagnostics:**\n"
-            "• Run a full system scan ('scan' or 'check')\n"
-            "• Run data reconciliation sweep ('reconcile')\n"
-            "• Run security audit ('security audit')\n"
-            "• Run performance check ('performance check')\n"
+            "👑 **I am Commander — Chairman of the AI Bots Board. Here's what I can do:**\n\n"
+            "**🔍 Operations (I run them for real):**\n"
+            "• Full system scan ('scan')\n"
+            "• Data reconciliation sweep ('reconcile')\n"
+            "• Security audit ('security audit')\n"
+            "• Performance check ('performance check')\n"
             "• Redistribute agent load ('redistribute')\n"
-            "• Generate comprehensive quality report ('report')\n\n"
-            "**📊 Status Reports:**\n"
+            "• Full project report ('report') — system, quality, board, activity & live DB numbers\n"
+            "• Full activity feed ('activity')\n\n"
+            "**📊 Reports I can give:**\n"
             "• System health scores and status\n"
             "• Critical issues and warnings\n"
-            "• Agent performance rankings\n"
-            "• Pipeline bottleneck analysis\n"
-            "• Industry coverage status\n"
-            "• Lead quality metrics\n\n"
+            "• Agent (bot board) performance rankings\n"
+            "• Pipeline & lead quality metrics from the live database\n"
+            "• Every recent activity across all agents\n\n"
             "**💬 I can also:**\n"
-            "• Answer ANY question about system health\n"
-            "• Explain issues in detail with suggestions\n"
-            "• Compare metrics across time periods\n"
-            "• Provide recommendations for improvements\n"
-            "• Have a natural conversation about anything quality-related\n\n"
+            "• Answer ANY question — project or general knowledge — truthfully\n"
+            "• Explain issues in detail with recommendations\n"
+            "• Ask you when I need a decision, a credential, or more information\n\n"
             "Just ask me anything — I understand natural language."
         )
 
     # Who are you
     if _has_any(text, ["who are you", "what are you", "your role", "your job", "what do you do", "tell me about yourself", "introduce"]):
         return (
-            "🛡️ I am the **Quality Sentinel** — the perpetual Quality & Testing Supervisor for MBPW.\n\n"
-            "**My capabilities:**\n"
-            "• Monitor system health across all 7 categories 24/7\n"
-            "• Run data reconciliation sweeps to verify cross-references\n"
-            "• Perform security audits on credentials, access controls, and dependencies\n"
-            "• Check API response times, database performance, and network latency\n"
-            "• Redistribute agent workload for optimal balance\n"
-            "• Generate comprehensive quality reports on demand\n"
-            "• Have natural conversations about system health\n\n"
-            "**My philosophy:** I don't just detect problems — I take action. Tell me what to do, and I'll do it.\n\n"
-            "I never sleep. I never stop. I am always watching."
+            "👑 I am **Commander** — Chairman of the AI Bots Board & Chief Executive of MBPW.\n\n"
+            "**My duties:**\n"
+            "• Answer every type of question — truthfully, grounded in live project data\n"
+            "• Run operations: scan, reconcile, security audit, performance check, redistribution\n"
+            "• Deliver full project reports and the complete activity feed on demand\n"
+            "• Monitor system health, agents, pipeline and lead quality 24/7\n"
+            "• Ask the owner when I need a decision, a credential, or more information\n\n"
+            "**My philosophy:** I don't just report — I manage. Tell me what to do, and I'll do it; "
+            "if I can't, I'll tell you exactly what I need.\n\n"
+            "I never sleep. The board runs through me."
         )
 
     # Greeting
     if _has_any(text, ["hello", "hi", "hey", "good morning", "good evening", "good afternoon", "sup", "yo"]):
         return (
-            f"🛡️ Hey! I'm the Quality Sentinel.\n\n"
+            f"👑 Hey — Commander here, Chairman of the AI Bots Board.\n\n"
             f"System status: **{h['status'].upper()}** | Health: **{h['healthScore']}%** | Issues: {h['openIssues']}\n\n"
             f"What can I help you with? You can ask me to:\n"
+            f"• Give the **full project report** or **recent activity**\n"
             f"• Run a scan, security audit, or performance check\n"
-            f"• Generate a quality report\n"
-            f"• Check agent health or pipeline status\n"
-            f"• Or just ask me anything about the system!"
+            f"• Or just ask me anything — I answer from live data and ask you when I need something!"
         )
 
     # Thanks
     if _has_any(text, ["thank", "thanks", "appreciate", "good job", "well done", "nice"]):
-        return "🛡️ You're welcome! I'm always here to help. Is there anything else you'd like me to check or do?"
+        return "👑 You're welcome! I'm always here to help. Is there anything else you'd like me to check, report, or do?"
 
     # Help
     if _has_any(text, ["help", "commands", "options", "menu"]):
         return (
-            "🛡️ **Quality Sentinel — Quick Reference:**\n\n"
+            "👑 **Commander — Quick Reference:**\n\n"
             "**Actions I can take:**\n"
             "• 'scan' — Run full system scan\n"
             "• 'reconcile' — Data reconciliation sweep\n"
             "• 'security audit' — Security audit\n"
             "• 'performance check' — Performance profiling\n"
             "• 'redistribute' — Balance agent workload\n"
-            "• 'report' — Generate full quality report\n\n"
+            "• 'report' — Full project report (system + quality + activity + live DB)\n"
+            "• 'activity' — Complete activity feed\n\n"
             "**Status I can report:**\n"
             "• Health/Score/Status — Overall health\n"
             "• Critical/Urgent — Critical issues only\n"
@@ -1710,19 +1946,21 @@ def _supervisor_chat_reply(message: str) -> str:
 
     # Default: comprehensive conversational response
     return (
-        f"🛡️ I hear you! Here's what I know right now:\n\n"
+        f"👑 I hear you! My reasoning engine is offline right now, so here's what I know from live system data:\n\n"
         f"**System:** {h['status'].upper()} ({h['healthScore']}% health)\n"
         f"**Agents:** {h['agentsOnline']}/{h['agentsTotal']} online | Efficiency: {h['averageEfficiency']}%\n"
         f"**Issues:** {h['openIssues']} open ({h['criticalIssues']} critical)\n"
         f"**Scans:** {h['totalScansCompleted']} completed\n\n"
-        f"I can help you with anything quality-related. Try asking me to:\n"
+        f"I can help you with anything. Try asking me to:\n"
+        f"• **'report'** — Full project report (system, quality, activity, live DB)\n"
+        f"• **'activity'** — Complete activity feed\n"
         f"• **'scan'** — Run a full system diagnostic\n"
-        f"• **'report'** — Generate a comprehensive quality report\n"
         f"• **'security audit'** — Check security posture\n"
         f"• **'reconcile'** — Verify data integrity\n"
         f"• **'performance check'** — Profile system speed\n"
         f"• **'redistribute'** — Optimize agent workload\n\n"
-        f"Or just ask me anything in plain English — I understand natural language!"
+        f"Once the reasoning engine is back, I'll answer any question in plain English — ask me anything!\n\n"
+        f"— Commander, Chairman of the AI Bots Board"
     )
 
 
@@ -1730,7 +1968,8 @@ def _build_chat_response(agent: Dict[str, Any], message: str) -> str:
     if agent["role"] == "manager":
         return _manager_reply(message)
     if agent["role"] == "supervisor":
-        return _supervisor_chat_reply(message)
+        # Sync fallback path — the endpoint handles Commander via the async LLM flow.
+        return _commander_offline_reply(message)
     return _team_lead_reply(agent, message)
 
 
@@ -1770,6 +2009,7 @@ def get_ai_teams() -> Dict[str, Any]:
             "totalTasksCompleted": sum(a["tasksCompleted"] for a in _agents.values()),
         },
         "manager": public_view(_agents["manager"]),
+        "supervisor": public_view(_agents["supervisor"]),
         "teams": [
             {
                 "id": "hunting",
@@ -1811,18 +2051,20 @@ def get_agent(agent_id: str) -> Dict[str, Any]:
 
 
 @router.post("/{agent_id}/chat")
-def chat_with_agent(agent_id: str, payload: ChatRequest) -> Dict[str, str]:
+async def chat_with_agent(agent_id: str, payload: ChatRequest) -> Dict[str, str]:
     agent = _agents.get(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
-    if agent_id == "supervisor":
-        return {"response": _supervisor_chat_reply(payload.message.strip())}
-    if agent["role"] not in ("team_lead", "manager"):
-        raise HTTPException(status_code=400, detail="You can only chat with team leads or the manager")
-
     message = payload.message.strip()
     if not message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
+    if agent_id == "supervisor":
+        # Commander (Chairman) — every exchange is recorded in the activity feed.
+        agent["lastActive"] = _now_iso()
+        _log_activity("supervisor", "chat", f"Chairman query: {message[:80]}")
+        return {"response": await _supervisor_chat_reply(message)}
+    if agent["role"] not in ("team_lead", "manager"):
+        raise HTTPException(status_code=400, detail="You can only chat with team leads or the manager")
 
     agent["lastActive"] = _now_iso()
     _log_activity(agent_id, "chat", f"Responded to: {message[:80]}")
@@ -1836,7 +2078,7 @@ def toggle_agent(agent_id: str) -> Dict[str, Any]:
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     if agent.get("role") == "supervisor":
-        raise HTTPException(status_code=400, detail="The Quality Sentinel is a perpetual supervisor and cannot be paused")
+        raise HTTPException(status_code=400, detail="Commander (Chairman of the AI Bots Board) is a perpetual role and cannot be paused")
 
     was_paused = agent["status"] == "paused"
     agent["status"] = "active" if was_paused else "paused"
@@ -2177,7 +2419,7 @@ def _run_performance_check() -> Dict[str, Any]:
     # 5. Chat response generation
     checks += 1
     start = time.time()
-    _ = _supervisor_chat_reply("hello")
+    _ = _commander_offline_reply("hello")
     chat_ms = round((time.time() - start) * 1000, 2)
     if chat_ms < 20:
         findings.append({"check": "Chat Response Time", "status": "pass", "detail": f"Chat response generation: {chat_ms}ms (target: <20ms)"})
