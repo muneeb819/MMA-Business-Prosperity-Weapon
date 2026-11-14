@@ -119,6 +119,13 @@ const API_SOURCES = {
             cleanTitle = title.slice(0, idx).trim();
             company = title.slice(idx + 4).trim();
           }
+        } else if (title.includes(":")) {
+          // "Company: Role" pattern (same rule as the backend parser).
+          const idx = title.indexOf(":");
+          if (idx > 0 && idx < title.length * 0.6) {
+            company = title.slice(0, idx).trim();
+            cleanTitle = title.slice(idx + 1).trim() || title;
+          }
         }
         const cleanDesc = desc.replace(/<[^>]+>/g, "").slice(0, 1500);
         const techs: string[] = [];
