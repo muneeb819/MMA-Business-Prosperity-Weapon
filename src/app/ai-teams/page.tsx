@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,8 @@ export default function AITeamsPage() {
   const [qualityReport, setQualityReport] = useState<LegacyLooseValue>(null);
   const [showQualityReport, setShowQualityReport] = useState(false);
 
+  const router = useRouter();
+
   const fetchData = useCallback(async () => {
     try {
       const [teamsRes, actRes] = await Promise.all([api.aiTeams.list(), api.aiTeams.activity(30)]);
@@ -86,12 +89,18 @@ export default function AITeamsPage() {
   }, []);
 
   useEffect(() => {
+    // Signed-out visitors can't load the board (API requires auth) — send them to
+    // login instead of dead-ending on the error state.
+    if (typeof window !== "undefined" && !localStorage.getItem("mbpw_token")) {
+      router.replace("/login");
+      return;
+    }
     // This poll synchronizes the view with the AI teams API; updates follow the async request.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- external API polling.
     void fetchData();
     const t = setInterval(() => { void fetchData(); }, 15000);
     return () => clearInterval(t);
-  }, [fetchData]);
+  }, [fetchData, router]);
 
   // Supervisor auto-scan on mount + every 60 seconds
   const fetchSupervisorData = useCallback(async () => {
@@ -231,10 +240,15 @@ export default function AITeamsPage() {
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
         <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-        <p className="text-zinc-400">Couldn&apos;t load AI teams — sign in and retry. (If you&apos;re signed in, the backend may still be starting up.)</p>
-        <Button onClick={fetchData} variant="outline" className="mt-4 border-white/10 text-zinc-400">
-          <RefreshCw className="w-4 h-4 mr-2" /> Retry
-        </Button>
+        <p className="text-zinc-400">Couldn&apos;t load AI teams — your session may have expired, or the backend is starting up.</p>
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <Button onClick={fetchData} variant="outline" className="border-white/10 text-zinc-400">
+            <RefreshCw className="w-4 h-4 mr-2" /> Retry
+          </Button>
+          <Button onClick={() => router.push("/login")} className="bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white">
+            Sign in
+          </Button>
+        </div>
       </div>
     </div>
   );
