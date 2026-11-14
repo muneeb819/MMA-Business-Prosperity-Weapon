@@ -72,8 +72,13 @@ const CONNECTOR_SOURCES: { value: string; label: string; needsKey: boolean }[] =
   { value: "greenhouse", label: "Greenhouse ATS", needsKey: true },
   { value: "lever", label: "Lever ATS", needsKey: true },
   { value: "ashby", label: "Ashby ATS", needsKey: true },
-{ value: "upwork", label: "Upwork", needsKey: false },
-{ value: "workingnomads", label: "Working Nomads", needsKey: false },
+  { value: "upwork", label: "Upwork", needsKey: false },
+  { value: "indeed", label: "Indeed", needsKey: false },
+  { value: "rozee", label: "ROZEE.PK (Pakistan)", needsKey: false },
+  { value: "hn_demand", label: "HN Discussions", needsKey: false },
+  { value: "reddit", label: "Reddit", needsKey: true },
+  { value: "pinterest", label: "Pinterest", needsKey: true },
+  { value: "workingnomads", label: "Working Nomads", needsKey: false },
 { value: "jobspresso", label: "Jobspresso", needsKey: false },
 { value: "remoteco", label: "Remote.co", needsKey: false },
 { value: "europeremotely", label: "Europe Remotely", needsKey: false },
@@ -93,6 +98,9 @@ export default function ConnectorsPage() {
   const [liveLeadCount, setLiveLeadCount] = useState(0);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [serverSources, setServerSources] = useState<
+    { name: string; display_name: string; source_type: string; url: string; requires_key: boolean }[]
+  >([]);
 
   const showToast = useCallback((msg: string) => { setToastMsg(msg); }, []);
 
@@ -107,13 +115,30 @@ export default function ConnectorsPage() {
     setSyncingAll(true);
     setSyncResult(null);
     try {
+      // 1) Server-side sync: ALL registered sources (Indeed, Upwork, ROZEE, HN,
+      //    daily-boards, …) are fetched on our backend and stored in the database
+      //    with full info + source URLs.
+      let serverMsg = "";
+      try {
+        const srv = (await api.leadSources.syncAll(15)) as
+          | { summary?: Record<string, number | undefined> }
+          | null;
+        const s = srv?.summary || {};
+        serverMsg = ` · Server: ${s.total_new ?? 0} new of ${s.total_fetched ?? 0} fetched from ${s.sources_synced ?? 0} sources`;
+      } catch {
+        serverMsg = " · Server sync unavailable";
+      }
+      // 2) Browser sources (CORS-friendly live feeds) for the instant preview list.
       const { leads, results } = await fetchAllSources(15);
       setSyncResult(results);
       setLiveLeadCount(leads.length);
       setLastSync(new Date().toISOString());
       const totalFetched = Object.values(results).reduce((sum, r) => sum + r.fetched, 0);
       const totalErrors = Object.values(results).filter((r) => r.error).length;
-      showToast(`Fetched ${totalFetched} real leads from ${Object.keys(results).length} sources${totalErrors > 0 ? ` (${totalErrors} errors)` : ""}`);
+      showToast(
+        `Fetched ${totalFetched} browser leads from ${Object.keys(results).length} sources` +
+          `${totalErrors > 0 ? ` (${totalErrors} errors)` : ""}${serverMsg}`
+      );
     } catch (e: unknown) {
       showToast("Sync failed: " + getErrorMessage(e, "Unknown error"));
     } finally {
@@ -123,8 +148,12 @@ export default function ConnectorsPage() {
 
   const fetchConnectors = useCallback(async () => {
     try {
-      const data = await api.connectors.list();
+      const [data, sources] = await Promise.all([
+        api.connectors.list(),
+        api.leadSources.list().catch(() => []),
+      ]);
       setConnectors(Array.isArray(data) ? data : []);
+      setServerSources(Array.isArray(sources) ? sources : []);
     } catch {
       setConnectors([]);
     } finally {
@@ -301,6 +330,57 @@ export default function ConnectorsPage() {
                   )}
                 </CardContent>
               </Card>
+
+            {serverSources.length > 0 && (
+              <Card className="bg-zinc-900/60 border-white/[0.06]">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-white text-lg flex items-center gap-2">
+                        <Database className="w-5 h-5 text-indigo-400" />
+                        Server Lead Sources
+                        <Badge variant="outline" className="text-[10px] text-indigo-400 bg-indigo-500/10 border-indigo-500/30 ml-2">
+                          {serverSources.length} configured · synced daily 09:00 UTC
+                        </Badge>
+                      </CardTitle>
+                      <p className="text-xs text-zinc-500 mt-1">
+                        Fetched by our backend and stored in the database with full details + source URLs (Indeed · Upwork · ROZEE.PK · HN Discussions · and more)
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {serverSources.map((src) => {
+                      const cfg = connectorTypeConfig[src.source_type] || connectorTypeConfig.scraper;
+                      const TypeIcon = cfg.icon;
+                      return (
+                        <a
+                          key={src.name}
+                          href={src.url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] transition-all block"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <TypeIcon className={`w-4 h-4 ${cfg.color} shrink-0`} />
+                            <span className="text-sm font-medium text-white truncate">{src.display_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{cfg.label}</span>
+                            {src.requires_key && (
+                              <Badge variant="outline" className="text-[9px] text-amber-400 bg-amber-500/10 border-amber-500/30 px-1.5 py-0">
+                                API key needed
+                              </Badge>
+                            )}
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {loading ? (
               <div className="text-center py-20 text-zinc-500">Loading connectors...</div>

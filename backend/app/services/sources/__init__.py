@@ -16,6 +16,11 @@ from app.services.sources.workingnomads import WorkingNomadsSource
 from app.services.sources.jobspresso import JobspressoSource
 from app.services.sources.remoteco import RemoteCoSource
 from app.services.sources.europeremotely import EuropeRemotelySource
+from app.services.sources.indeed import IndeedSource
+from app.services.sources.rozee import RozeeSource
+from app.services.sources.hn_demand import HNDiscussionsSource
+from app.services.sources.reddit import RedditSource
+from app.services.sources.pinterest import PinterestSource
 
 ALL_SOURCES: dict[str, BaseSource] = {}
 
@@ -41,6 +46,11 @@ register_source(WorkingNomadsSource())
 register_source(JobspressoSource())
 register_source(RemoteCoSource())
 register_source(EuropeRemotelySource())
+register_source(IndeedSource())
+register_source(RozeeSource())
+register_source(HNDiscussionsSource())
+register_source(RedditSource())
+register_source(PinterestSource())
 
 
 def get_source(name: str) -> BaseSource | None:

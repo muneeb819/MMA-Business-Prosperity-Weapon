@@ -110,7 +110,9 @@ const LeadGrid = memo(function LeadGrid({
                     </div>
                     <div className="text-emerald-400 text-xs sm:text-sm font-semibold whitespace-nowrap">
                       {lead.budget.min || lead.budget.max
-                        ? `${formatCurrency(lead.budget.min)} – ${formatCurrency(lead.budget.max)}`
+                        ? lead.budget.min && lead.budget.max && lead.budget.min === lead.budget.max
+                          ? formatCurrency(lead.budget.min)
+                          : `${formatCurrency(lead.budget.min)} – ${formatCurrency(lead.budget.max)}`
                         : <span className="text-zinc-500 font-medium">Budget not listed</span>}
                     </div>
                   </div>
