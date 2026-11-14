@@ -141,4 +141,25 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    """Liveness + real database check (SELECT 1 + lead count). Never fabricates a pass."""
+    payload: dict = {"status": "healthy", "database": "connected", "leads": 0}
+    status_code = 200
+    try:
+        from sqlalchemy import text
+        from app.models.database import SessionLocal
+        from app.models.schema import Lead
+
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            payload["leads"] = db.query(Lead).count()
+        finally:
+            db.close()
+    except Exception as exc:  # noqa: BLE001 — report the truth, degrade honestly
+        payload["status"] = "degraded"
+        payload["database"] = f"error: {type(exc).__name__}"
+        payload.pop("leads", None)
+        status_code = 503
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(content=payload, status_code=status_code)

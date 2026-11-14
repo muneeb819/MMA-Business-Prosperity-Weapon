@@ -189,7 +189,12 @@ def test_cron_requires_secret_and_accepts_authorized_request(client, monkeypatch
         headers={"Authorization": "Bearer unit-test-cron-secret"},
     )
     assert accepted.status_code == 200
-    assert accepted.json() == {"ok": True, "summary": {"processed": 0, "sent": 0}}
+    body = accepted.json()
+    assert body["ok"] is True
+    assert body["summary"] == {"processed": 0, "sent": 0}
+    # The cron now syncs every keyless lead source before the cadence run.
+    assert "lead_sync" in body
+    assert set(body["lead_sync"]) == {"sources", "fetched", "new", "updated"}
 
 
 def test_production_database_requires_supported_durable_database():

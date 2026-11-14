@@ -160,9 +160,10 @@ def send(data: dict, db: Session = Depends(get_db), user=Depends(get_current_use
 # Automated outreach engine
 # --------------------------------------------------------------------------- #
 @router.get("/cron")
-def cron_run(request: Request, db: Session = Depends(get_db)):
-    """Vercel Cron target (GET). Processes all due cadence steps. Optionally guarded
-    by CRON_SECRET (set in env) via ?secret= or Authorization: Bearer <secret>."""
+async def cron_run(request: Request, db: Session = Depends(get_db)):
+    """Vercel Cron target (GET). First syncs ALL keyless lead sources into the
+    database (full lead info incl. source URLs), then processes all due cadence
+    steps. Guarded by CRON_SECRET via ?secret= or Authorization: Bearer <secret>."""
     secret = os.getenv("CRON_SECRET", "")
     if not secret:
         raise HTTPException(status_code=500, detail="CRON_SECRET is not configured")
@@ -171,8 +172,22 @@ def cron_run(request: Request, db: Session = Depends(get_db)):
     ).replace("Bearer ", "")
     if provided != secret:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # 1) Pick up fresh leads from every keyless source (title, company, budget,
+    #    country, tech, tags and the source URL are all stored — see job_to_lead).
+    from app.services.sync import sync_all_sources
+
+    lead_sync = await sync_all_sources(db, limit_per_source=20)
+    sync_summary = {
+        "sources": len(lead_sync),
+        "fetched": sum(r.get("fetched", 0) for r in lead_sync.values() if isinstance(r, dict)),
+        "new": sum(r.get("new", 0) for r in lead_sync.values() if isinstance(r, dict)),
+        "updated": sum(r.get("updated", 0) for r in lead_sync.values() if isinstance(r, dict)),
+    }
+
+    # 2) Run the outreach cadence (Day 0/3/7/14) on the synced leads.
     summary = outreach_automation.process_due_outreach(db)
-    return {"ok": True, "summary": summary}
+    return {"ok": True, "lead_sync": sync_summary, "summary": summary}
 
 
 @router.post("/automation/run")
